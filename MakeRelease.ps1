@@ -1,0 +1,121 @@
+﻿# Builds the public beta packages in .\release\. Run after Build.cmd. Packs the owner's voice clips
+# and the three original menu pictures; never saves, logs or rollback folders.
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $root
+$utf8 = New-Object Text.UTF8Encoding($false)
+$plugin = [IO.File]::ReadAllText("$root\source\Plugin.cpp")
+$version = [regex]::Match($plugin, 'SA People ([0-9.]+) initialized').Groups[1].Value
+if (-not $version) { throw 'Version not found in Plugin.cpp' }
+if (-not (Test-Path "$root\build\SA-People.asi")) { throw 'Run Build.cmd first' }
+
+$out = "$root\release"
+$name = "SA-People-$version-beta"
+$stage = "$out\$name"
+if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+New-Item -ItemType Directory -Force "$stage\SA-People\assets", "$stage\SA-People\audio", "$stage\SA-People\backgrounds" | Out-Null
+
+Copy-Item "$root\build\SA-People.asi" $stage
+Copy-Item "$root\languages.tsv" "$stage\SA-People\"
+Copy-Item "$root\assets\*.png" "$stage\SA-People\assets\"
+Copy-Item "$root\audio\*" "$stage\SA-People\audio\" -Include *.wav, *.mp3
+foreach ($n in 8, 9, 10) { Copy-Item "$root\backgrounds\gtasanandreas$n.*" "$stage\SA-People\backgrounds\" } # Owner-made art only.
+foreach ($f in 'README.md', 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd', 'TEST-CHECKLIST-TR.md') {
+    Copy-Item "$root\release-template\$f" $stage
+}
+Copy-Item "$root\CHANGELOG.md" $stage
+Copy-Item "$root\OYUNCU-REHBERI-TR.md" $stage
+
+[IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
+[World]
+AutoRestore=1
+SideEvents=1
+FirstEventSeconds=45
+
+[Interface]
+ScalePercent=100
+AutoCloseSeconds=0
+Language=en
+ModernMenu=1
+
+[Audio]
+Enabled=1
+HonorPercent=10
+VoicePercent=45
+"@, $utf8)
+
+# List the sound files the mod looks for, straight from the source.
+$policy = [IO.File]::ReadAllText("$root\source\AudioPolicy.h", [Text.Encoding]::UTF8) + [IO.File]::ReadAllText("$root\source\Audio.h", [Text.Encoding]::UTF8)
+$names = [regex]::Matches($policy, 'L"([^"]+\.(?:wav|mp3))"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+[IO.File]::WriteAllText("$stage\SA-People\audio\README.txt", (@(
+    'Voice clips used by the mod. You can replace any of them with your own file of the same name;',
+    'a missing file is simply skipped (logged once in SA-People.log). Names the mod looks for:',
+    '') + $names) -join "`r`n", $utf8)
+[IO.File]::WriteAllText("$stage\SA-People\backgrounds\README.txt", @(
+    'Menu pictures (JPG, PNG or BMP). Add your own here.',
+    'Files whose names start with "gtasanandreas" appear 95% of the time; any other picture 5%.',
+    'Without pictures the menu uses a plain dark background.') -join "`r`n", $utf8)
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+# Zip with forward-slash entry names so every unzip tool agrees.
+function New-Zip($dir, $zipPath) {
+    $base = (Split-Path -Parent $dir).TrimEnd('\') + '\'
+    $zip = [IO.Compression.ZipFile]::Open($zipPath, 'Create')
+    foreach ($f in Get-ChildItem $dir -Recurse -File) {
+        $entry = $f.FullName.Substring($base.Length).Replace('\', '/')
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $f.FullName, $entry, [IO.Compression.CompressionLevel]::Optimal)
+    }
+    $zip.Dispose()
+}
+# Single-file setup: Installer.exe followed by the mod files and an index (see Installer.cpp).
+function New-Setup($stageDir, $setupPath) {
+    Copy-Item "$root\build\Installer.exe" $setupPath
+    $fs = [IO.File]::Open($setupPath, 'Open', 'ReadWrite')
+    $fs.Seek(0, 'End') | Out-Null
+    $entries = @()
+    $files = @(Get-Item "$stageDir\SA-People.asi") + @(Get-ChildItem "$stageDir\SA-People" -Recurse -File)
+    foreach ($f in $files) {
+        $rel = $f.FullName.Substring($stageDir.Length + 1).Replace('\', '/')
+        $bytes = [IO.File]::ReadAllBytes($f.FullName)
+        $entries += [pscustomobject]@{ Path = $rel; Mode = [byte]($(if ($rel -eq 'SA-People/settings.ini') { 1 } else { 0 })); Offset = [uint64]$fs.Position; Size = [uint64]$bytes.Length }
+        $fs.Write($bytes, 0, $bytes.Length)
+    }
+    $indexAt = [uint64]$fs.Position
+    $w = New-Object IO.BinaryWriter($fs)
+    $w.Write([uint32]$entries.Count)
+    foreach ($e in $entries) {
+        $name = [Text.Encoding]::UTF8.GetBytes($e.Path)
+        $w.Write([uint16]$name.Length); $w.Write($name); $w.Write($e.Mode); $w.Write($e.Offset); $w.Write($e.Size)
+    }
+    $w.Write($indexAt)
+    $w.Write([Text.Encoding]::ASCII.GetBytes('SAPPKG01'))
+    $w.Flush(); $fs.Dispose()
+}
+$setup = "$out\$name-Setup.exe"
+New-Setup $stage $setup
+Copy-Item $setup "$stage\SA-People-Setup.exe"
+$binaryZip = "$out\$name.zip"
+New-Zip $stage $binaryZip
+
+# Source package.
+$src = "$out\$name-source"
+New-Item -ItemType Directory -Force "$src\source" | Out-Null
+Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc
+foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1') { Copy-Item "$root\$f" $src }
+Copy-Item "$root\assets" "$src\assets" -Recurse
+foreach ($f in 'README.md', 'LICENSE.txt') { Copy-Item "$root\release-template\$f" $src }
+New-Zip $src "$out\$name-source.zip"
+
+# Verify: nothing private or third-party may be inside.
+$bad = @()
+foreach ($zip in $binaryZip, "$out\$name-source.zip") {
+    $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+    foreach ($e in $archive.Entries) {
+        $allowed = ($zip -eq $binaryZip) -and ($e.FullName -match '/SA-People/audio/[^/]+\.(wav|mp3)$|/SA-People/backgrounds/gtasanandreas(8|9|10)\.(jpg|png)$')
+        if (-not $allowed -and $e.FullName -match '\.(wav|mp3|ogg|jpg|jpeg|bmp|log|bak|webp)$|people\.dat|people\.pre|rollback') { $bad += "$zip : $($e.FullName)" }
+    }
+    $archive.Dispose()
+}
+Remove-Item $stage, $src -Recurse -Force
+if ($bad) { $bad; throw 'Forbidden files found in a package' }
+Get-ChildItem $out -Filter *.zip | Select-Object Name, @{n = 'KB'; e = { [int]($_.Length / 1KB) } }

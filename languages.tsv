@@ -1,0 +1,462 @@
+PHONE_CONTACTS	Rehber	Контакты	Contactos	Contacts
+PHONE_MEETINGS	Buluşmalar	Встречи	Encuentros	Meetings
+PHONE_SETTINGS	Ayarlar	Настройки	Ajustes	Settings
+PHONE_CONTACT	Kişi	Контакт	Contacto	Contact
+PHONE_EMPTY	Rehber boş	Нет контактов	Sin contactos	No contacts
+PHONE_NO_MEETINGS	Buluşma yok	Нет встреч	Sin encuentros	No meetings
+PHONE_IN_SECONDS	{0} sn sonra	Через {0} с	En {0} s	In {0} s
+PHONE_ON_WAY	Buluşma vakti	Пора встретиться	Hora de reunirse	Meeting time
+PHONE_MET	Buluştunuz	Вы встретились	Os reunisteis	You met
+PHONE_CANCELLED	Buluşma sona erdi	Встреча завершена	Encuentro terminado	Meeting ended
+PHONE_LANGUAGE	Dil	Язык	Idioma	Language
+PHONE_UNKNOWN_JOB	Mesleğini bilmiyorsun	Работа неизвестна	Trabajo desconocido	Job unknown
+PHONE_FEMALE	Kadın	Женщина	Mujer	Woman
+PHONE_MALE	Erkek	Мужчина	Hombre	Man
+PHONE_UNKNOWN	Bilinmiyor	Неизвестно	Desconocido	Unknown
+PHONE_MOTHER	Anne	Мать	Madre	Mother
+PHONE_FATHER	Baba	Отец	Padre	Father
+PHONE_SIBLING	Kardeş	Брат / сестра	Hermano/a	Sibling
+PHONE_CHILD	Çocuk	Ребёнок	Hijo/a	Child
+PHONE_ENCOUNTERS	{0} karşılaşma	Встреч: {0}	{0} encuentros	{0} encounters
+PHONE_BAD_MEMORY	Ona tehditle para sordun.	Ты угрожал ради денег.	Le exigiste dinero.	You threatened them for money.
+PHONE_BATTERY_MEMORY	Arabasına yardım ettin.	Ты помог с машиной.	Ayudaste con su coche.	You helped with their car.
+PHONE_MEETING_MEMORY	Birlikte vakit geçirdiniz.	Вы провели время вместе.	Pasasteis tiempo juntos.	You spent time together.
+PHONE_TALK_MEMORY	Sokakta tanıştınız.	Вы познакомились на улице.	Os conocisteis en la calle.	You met on the street.
+PHONE_INVITE	Buluşmaya çağır	Пригласить на встречу	Invitar a un encuentro	Arrange a meeting
+PHONE_CANCEL	İptal	Отменить	Cancelar	Cancel
+PHONE_SELECT	Seç	Выбрать	Elegir	Select
+PHONE_BACK	Geri	Назад	Atrás	Back
+PHONE_OK	Tamam	ОК	Vale	OK
+PHONE_INVITE_ACCEPT	Tamam CJ. Birazdan yakınında buluşalım. Noktayı haritana ekledim.	Хорошо, CJ. Скоро встретимся рядом. Место отмечено на карте.	Vale, CJ. Nos vemos cerca dentro de poco. El lugar está marcado en el mapa.	OK, CJ. Let's meet nearby soon. The spot is marked on your map.
+PHONE_INVITE_REJECT	Bugün buluşamam CJ. Biraz daha tanışalım, sonra konuşuruz.	Сегодня не могу, CJ. Давай сначала узнаем друг друга получше.	Hoy no puedo, CJ. Conozcámonos mejor y luego hablamos.	I can't meet today, CJ. Let's get to know each other better first.
+PHONE_INVITE_ACTIVE	Zaten buluşmanız var.	У вас уже назначена встреча.	Ya tenéis un encuentro pendiente.	You already have a meeting arranged.
+PHONE_INVITE_BUSY	Şu an müsait değil. Biraz sonra ara.	Сейчас занят. Позвони позже.	Ahora no puede. Llama más tarde.	They're busy. Call again later.
+PHONE_INVITE_SAFE	Buluşma için dışarıda, yaya ve sakin bir yerde olmalısın.	Для встречи выйди на улицу пешком в спокойное место.	Busca un lugar tranquilo al aire libre y ve a pie.	Find a quiet place outside, on foot.
+PHONE_INVITE_NO_SPOT	Yakında uygun bir buluşma noktası bulamadım.	Рядом нет подходящего места встречи.	No hay un lugar adecuado cerca.	There's no suitable meeting spot nearby.
+PHONE_INVITE_FULL	Önce mevcut buluşmalardan birini tamamla.	Сначала заверши одну из текущих встреч.	Termina uno de los encuentros pendientes primero.	Finish an existing meeting first.
+PHONE_INVITE_CANCEL	Buluşma iptal edildi.	Встреча отменена.	Encuentro cancelado.	Meeting cancelled.
+PHONE_ARRIVED	{0} buluşma noktasında seni bekliyor.	{0} ждёт тебя на месте встречи.	{0} te espera en el punto de encuentro.	{0} is waiting at the meeting spot.
+PHONE_MEETING_DONE	{0} ile buluştun.	Вы встретились с {0}.	Te has reunido con {0}.	You met up with {0}.
+PHONE_MEETING_MISSED	{0} ile buluşma süresi doldu.	Время встречи с {0} истекло.	Se agotó el tiempo para reunirte con {0}.	Your meeting with {0} has expired.
+PHONE_MEET_GREETING	CJ! Geldiğine sevindim. Biraz yürüyelim mi?	CJ! Рад тебя видеть. Прогуляемся?	¡CJ! Me alegro de verte. ¿Damos un paseo?	CJ! Good to see you. Want to walk for a bit?
+MOD_LANGUAGE	Dil Seçimi	Язык	Idioma	Language
+Arkadas	Arkadaş	Друг	Amigo	Friend
+Araniz gergin	Aranız gergin	Напряжённые отношения	Relación tensa	Things are tense
+Tanidik	Tanıdık	Знакомый	Conocido	Acquaintance
+Yabanci	Yabancı	Незнакомец	Desconocido	Stranger
+Yabanci kadin	Yabancı kadın	Незнакомка	Desconocida	Stranger (woman)
+Yabanci erkek	Yabancı erkek	Незнакомец	Desconocido	Stranger (man)
+Tamirci	Tamirci	Механик	Mecánico	Mechanic
+Sofor	Şoför	Водитель	Conductor	Driver
+Asci	Aşçı	Повар	Cocinero	Cook
+Tezgahtar	Tezgahtar	Продавец	Dependiente	Shop assistant
+Elektrikci	Elektrikçi	Электрик	Electricista	Electrician
+Guvenlikci	Güvenlikçi	Охранник	Guardia	Security guard
+Postaci	Postacı	Почтальон	Cartero	Postal worker
+Berber	Berber	Парикмахер	Barbero	Barber
+Emekli	Emekli	Пенсионер	Jubilado	Retired
+KONUSMAYA DEVAM ET	KONUŞMAYA DEVAM ET	ПРОДОЛЖИТЬ РАЗГОВОР	SEGUIR HABLANDO	KEEP TALKING
+SELAMLA	SELAMLA	ПОЗДОРОВАТЬСЯ	SALUDAR	GREET
+KONUSMAK ISTEMIYOR	KONUŞMAK İSTEMİYOR	НЕ ХОЧЕТ ГОВОРИТЬ	NO QUIERE HABLAR	DOESN'T WANT TO TALK
+SAKINLESTIR	SAKİNLEŞTİR	УСПОКОИТЬ	CALMAR	DEFUSE
+KISKIRT	KIŞKIRT	СПРОВОЦИРОВАТЬ	PROVOCAR	ANTAGONIZE
+SOY	SOY	ОГРАБИТЬ	ATRACAR	ROB
+PARASINI ZATEN ISTEDIN	PARASINI ZATEN İSTEDİN	УЖЕ ТРЕБОВАЛ ДЕНЬГИ	YA PEDISTE SU DINERO	ALREADY DEMANDED MONEY
+TELEFON  [F6]	TELEFON  [F6]	ТЕЛЕФОН  [F6]	TELÉFONO  [F6]	PHONE  [F6]
+YARDIM	YARDIM	ПОМОЩЬ	AYUDA	HELP
+AKUYA YARDIM ET	AKÜYE YARDIM ET	ПОМОЧЬ С АККУМУЛЯТОРОМ	AYUDAR CON LA BATERÍA	HELP WITH THE BATTERY
+YOL PARASI VER ($20)	YOL PARASI VER ($20)	ДАТЬ НА ПРОЕЗД ($20)	DAR PARA EL BILLETE ($20)	GIVE BUS FARE ($20)
+YOL TARIF ET	YOL TARİF ET	ПОДСКАЗАТЬ ДОРОГУ	INDICAR EL CAMINO	GIVE DIRECTIONS
+NE OLDUGUNU SOR	NE OLDUĞUNU SOR	СПРОСИТЬ, ЧТО СЛУЧИЛОСЬ	PREGUNTAR QUÉ PASA	ASK WHAT'S WRONG
+E basili tut  /  Aku baglantisini kontrol et	E basılı tut / Akü bağlantısını kontrol et	Удерживай E / Проверь аккумулятор	Mantén E / Revisa la batería	Hold E / Check the battery connection
+Az once de aynisini soyledin. Artik sana inanmiyorum.	Az önce de aynısını söyledin. Artık sana inanmıyorum.	Ты только что говорил то же самое. Я тебе больше не верю.	Acabas de decir lo mismo. Ya no te creo.	You just said the same thing. I don't believe you anymore.
+Tamam, uzatmayalim. Sen yoluna, ben yoluma.	Tamam, uzatmayalım. Sen yoluna, ben yoluma.	Ладно, хватит. Каждый своей дорогой.	Vale, dejémoslo. Cada uno por su camino.	OK, let's leave it. You go your way, I'll go mine.
+Peki CJ. Bir daha boyle konusma.	Peki CJ. Bir daha böyle konuşma.	Ладно, CJ. Больше так не говори.	Vale, CJ. No vuelvas a hablarme así.	Fine, CJ. Don't talk like that again.
+Anlastik. Biraz sakinlik iyi gelir.	Anlaştık. Biraz sakinlik iyi gelir.	Договорились. Нам всем надо остыть.	De acuerdo. Nos vendrá bien calmarnos.	Agreed. We could use some peace.
+Tamam, meseleyi burada kapatalim.	Tamam, meseleyi burada kapatalım.	Хорошо, закроем тему.	Vale, zanjemos el asunto.	OK, let's end this here.
+Bir sorun yok. Iyi gunler.	Bir sorun yok. İyi günler.	Всё нормально. Хорошего дня.	No pasa nada. Que tengas buen día.	No problem. Have a good day.
+Derdin ne senin? Yoluna baksana!	Derdin ne senin? Yoluna baksana!	В чём твоя проблема? Иди своей дорогой!	¿Qué te pasa? ¡Sigue tu camino!	What's your problem? Keep walking!
+Tanimadigin insanla boyle konusma.	Tanımadığın insanla böyle konuşma.	Не разговаривай так с незнакомыми.	No hables así a quien no conoces.	Don't talk like that to someone you don't know.
+Baska eglencen yok mu senin?	Başka eğlencen yok mu senin?	Тебе больше заняться нечем?	¿No tienes otra cosa que hacer?	Haven't you got anything better to do?
+Agzindan cikana dikkat et.	Ağzından çıkana dikkat et.	Следи за языком.	Cuidado con lo que dices.	Watch your mouth.
+Bugun benimle ugrasma!	Bugün benimle uğraşma!	Не лезь ко мне сегодня!	¡Hoy no me busques las cosquillas!	Don't mess with me today!
+Hadi, isine bak. Basimi agritma.	Hadi, işine bak. Başımı ağrıtma.	Иди по делам. Не доставай меня.	Anda, a lo tuyo. No me molestes.	Get on with your day. Don't bother me.
+Yeter artik! Sen kasindin!	Yeter artık! Sen kaşındın!	Хватит! Сам напросился!	¡Ya basta! ¡Tú te lo has buscado!	Enough! You asked for it!
+Gel buraya! Simdi hesaplasacagiz.	Gel buraya! Şimdi hesaplaşacağız.	Иди сюда! Сейчас разберёмся.	¡Ven aquí! Vamos a arreglar esto.	Come here! We're settling this now.
+O lafi sana yedirecegim!	O lafı sana yedireceğim!	Я заставлю тебя пожалеть об этих словах!	¡Te haré tragarte esas palabras!	I'll make you eat those words!
+Uzak dur benden! Son kez soyluyorum.	Uzak dur benden! Son kez söylüyorum.	Держись подальше! Последний раз говорю.	¡Aléjate! Te lo digo por última vez.	Stay away from me! Last warning.
+Seninle konusmak istemiyorum.	Seninle konuşmak istemiyorum.	Я не хочу с тобой разговаривать.	No quiero hablar contigo.	I don't want to talk to you.
+Ocakta yemek var, yakmadan eve yetiseyim. Gorusuruz!	Ocakta yemek var, yakmadan eve yetişeyim. Görüşürüz!	У меня еда на плите. Пора домой, пока не сгорела. Пока!	Tengo comida al fuego. Vuelvo antes de que se queme. ¡Nos vemos!	I've got food on the stove. Better get home before it burns. See you!
+Muhabbet guzel de ise gec kaldim. Sonra devam ederiz.	Muhabbet güzel de işe geç kaldım. Sonra devam ederiz.	Приятно поболтать, но я опаздываю на работу. Продолжим потом.	Da gusto hablar, pero llego tarde al trabajo. Seguimos luego.	Nice talking, but I'm late for work. Let's continue later.
+Cocugu almaya gidecegim. Kendine iyi bak.	Çocuğu almaya gideceğim. Kendine iyi bak.	Мне надо забрать ребёнка. Береги себя.	Tengo que recoger al crío. Cuídate.	I've got to pick up my kid. Take care.
+Otobusu kacirmayayim. Bir ara yine konusuruz.	Otobüsü kaçırmayayım. Bir ara yine konuşuruz.	Не хочу опоздать на автобус. Ещё поговорим.	No quiero perder el autobús. Ya hablaremos.	Better not miss my bus. We'll talk again.
+Market kapanmadan yetismem lazim. Gorusuruz.	Market kapanmadan yetişmem lazım. Görüşürüz.	Надо успеть в магазин до закрытия. Пока.	Tengo que llegar antes de que cierre la tienda. Nos vemos.	I need to get to the store before it closes. See you.
+Annem beni bekliyor. Simdilik musade isteyeyim.	Annem beni bekliyor. Şimdilik müsaade isteyeyim.	Мама меня ждёт. Мне пора.	Mi madre me espera. Me voy despidiendo.	My mother's waiting for me. I'd better go.
+Vardiyam basliyor. Yine denk geliriz.	Vardiyam başlıyor. Yine denk geliriz.	У меня смена начинается. Ещё увидимся.	Empieza mi turno. Ya nos veremos.	My shift's starting. See you around.
+Basim agriyor, bugun pek konusasim yok.	Başım ağrıyor, bugün pek konuşasım yok.	Голова болит. Сегодня не до разговоров.	Me duele la cabeza. Hoy no tengo ganas de hablar.	My head hurts. I don't feel like talking today.
+Komsuya soz verdim, ona bir ugrayacagim.	Komşuya söz verdim, ona bir uğrayacağım.	Обещал зайти к соседу. Надо идти.	Prometí pasar por casa del vecino. Voy para allá.	I promised to stop by my neighbor's. I'd better go.
+Karnim zil caliyor. Bir seyler yiyip geleyim.	Karnım zil çalıyor. Bir şeyler yiyip geleyim.	Умираю с голоду. Пойду перекушу.	Me muero de hambre. Voy a comer algo.	I'm starving. I'll go grab a bite.
+Eve misafir gelecek. Hazirlik yapmam lazim.	Eve misafir gelecek. Hazırlık yapmam lazım.	Ко мне гости придут. Нужно приготовиться.	Viene gente a casa. Tengo que prepararlo todo.	I've got visitors coming. I need to get ready.
+Bir arkadasi bekletiyorum. Sonra gorusuruz.	Bir arkadaşı bekletiyorum. Sonra görüşürüz.	Друг меня ждёт. Увидимся позже.	Tengo a un amigo esperando. Hasta luego.	I've kept a friend waiting. See you later.
+Faturalari yatirmam gerekiyor. Gec kalmayayim.	Faturaları yatırmam gerekiyor. Geç kalmayayım.	Мне нужно оплатить счета. Пора идти.	Tengo que pagar unas facturas. Mejor me voy.	I need to pay some bills. Better get going.
+Bugun biraz yalniz yurusem iyi olacak.	Bugün biraz yalnız yürüsem iyi olacak.	Сегодня мне лучше прогуляться в одиночестве.	Hoy prefiero dar un paseo a solas.	I'd rather walk alone for a while today.
+Camasirlar makinede kaldi. Kosayim ben.	Çamaşırlar makinede kaldı. Koşayım ben.	Бельё в машинке осталось. Побегу.	Dejé la ropa en la lavadora. Tengo que irme.	I left the laundry in the machine. I'd better run.
+Randevum var. Muhabbeti baska zaman tamamlayalim.	Randevum var. Muhabbeti başka zaman tamamlayalım.	У меня встреча. Договорим в другой раз.	Tengo una cita. Seguimos otro día.	I've got an appointment. Let's finish talking another time.
+Selam dostum. Nasil gidiyor?	Selam dostum. Nasıl gidiyor?	Привет, дружище. Как дела?	Hola, colega. ¿Cómo va?	Hey, buddy. How's it going?
+Iyi gunler! Mahallede bir tur mu atiyorsun?	İyi günler! Mahallede bir tur mu atıyorsun?	Добрый день! Гуляешь по району?	¡Buenas! ¿De paseo por el barrio?	Good day! Taking a walk around the neighborhood?
+Selam. Bugun sokaklar hareketli.	Selam. Bugün sokaklar hareketli.	Привет. Сегодня на улицах оживлённо.	Hola. Hoy hay movimiento por aquí.	Hey. The streets are lively today.
+Hey, nasil gidiyor?	Hey, nasıl gidiyor?	Эй, как жизнь?	Ey, ¿cómo va todo?	Hey, how's it going?
+Merhaba. Bir sey mi soracaktin?	Merhaba. Bir şey mi soracaktın?	Привет. Хотел что-то спросить?	Hola. ¿Querías preguntar algo?	Hello. Were you going to ask something?
+Selam dostum. Hava almaya mi ciktin?	Selam dostum. Hava almaya mı çıktın?	Привет, дружище. Вышел подышать воздухом?	Hola, colega. ¿Has salido a tomar el aire?	Hey, buddy. Out for some fresh air?
+CJ, yine denk geldik! Nasilsin?	CJ, yine denk geldik! Nasılsın?	CJ, опять встретились! Как ты?	¡CJ, otra vez por aquí! ¿Cómo estás?	CJ, we meet again! How are you?
+Hey CJ! Uzun zaman oldu.	Hey CJ! Uzun zaman oldu.	Эй, CJ! Давно не виделись.	¡Ey, CJ! Cuánto tiempo.	Hey, CJ! It's been a while.
+CJ, mahallede haber var mi?	CJ, mahallede haber var mı?	CJ, что нового в районе?	CJ, ¿qué se cuenta por el barrio?	CJ, any news around the neighborhood?
+Bak kim gelmis! Nasil gidiyor CJ?	Bak kim gelmiş! Nasıl gidiyor CJ?	Кого я вижу! Как дела, CJ?	¡Mira quién está aquí! ¿Cómo va, CJ?	Look who's here! How's it going, CJ?
+CJ! Dostum, seni gormek iyi geldi!	CJ! Dostum, seni görmek iyi geldi!	CJ! Дружище, рад тебя видеть!	¡CJ! ¡Qué alegría verte, colega!	CJ! Buddy, good to see you!
+Kardesim CJ! Keyfin yerinde mi?	Kardeşim CJ! Keyfin yerinde mi?	Братан CJ! Всё хорошо?	¡Hermano CJ! ¿Todo bien?	My man CJ! You doing all right?
+CJ, iyi ki denk geldik. Neler yapiyorsun?	CJ, iyi ki denk geldik. Neler yapıyorsun?	CJ, хорошо, что встретились. Чем занимаешься?	CJ, me alegro de verte. ¿Qué te cuentas?	CJ, glad we ran into each other. What have you been up to?
+Hey dostum! Bugun nasil gidiyor?	Hey dostum! Bugün nasıl gidiyor?	Эй, дружище! Как день проходит?	¡Ey, colega! ¿Qué tal el día?	Hey, buddy! How's your day going?
+Bu arada, ben {0}. Memnun oldum CJ.	Bu arada, ben {0}. Memnun oldum CJ.	Кстати, я {0}. Приятно познакомиться, CJ.	Por cierto, soy {0}. Encantado, CJ.	By the way, I'm {0}. Nice to meet you, CJ.
+{0} olarak calisiyorum. Gecinip gidiyoruz.	{0} olarak çalışıyorum. Geçinip gidiyoruz.	Моя работа — {0}. Как-то живём.	Mi oficio: {0}. Me las arreglo.	My job is {0}. Getting by.
+Cocugumun adi {0}. Bir ara yine anlatirim.	Çocuğumun adı {0}. Bir ara yine anlatırım.	Моего ребёнка зовут {0}. Как-нибудь ещё расскажу.	Mi hijo se llama {0}. Otro día te cuento más.	My kid's name is {0}. I'll tell you more another time.
+Esimin adi {0}. Bir ara yine anlatirim.	Eşimin adı {0}. Bir ara yine anlatırım.	Мою вторую половинку зовут {0}. Расскажу ещё как-нибудь.	Mi pareja se llama {0}. Otro día te cuento más.	My partner's name is {0}. I'll tell you more another time.
+Kardesimin adi {0}. Bir ara yine anlatirim.	Kardeşimin adı {0}. Bir ara yine anlatırım.	Моего брата или сестру зовут {0}. Потом ещё расскажу.	Mi hermano o hermana se llama {0}. Otro día te cuento más.	My sibling's name is {0}. I'll tell you more another time.
+Annemin adi {0}. Bir ara yine anlatirim.	Annemin adı {0}. Bir ara yine anlatırım.	Мою маму зовут {0}. Потом ещё расскажу.	Mi madre se llama {0}. Otro día te cuento más.	My mother's name is {0}. I'll tell you more another time.
+Babamin adi {0}. Bir ara yine anlatirim.	Babamın adı {0}. Bir ara yine anlatırım.	Моего отца зовут {0}. Потом ещё расскажу.	Mi padre se llama {0}. Otro día te cuento más.	My father's name is {0}. I'll tell you more another time.
+Aileyi de tanidin artik! Bir gun daha uzun otururuz.	Aileyi de tanıdın artık! Bir gün daha uzun otururuz.	Теперь и мою семью знаешь! Как-нибудь посидим подольше.	¡Ya conoces a la familia! Otro día hablamos con más calma.	You know the family now! Let's sit down for longer sometime.
+San Andreas'ta buyudum. {0} yasindayim; daha yapacak cok is var.	San Andreas'ta büyüdüm. {0} yaşındayım; daha yapacak çok iş var.	Я вырос в Сан-Андреасе. Мне {0}, ещё многое надо успеть.	Me crié en San Andreas. Tengo {0} años y mucho por hacer.	I grew up in San Andreas. I'm {0}; still plenty to do.
+Sen de benim gibi mahallede tur atiyorsun galiba.	Sen de benim gibi mahallede tur atıyorsun galiba.	Ты, похоже, тоже гуляешь по району.	Parece que también estás dando una vuelta por el barrio.	Looks like you're walking around the neighborhood too.
+Dun komsu kedisini ariyordu. Kedi de adamin arabasinda uyuyormus!	Dün komşu kedisini arıyordu. Kedi de adamın arabasında uyuyormuş!	Вчера сосед искал кота. А тот спал в его же машине!	Ayer el vecino buscaba a su gato. ¡Estaba durmiendo en su coche!	My neighbor was looking for his cat yesterday. It was asleep in his car!
+Az once birinin arabasi kendi kendine kaydi. Adam pesinden kostu!	Az önce birinin arabası kendi kendine kaydı. Adam peşinden koştu!	Только что машина сама покатилась, а хозяин за ней побежал!	¡Acaba de irse un coche cuesta abajo y su dueño corriendo detrás!	Someone's car just rolled away on its own. The guy ran after it!
+Is bitiyor, evde yine is cikiyor. Her gun ayni kosturmaca.	İş bitiyor, evde yine iş çıkıyor. Her gün aynı koşturmaca.	С работы придёшь, а дома опять дела. Каждый день беготня.	Acabas de trabajar y te esperan más tareas en casa. Siempre corriendo.	Work ends and there's more waiting at home. Same rush every day.
+Buralarda her gun bir tuhaflik. Sen de alistin mi?	Buralarda her gün bir tuhaflık. Sen de alıştın mı?	Тут каждый день что-то странное. Ты уже привык?	Aquí pasa algo raro cada día. ¿Ya te has acostumbrado?	Something strange happens here every day. Used to it yet?
+Bir sey soracak gibisin CJ. Ne oldu?	Bir şey soracak gibisin CJ. Ne oldu?	Ты будто что-то спросить хочешь, CJ. Что такое?	Parece que quieres preguntar algo, CJ. ¿Qué pasa?	Looks like you want to ask something, CJ. What's up?
+Benim gibi sakin bir gun isteyen cok kisi vardir.	Benim gibi sakin bir gün isteyen çok kişi vardır.	Наверняка не я один хочу спокойного дня.	Seguro que no soy el único que quiere un día tranquilo.	I'm sure I'm not the only one who wants a quiet day.
+Mahalledeki dukkan yine el degistirmis. Duydun mu?	Mahalledeki dükkân yine el değiştirmiş. Duydun mu?	Магазин в районе опять сменил хозяина. Слышал?	La tienda del barrio ha cambiado de dueño otra vez. ¿Lo sabías?	The neighborhood store changed hands again. Hear about that?
+Sen de hava almaya cikmissin. Ben de onu yapiyorum.	Sen de hava almaya çıkmışsın. Ben de onu yapıyorum.	Ты тоже вышел проветриться. Я вот тоже.	Tú también has salido a tomar el aire. Igual que yo.	You're out for some air too. That's what I'm doing.
+Otobuse yetisecegim diye kostum, yanlis yone gidiyormusum!	Otobüse yetişeceğim diye koştum, yanlış yöne gidiyormuşum!	Бежал на автобус, а оказалось — не в ту сторону!	¡Corrí para coger el autobús y resulta que iba en dirección contraria!	I ran to catch the bus. Turned out I was going the wrong way!
+Bazen gune hic baslamasam diyorum. Isler birikiyor.	Bazen güne hiç başlamasam diyorum. İşler birikiyor.	Иногда даже начинать день не хочется. Столько дел.	A veces no quiero ni empezar el día. Se acumulan las cosas.	Sometimes I don't even want to start the day. Everything piles up.
+Bir gun isim duserse sana sorabilir miyim, dostum?	Bir gün işim düşerse sana sorabilir miyim, dostum?	Если понадобится помощь, можно к тебе обратиться, дружище?	Si algún día necesito ayuda, ¿puedo contar contigo, colega?	If I need a hand someday, can I count on you, buddy?
+Sag ol CJ, o isi zaten hallettik.	Sağ ol CJ, o işi zaten hallettik.	Спасибо, CJ, мы с этим уже разобрались.	Gracias, CJ, eso ya lo arreglamos.	Thanks, CJ, we already took care of that.
+Calisti! Cok sag ol CJ. Ben {0}. Bunu unutmam.	Çalıştı! Çok sağ ol CJ. Ben {0}. Bunu unutmam.	Завелась! Спасибо, CJ. Я {0}. Не забуду твою помощь.	¡Funciona! Gracias, CJ. Soy {0}. No lo olvidaré.	It worked! Thanks, CJ. I'm {0}. I won't forget this.
+Arabanin akusu bitti! Bir el atabilir misin?	Arabanın aküsü bitti! Bir el atabilir misin?	Аккумулятор сел! Можешь помочь?	¡Se ha muerto la batería! ¿Me echas una mano?	My car battery's dead! Can you give me a hand?
+Yakininda arabasina yardim bekleyen biri var. ALT + G ile konus.	Yakında arabasına yardım bekleyen biri var.	Рядом кому-то нужна помощь с машиной.	Alguien necesita ayuda con su coche cerca.	Someone nearby needs help with their car.
+Yardimlasman gunlugune eklendi.	Yardım ettiğin kişi rehberine eklendi.	Контакт добавлен в телефон после твоей помощи.	La persona a la que ayudaste está en tus contactos.	The person you helped is now in your contacts.
+Kaputun altindaki aku baglantisina bakabilir misin? Burada kaldim.	Kaputun altındaki akü bağlantısına bakabilir misin? Burada kaldım.	Посмотри соединение аккумулятора под капотом. Я тут застрял.	¿Puedes revisar la conexión de la batería? Me he quedado tirado.	Can you check the battery connection under the hood? I'm stuck here.
+Simdi gitmem gerekiyor. Sonra konusuruz.	Şimdi gitmem gerekiyor. Sonra konuşuruz.	Мне пора идти. Потом поговорим.	Tengo que irme. Hablamos luego.	I've got to go now. We'll talk later.
+Kendine iyi bak CJ. Ben gideyim.	Kendine iyi bak CJ. Ben gideyim.	Береги себя, CJ. Мне пора.	Cuídate, CJ. Me voy.	Take care, CJ. I'd better go.
+Sonra devam ederiz dostum.	Sonra devam ederiz dostum.	Продолжим потом, дружище.	Seguimos luego, colega.	We'll continue later, buddy.
+Bugunluk bu kadar. Gorusuruz!	Bugünlük bu kadar. Görüşürüz!	На сегодня хватит. Пока!	Por hoy ya está. ¡Nos vemos!	That's it for today. See you!
+Su an mesgulum, sonra konusalim.	Şu an meşgulüm, sonra konuşalım.	Я сейчас занят. Поговорим позже.	Ahora estoy ocupado. Hablamos luego.	I'm busy right now. Let's talk later.
+Biraz acelem var. Sonra olur mu?	Biraz acelem var. Sonra olur mu?	Я немного спешу. Давай потом?	Tengo un poco de prisa. ¿Lo dejamos para luego?	I'm in a bit of a hurry. Can we talk later?
+Simdi kafam dolu, musade et.	Şimdi kafam dolu, müsaade et.	У меня сейчас голова забита. Дай пройти.	Tengo la cabeza en otra parte. Déjame, por favor.	I've got a lot on my mind. Give me some space.
+Bir isi halletmem gerekiyor. Gorusuruz.	Bir işi halletmem gerekiyor. Görüşürüz.	Мне надо кое-что сделать. Увидимся.	Tengo que hacer una cosa. Nos vemos.	I've got something to take care of. See you.
+Artik seni arkadasi olarak goruyor. F6 ile gunlugune bak.	Artık seni arkadaşı olarak görüyor.	Теперь вы друзья.	Ahora te considera su amigo.	They now see you as a friend.
+Gunlugune bir tanidik eklendi. F6 ile oku.	Rehberine yeni bir tanıdık eklendi.	В телефон добавлен новый контакт.	Nuevo contacto añadido al teléfono.	A new acquaintance was added to your contacts.
+Dostum, cuzdanimi evde unutmusum. Otobus icin 20 dolar verebilir misin?	Dostum, cüzdanımı evde unutmuşum. Otobüs için 20 dolar verebilir misin?	Дружище, я забыл кошелёк дома. Дашь 20 долларов на автобус?	Colega, me dejé la cartera en casa. ¿Me das 20 dólares para el autobús?	Buddy, I left my wallet at home. Can you spare 20 dollars for the bus?
+Vardiyaya yetismem lazim ama yol param eksik. 20 dolar yardim eder misin?	Vardiyaya yetişmem lazım ama yol param eksik. 20 dolar yardım eder misin?	Надо успеть на смену, но на проезд не хватает. Поможешь двадцаткой?	Tengo que llegar a mi turno y no me llega para el viaje. ¿Me ayudas con 20 dólares?	I need to get to my shift but I'm short on fare. Can you help with 20 dollars?
+Eve donmem gerekiyor. Bilet icin 20 dolarim eksik, el atar misin?	Eve dönmem gerekiyor. Bilet için 20 dolarım eksik, el atar mısın?	Мне надо домой. На билет не хватает 20 долларов. Выручишь?	Tengo que volver a casa. Me faltan 20 dólares para el billete. ¿Me ayudas?	I need to get home. I'm 20 dollars short for the ticket. Can you help?
+Hey dostum, buraya yabanciyim. Bir yer sorabilir miyim?	Hey dostum, buraya yabancıyım. Bir yer sorabilir miyim?	Эй, дружище, я тут впервые. Можно спросить дорогу?	Oye, colega, no soy de aquí. ¿Puedo preguntarte por un sitio?	Hey, buddy, I'm new here. Can I ask where something is?
+Bir dakikani alabilir miyim? Yolumu kaybettim galiba.	Bir dakikanı alabilir miyim? Yolumu kaybettim galiba.	Можно тебя на минутку? Кажется, я заблудился.	¿Tienes un minuto? Creo que me he perdido.	Got a minute? I think I'm lost.
+Buralari biliyor musun? Bir yere nasil gidecegimi soracaktim.	Buraları biliyor musun? Bir yere nasıl gideceğimi soracaktım.	Ты знаешь эти места? Хотел спросить, как пройти.	¿Conoces esta zona? Quería preguntar cómo llegar a un sitio.	Do you know this area? I wanted to ask how to get somewhere.
+Yakininda yardim isteyen biri var. ALT ile odaklan, G ile konus.	Yakında yardım isteyen biri var.	Кому-то рядом нужна помощь.	Alguien cerca necesita ayuda.	Someone nearby needs help.
+San Fierro'ya yeni geldim. Tabelalari takip edersem ana yola cikar miyim?	San Fierro'ya yeni geldim. Tabelaları takip edersem ana yola çıkar mıyım?	Я недавно в Сан-Фиерро. По указателям выйду на главную дорогу?	Acabo de llegar a San Fierro. ¿Los carteles llevan a la carretera principal?	I just arrived in San Fierro. Will the signs get me to the main road?
+Ana yola cikmam gerekiyor. Su tabelalari takip etsem olur mu?	Ana yola çıkmam gerekiyor. Şu tabelaları takip etsem olur mu?	Мне надо на главную дорогу. Идти по этим указателям?	Necesito llegar a la carretera principal. ¿Sigo esos carteles?	I need to reach the main road. Should I follow those signs?
+Sorun degil dostum. Belki baska biri yardimci olur.	Sorun değil dostum. Belki başka biri yardımcı olur.	Ничего, дружище. Может, кто-то ещё поможет.	No pasa nada, colega. Quizá me ayude otra persona.	No problem, buddy. Maybe someone else can help.
+Yol parasi icin 20 dolar verdin.	Yol parası için 20 dolar verdin.	Ты дал 20 долларов на проезд.	Has dado 20 dólares para el viaje.	You gave 20 dollars for the fare.
+Cok sag ol CJ! Ben {0}. Yetismemi sagladin.	Çok sağ ol CJ! Ben {0}. Yetişmemi sağladın.	Спасибо, CJ! Я {0}. Благодаря тебе успею.	¡Gracias, CJ! Soy {0}. Me has ayudado a llegar a tiempo.	Thanks, CJ! I'm {0}. You helped me get there on time.
+Tabelalari takip edecegim. Ben {0}. Sag ol CJ, iyi ki sordum.	Tabelaları takip edeceğim. Ben {0}. Sağ ol CJ, iyi ki sordum.	Пойду по указателям. Я {0}. Спасибо, CJ, хорошо, что спросил.	Seguiré los carteles. Soy {0}. Gracias, CJ, menos mal que pregunté.	I'll follow the signs. I'm {0}. Thanks, CJ, glad I asked.
+Olay zaten aktif. Basinin uzerindeki isarete yaklasip ALT + G kullan.	Yakındaki yardım işaretine yaklaş.	Подойди к значку помощи рядом.	Acércate al marcador de ayuda.	Go to the nearby help marker.
+Su an uygun bir sivil yok. Sakin bir sokakta, yayalara yakin F5'i dene.	Yakında uygun biri yok.	Рядом нет подходящего человека.	No hay nadie adecuado cerca.	There's no suitable person nearby.
+Soymak icin kisiye biraz daha yaklas (4 metreden az).	Soymak için kişiye biraz daha yaklaş.	Подойди ближе, чтобы потребовать деньги.	Acércate para exigirle el dinero.	Get closer to demand their money.
+Sana verecek baska bir seyim yok. Uzak dur benden!	Sana verecek başka bir şeyim yok. Uzak dur benden!	Мне больше нечего тебе дать. Оставь меня!	¡No tengo nada más que darte! ¡Aléjate!	I've got nothing else to give you. Stay away!
+Bu kisi su an mesgul.	Bu kişi şu an meşgul.	Этот человек сейчас занят.	Esta persona está ocupada.	This person is busy right now.
+Tamam! Al {0} dolar. Yeter ki zarar verme!	Tamam! Al {0} dolar. Yeter ki zarar verme!	Ладно! Вот {0} долларов. Только не трогай меня!	¡Vale! Toma {0} dólares. ¡Pero no me hagas daño!	OK! Take {0} dollars. Just don't hurt me!
+{0} dolar aldin.	{0} dolar aldın.	Ты взял {0} долларов.	Has recibido {0} dólares.	You took {0} dollars.
+Ustume gelme! Benden bir sey alamazsin.	Üstüme gelme! Benden bir şey alamazsın.	Не приближайся! Ты ничего не получишь.	¡No te acerques! No vas a sacarme nada.	Stay back! You're not getting anything from me.
+Bak, ceplerim bos! Param yok, ne olur birak beni.	Bak, ceplerim boş! Param yok, ne olur bırak beni.	Смотри, карманы пустые! Денег нет, отпусти меня.	¡Mira, tengo los bolsillos vacíos! No tengo dinero, déjame.	Look, my pockets are empty! No money, please leave me alone.
+Yanlis kisiye bulastin! Simdi goreceksin!	Yanlış kişiye bulaştın! Şimdi göreceksin!	Не на того напал! Сейчас получишь!	¡Te has metido con la persona equivocada! ¡Ahora verás!	You picked the wrong person! Now you'll see!
+Beni rahat birak! Burada durmayacagim!	Beni rahat bırak! Burada durmayacağım!	Оставь меня! Я здесь не останусь!	¡Déjame en paz! ¡No pienso quedarme aquí!	Leave me alone! I'm not staying here!
+Imdat! Uzak dur benden!	İmdat! Uzak dur benden!	Помогите! Отойди от меня!	¡Socorro! ¡Aléjate de mí!	Help! Stay away from me!
+Sana tek kurus yok! Git isine!	Sana tek kuruş yok! Git işine!	Ни гроша не получишь! Иди отсюда!	¡No te daré ni un céntimo! ¡Lárgate!	Not a cent for you! Get lost!
+Olay icin disarida, yaya ve sakin bir durumda olmalisin.	Önce dışarıda, yaya ve sakin bir duruma geç.	Сначала выйди на улицу пешком и найди спокойное место.	Sal al exterior, a pie y sin problemas.	Go outside, on foot, and find a quiet moment.
+Biraz ilerle; yeni olay icin kisa bir ara gerekiyor.	Yeni olay için kısa bir ara gerekiyor.	Перед новым событием нужна небольшая пауза.	Espera un poco antes de otro encuentro.	Give it a moment before another encounter.
+ALT: odaklan / G-H-J-R: etkilesim / F6: gunluk	SA CELL hazır. ALT: odaklan, G/H/J/R: etkileşim, F6: telefon.	SA CELL готов. ALT — выбрать, G/H/J/R — действия, F6 — телефон.	SA CELL listo. ALT: enfocar, G/H/J/R: acciones, F6: teléfono.	SA CELL ready. ALT: focus, G/H/J/R: actions, F6: phone.
+Gunluk ve dunya kaydedildi.	Kişiler ve buluşmalar kaydedildi.	Контакты и встречи сохранены.	Contactos y encuentros guardados.	Contacts and meetings saved.
+Kayit hatasi. Log dosyasina bak.	Kayıt başarısız.	Не удалось сохранить.	No se pudo guardar.	Could not save.
+Bulusma hazir.	Buluşma hazır.	Встреча готова.	Encuentro preparado.	Meeting ready.
+Kisi yukleniyor...	Kişi geliyor...	Контакт в пути...	El contacto está en camino...	Contact is on the way...
+PHONE_UNAVAILABLE	Bu numaraya ulaşılamıyor.	Номер недоступен.	Este número no está disponible.	This number is unavailable.
+PHONE_INVITE_REFUSED	Seninle buluşmak istemiyorum.	Я не хочу с тобой встречаться.	No quiero quedar contigo.	I don't want to meet you.
+SAVE_RECOVERED	Kayıt dosyası bozuktu; son yedekten geri yüklendi.	Файл сохранения был повреждён; восстановлен из резервной копии.	El archivo estaba dañado; se restauró desde la copia de seguridad.	The archive was damaged; restored from the last backup.
+PHONE_OLD_MEETINGS	Eski oturumun süresi geçmiş buluşmaları kapatıldı. Yeniden arayabilirsin.	Старые встречи завершены. Можно позвонить снова.	Las citas antiguas han terminado. Puedes volver a llamar.	Old appointments have ended. You can call again.
+PHONE_DISTANCE	Konum: {0} metre	Место: {0} м	Lugar: {0} metros	Location: {0} metres
+PHONE_SPOUSE	Eş	Супруг / супруга	Cónyuge	Spouse
+NET_PARENT	Anne / baba	Родитель	Progenitor	Parent
+NET_SCROLL	↑ ↓ Bağlantıları gez	↑ ↓ Просмотр связей	↑ ↓ Ver relaciones	↑ ↓ Browse connections
+PHONE_NPC_HERE	Arkadaşın seni noktada bekliyor.	Друг ждёт на месте.	Tu contacto te espera allí.	Your contact is waiting at the spot.
+PHONE_NPC_WAY	Arkadaşın yolda; noktada bekle.	Друг в пути; жди на месте.	Tu contacto va de camino; espera allí.	Your contact is on the way; wait at the spot.
+PHONE_WAIT_LEFT	Bekleme süresi: {0} sn	Ожидание: {0} с	Espera: {0} s	Waiting window: {0} s
+PHONE_ROUTE	Konuma bak	Показать место	Ver ubicación	Show location
+PHONE_ROUTE_READY	Haritadaki mavi işarete git. Yaklaşınca BULUŞMA yazısını göreceksin.	Иди к синей метке на карте. Вблизи появится надпись ВСТРЕЧА.	Ve a la marca azul del mapa. Al acercarte verás ENCUENTRO.	Go to the blue map marker. The MEETING label appears nearby.
+PHONE_MEETING_SPOT	BULUŞMA	ВСТРЕЧА	ENCUENTRO	MEETING
+PHONE_INFO	Bilgiler	Сведения	Información	Details
+PHONE_FAMILY	Aile	Семья	Familia	Family
+PHONE_MEMORIES	Anılar	Воспоминания	Recuerdos	Memories
+PHONE_NETWORK	İlişkiler	Связи	Relaciones	Connections
+NET_SOMEONE	bir tanıdığım	мой знакомый	un conocido	someone I know
+NET_FRIEND	Arkadaş	Друг	Amistad	Friend
+NET_SIBLING	Kardeş	Брат / сестра	Hermano/a	Sibling
+NET_RIVAL	Rakip	Соперник	Rival	Rival
+NET_EMPTY	Bağlantılarını henüz bilmiyorsun.	Связи пока неизвестны.	Aún no conoces sus relaciones.	You haven't learned their connections.
+NET_THANKS	{0} senden iyi bahsetti. Yardımını duydum.	{0} хорошо о тебе отзывался. Я слышал о помощи.	{0} habló bien de ti. Supe que ayudaste.	{0} spoke well of you. I heard you helped.
+NET_WARNING	{0} ile aranızda olanları duydum. Burada birbirimizi tanırız.	Я слышал о том, что было между тобой и {0}. Здесь все знакомы.	Me enteré de lo que pasó con {0}. Aquí nos conocemos.	I heard what happened with {0}. People here know each other.
+NET_LOSS	{0} benim yakınımdı. Başına geleni unutmayacağım.	{0} был мне близок. Я не забуду случившегося.	{0} era alguien cercano. No olvidaré lo que pasó.	{0} was close to me. I won't forget what happened.
+LIFE_GIVE_BEGGAR	YARDIM ET ($10)	ПОМОЧЬ ($10)	AYUDAR ($10)	HELP ($10)
+LIFE_GIVE_ADDICT	PARA VER ($20)	ДАТЬ ДЕНЬГИ ($20)	DAR DINERO ($20)	GIVE MONEY ($20)
+LIFE_ACCEPT_RIDE	ARACA DAVET ET	ПРЕДЛОЖИТЬ ПОЕЗДКУ	OFRECER LLEVAR	OFFER A RIDE
+LIFE_ACCEPT_VISIT	DAVETİ KABUL ET ($80)	ПРИНЯТЬ ($80)	ACEPTAR INVITACIÓN ($80)	ACCEPT INVITATION ($80)
+LIFE_ASK_BEGGAR	İki gündür doğru dürüst yemek yemedim. On dolar yardım eder misin?	Два дня толком не ел. Поможешь десятью долларами?	Llevo dos días sin comer bien. ¿Me ayudas con diez dólares?	I haven't had a proper meal in two days. Could you spare ten dollars?
+LIFE_ASK_ADDICT	Dostum, madde almam lazım. Yirmi dolar ver, sonra giderim.	Мне нужна доза. Дай двадцать долларов, и я уйду.	Necesito una dosis. Dame veinte dólares y me iré.	I need a fix. Give me twenty dollars and I'll leave.
+LIFE_ASK_RIDE	Hey! Beni bir yere bırakır mısın? Yolun parasını veririm. Kenara çek de konuşalım.	Эй! Подвезёшь? Я заплачу. Остановись, поговорим.	¡Eh! ¿Me llevas a un sitio? Te pagaré. Para y hablamos.	Hey! Could you take me somewhere? I'll pay. Pull over and let's talk.
+LIFE_ASK_VISIT	İstersen evime geçebiliriz. Seksen dolar. Karar senin.	Можем пойти ко мне. Восемьдесят долларов. Решать тебе.	Podemos ir a mi casa. Ochenta dólares. Tú decides.	We could go to my place. Eighty dollars. Your choice.
+LIFE_NEARBY	Yakında biri sana sesleniyor. Yaklaş, ALT ile odaklan, G ile konuş; H ile kışkırt.	Кто-то рядом зовёт тебя. Подойди, ALT — выбрать, G — говорить, H — дразнить.	Alguien te llama. Acércate: ALT para enfocar, G para hablar, H para provocar.	Someone nearby is calling. Approach: ALT to focus, G to talk, H to antagonize.
+LIFE_NO_CASH	Üzerinde yoksa sorun değil. Yoluna devam et.	Нет денег — ничего. Иди дальше.	Si no tienes, no pasa nada. Sigue tu camino.	If you don't have it, that's fine. Keep going.
+LIFE_MY_NAME	Bu arada ben {0}.	Кстати, меня зовут {0}.	Por cierto, me llamo {0}.	By the way, I'm {0}.
+LIFE_RIDE_THANK	Ben {0}. Teşekkür ederim, iyi yolculuklar!	Меня зовут {0}. Спасибо, счастливого пути!	Soy {0}. ¡Gracias y buen viaje!	I'm {0}. Thanks, and have a good trip!
+LIFE_THANK_BEGGAR	Sağ ol. Bu gece sıcak bir şey yiyebileceğim.	Спасибо. Сегодня смогу поесть горячего.	Gracias. Esta noche podré comer algo caliente.	Thanks. I'll be able to get a hot meal tonight.
+LIFE_THANK_ADDICT	Tamam, bu işimi görür. Ben gideyim.	Вот, этого хватит. Я пойду.	Vale, con esto basta. Me voy.	Right, that'll do. I'll be on my way.
+LIFE_NEED_CAR	Sürücü koltuğunda ol, boş yolcu koltuğu bırak ve aracı durdur.	Сядь за руль, освободи место и остановись.	Ponte al volante, deja un asiento libre y detén el coche.	Be in the driver's seat, leave a passenger seat free and stop the car.
+LIFE_BOARDING	Sağ ol, biniyorum. Gideceğimiz yeri haritaya işaretledim.	Спасибо, сажусь. Место отмечено на карте.	Gracias, voy a subir. He marcado el destino en el mapa.	Thanks, I'm getting in. The destination is marked on the map.
+LIFE_RIDE_PAID	Yolculuk tamamlandı. {0} dolar aldın.	Поездка завершена. Получено {0} долларов.	Viaje terminado. Has recibido {0} dólares.	Ride complete. You received {0} dollars.
+LIFE_RIDE_CANCEL	Yolculuk sona erdi. Ücret alınmadı.	Поездка прервана. Оплата не получена.	Viaje cancelado. No has cobrado.	Ride ended. No fare was paid.
+LIFE_VISIT_UNAVAILABLE	Davet için 80 doların ve yakınlarda kullanılabilir bir ev girişi olmalı.	Нужны 80 долларов и доступный вход в дом поблизости.	Necesitas 80 dólares y una entrada de vivienda disponible cerca.	You need 80 dollars and an available house entrance nearby.
+LIFE_WALK_HOME	Evim yakında. İşaretlediğim kapıdan içeri gir, ben de geliyorum.	Дом рядом. Войди в отмеченную дверь, я подойду.	Mi casa está cerca. Entra por la puerta marcada; ahora voy.	My place is nearby. Go through the marked door; I'm coming.
+LIFE_HOME_MARKER	Ev haritada işaretli. Kapıdan içeri gir; altı saat geçecek. Ücret içeride alınır.	Дом отмечен. Войди: пройдёт шесть часов. Оплата внутри.	La casa está marcada. Entra: pasarán seis horas. Se paga dentro.	The house is marked. Enter: six hours will pass. Payment happens inside.
+LIFE_SIX_HOURS	Birlikte vakit geçirdiniz. Altı saat geçti; 80 dolar ödedin. Hazır olunca kapıdan çıkabilirsin.	Вы провели время вместе. Прошло шесть часов, оплачено 80 долларов. Можно выйти.	Habéis pasado tiempo juntos. Han pasado seis horas y has pagado 80 dólares. Puedes salir.	You spent time together. Six hours passed and you paid 80 dollars. You can leave through the door.
+VITAL_TITLE	CJ • DURUM	CJ • СОСТОЯНИЕ	CJ • ESTADO	CJ • STATUS
+VITAL_HONOR	Onur	Честь	Honor	Honor
+VITAL_STAMINA	Dayanıklılık	Выносливость	Resistencia	Stamina
+VITAL_MUSCLE	Kas	Мускулы	Músculo	Muscle
+VITAL_FAT	Yağ	Жир	Grasa	Fat
+VITAL_LUNG	Akciğer	Объём лёгких	Capacidad pulmonar	Lung capacity
+VITAL_APPEAL	Çekicilik	Привлекательность	Atractivo	Sex appeal
+Gunaydin. Bir sorun mu var?	Günaydın. Bir sorun mu var?	Доброе утро. Что-то случилось?	Buenos días. ¿Hay algún problema?	Morning. Is there a problem?
+Sokaklar bugun sakin degil. Dikkatli ol.	Sokaklar bugün sakin değil. Dikkatli ol.	Сегодня на улицах неспокойно. Будь осторожен.	Las calles están agitadas hoy. Ten cuidado.	The streets aren't calm today. Be careful.
+Hey, kimsin sen? Burasi bizim mahalle.	Hey, kimsin sen? Burası bizim mahalle.	Эй, ты кто? Это наш район.	Eh, ¿quién eres? Este es nuestro barrio.	Hey, who are you? This is our neighborhood.
+Ne ariyorsun burada?	Ne arıyorsun burada?	Что ты тут забыл?	¿Qué buscas aquí?	What are you looking for here?
+Merhaba. Bir sey mi lazim?	Merhaba. Bir şey mi lazım?	Привет. Тебе что-то нужно?	Hola. ¿Necesitas algo?	Hi. Need something?
+Selam. Vaktin var mi?	Selam. Vaktin var mı?	Привет. Есть минутка?	Hola. ¿Tienes un momento?	Hey. Got a minute?
+Gorev basindayiz. Bir sorun mu var?	Görev başındayız. Bir sorun mu var?	Мы на службе. Что-то случилось?	Estamos de servicio. ¿Pasa algo?	We're on duty. Is something wrong?
+Yardim lazimsa soyle, isimizi yapiyoruz.	Yardım lazımsa söyle, işimizi yapıyoruz.	Если нужна помощь, скажи. Мы работаем.	Si necesitas ayuda, dilo. Estamos trabajando.	Tell us if you need help. We're doing our job.
+Devriye uzun suruyor. Sen burada ne yapiyorsun?	Devriye uzun sürüyor. Sen burada ne yapıyorsun?	Патруль затянулся. А ты что здесь делаешь?	La patrulla se alarga. ¿Tú qué haces aquí?	This patrol is dragging on. What are you doing here?
+Bir sey gorursen bana soyle. Bu mahalle emanet.	Bir şey görürsen bana söyle. Bu mahalle emanet.	Если что-то увидишь, скажи мне. Район на нас.	Si ves algo, avísame. Este barrio está a nuestro cargo.	Tell me if you see anything. This neighborhood is in our care.
+Mahallede gozum uzerinde. Bir sey olursa duyarim.	Mahallede gözüm üzerinde. Bir şey olursa duyarım.	Я слежу за районом. Если что — узнаю.	Vigilo el barrio. Si pasa algo, me enteraré.	I keep an eye on the block. If anything happens, I'll hear.
+Dikkat et, buralarda herkes birbirini tanir.	Dikkat et, buralarda herkes birbirini tanır.	Осторожнее, тут все друг друга знают.	Ojo, aquí todos se conocen.	Watch out, everyone here knows each other.
+Sokakta gunler uzun. Insan yalniz kaliyor.	Sokakta günler uzun. İnsan yalnız kalıyor.	На улице дни длинные. Остаёшься один.	En la calle los días son largos. Uno se queda solo.	Days are long on the street. You end up alone.
+CJ? Neyin var senin, ne oluyor boyle?	CJ? Neyin var senin, ne oluyor böyle?	CJ? Что с тобой, что происходит?	¿CJ? ¿Qué te pasa? ¿Qué es esto?	CJ? What's with you? What's going on?
+Bu ne simdi? Seni anlayamiyorum.	Bu ne şimdi? Seni anlayamıyorum.	Это ещё что? Не понимаю тебя.	¿Y esto qué es? No te entiendo.	What was that? I don't get you.
+CJ? Ciddi misin sen? Bunu bir daha yapma.	CJ? Ciddi misin sen? Bunu bir daha yapma.	CJ? Ты серьёзно? Больше так не делай.	¿CJ? ¿Hablas en serio? No lo repitas.	CJ? Are you serious? Don't do that again.
+Ne bu simdi? Dalga mi geciyorsun benimle?	Ne bu şimdi? Dalga mı geçiyorsun benimle?	Это что сейчас? Издеваешься надо мной?	¿Qué es esto? ¿Te estás riendo de mí?	What's this now? Are you messing with me?
+Neden boyle yapiyorsun? Sana bir sey yapmadim.	Neden böyle yapıyorsun? Sana bir şey yapmadım.	Зачем ты так? Я тебе ничего не сделал.	¿Por qué haces eso? Yo no te hice nada.	Why are you doing this? I didn't do anything to you.
+Ciddi misin? Biz burada is yapiyoruz.	Ciddi misin? Biz burada iş yapıyoruz.	Ты серьёзно? Мы тут работаем.	¿En serio? Estamos trabajando.	Seriously? We're working here.
+Beni sinama. Bu son uyari.	Beni sınama. Bu son uyarı.	Не испытывай меня. Это последнее предупреждение.	No me pruebes. Es la última advertencia.	Don't test me. This is your last warning.
+Polisle dalga gecilmez. Geri cekil.	Polisle dalga geçilmez. Geri çekil.	С полицией не шутят. Отойди.	Con la policía no se bromea. Retrocede.	You don't mess with the police. Step back.
+Sabrimi tasirma. Bir daha deneme.	Sabrımı taşırma. Bir daha deneme.	Не выводи меня. Не пытайся снова.	No me hagas perder la paciencia. No lo intentes otra vez.	Don't push my patience. Don't try that again.
+Beni test etme. Pisman olursun.	Beni test etme. Pişman olursun.	Не проверяй меня. Пожалеешь.	No me pongas a prueba. Te arrepentirás.	Don't test me. You'll regret it.
+Yeter artik. Seninle bir daha konusmak istemiyorum.	Yeter artık. Seninle bir daha konuşmak istemiyorum.	Хватит. Я больше не хочу с тобой говорить.	Basta. No quiero volver a hablar contigo.	Enough. I don't want to talk to you again.
+Numarami sil, beni bir daha arama.	Numaramı sil, beni bir daha arama.	Удали мой номер и больше не звони.	Borra mi número y no me llames más.	Delete my number and never call me again.
+Bitti. Seninle konusmuyorum artik.	Bitti. Seninle konuşmuyorum artık.	Всё. Я с тобой больше не разговариваю.	Se acabó. Ya no hablo contigo.	That's it. I'm done talking to you.
+Bu mahallede sana yer yok. Uzak dur.	Bu mahallede sana yer yok. Uzak dur.	Тебе здесь не место. Держись подальше.	Aquí no hay sitio para ti. Aléjate.	There's no room for you in this neighborhood. Stay away.
+Yeter. Beni rahat birak.	Yeter. Beni rahat bırak.	Хватит. Оставь меня в покое.	Basta. Déjame en paz.	Enough. Leave me alone.
+Bu kadar yeter. Bizi rahat birak.	Bu kadar yeter. Bizi rahat bırak.	Достаточно. Оставь нас в покое.	Ya basta. Déjanos en paz.	That's enough. Leave us alone.
+Yeter! Seninle isim bitti.	Yeter! Seninle işim bitti.	Хватит! С тобой я закончил.	¡Basta! Contigo he terminado.	Enough! I'm done with you.
+Seninle konusmuyorum.	Seninle konuşmuyorum.	Я с тобой не разговариваю.	No hablo contigo.	I'm not talking to you.
+Beni rahat birak.	Beni rahat bırak.	Оставь меня в покое.	Déjame en paz.	Leave me alone.
+Defol git.	Defol git.	Убирайся.	Lárgate.	Get lost.
+Seni duymuyorum bile.	Seni duymuyorum bile.	Я тебя даже не слышу.	Ni te oigo.	I can't even hear you.
+Lutfen git.	Lütfen git.	Пожалуйста, уходи.	Por favor, vete.	Please go.
+Isimize engel olma.	İşimize engel olma.	Не мешай нам работать.	No estorbes nuestro trabajo.	Don't get in our way.
+Seninle isim yok. Uzaklas.	Seninle işim yok. Uzaklaş.	Мне с тобой не о чем. Уходи.	No tengo nada contigo. Aléjate.	I've got nothing with you. Move along.
+Yeter! Tutuklaniyorsun. Eller basinin ustune!	Yeter! Tutuklanıyorsun. Eller başının üstüne!	Хватит! Ты арестован. Руки за голову!	¡Basta! Quedas arrestado. ¡Manos arriba!	Enough! You're under arrest. Hands on your head!
+PHONE_CONTACT_REMOVED	{0} numaranı rehberinden sildi.	{0} удалил твой номер.	{0} borró tu número.	{0} deleted your number.
+POLICE_ARREST	Polis seni tutuklamaya geliyor!	Полиция идёт тебя арестовывать!	¡La policía viene a arrestarte!	The police are coming to arrest you!
+Polis	Polis	Полицейский	Policía	Police
+Cete uyesi	Çete üyesi	Член банды	Pandillero	Gang member
+Satici	Satıcı	Дилер	Camello	Dealer
+Saglik gorevlisi	Sağlık görevlisi	Парамедик	Paramédico	Paramedic
+Itfaiyeci	İtfaiyeci	Пожарный	Bombero	Firefighter
+Suclu	Suçlu	Преступник	Criminal	Criminal
+Evsiz	Evsiz	Бездомный	Sin techo	Homeless
+Sokak kadini	Sokak kadını	Уличная девушка	Chica de la calle	Street woman
+Sevgili	Sevgili	Любимый человек	Pareja	Partner
+Ilgi duyuyor	İlgi duyuyor	Проявляет интерес	Interesada	Interested
+Askim! Seni gormek ne guzel.	Aşkım! Seni görmek ne güzel.	Любимый! Как приятно тебя видеть.	¡Cariño! Qué bueno verte.	Babe! So good to see you.
+Hey yakisikli! Seni ozledim.	Hey yakışıklı! Seni özledim.	Эй, красавчик! Я скучала.	¡Hola guapo! Te echaba de menos.	Hey handsome! I missed you.
+CJ, bugun de gelmissin. Cok sevindim.	CJ, bugün de gelmişsin. Çok sevindim.	CJ, ты опять пришёл. Я так рада.	CJ, has venido otra vez. Me alegra mucho.	CJ, you came by again. I'm so glad.
+FEUD_START	{0}'nin ailesi artık peşinde. Kan davası başladı.	Семья {0} теперь охотится за тобой. Началась кровная месть.	La familia de {0} te persigue. Ha empezado una vendetta.	{0}'s family is after you now. A blood feud has begun.
+FEUD_LINE	Yakınımı öldürdün! Bunun hesabını vereceksin!	Ты убил моего близкого! Ты за это заплатишь!	¡Mataste a uno de los míos! ¡Lo vas a pagar!	You killed one of mine! You're going to pay for it!
+ROMANCE_PARTNER	{0} artık senin sevgilin.	{0} теперь твоя возлюбленная.	{0} ya es tu pareja.	{0} is now your partner.
+ROMANCE_INTEREST	{0} sana ilgi duymaya başladı.	{0} начинает проявлять к тебе интерес.	{0} empieza a sentir interés por ti.	{0} is starting to take an interest in you.
+PHONE_INVITE_VENUE	Kabul etti. Buluşma yeri: {0}. Haritadaki işarete git.	Согласился(ась). Место встречи: {0}. Езжай к метке на карте.	Aceptó. Lugar: {0}. Ve a la marca del mapa.	Accepted. Meeting place: {0}. Head to the marker on the map.
+VENUE_ALHAMBRA	Alhambra Kulübü	Клуб «Альгамбра»	Club Alhambra	Alhambra Club
+VENUE_PIGPEN	Pig Pen	Pig Pen	Pig Pen	Pig Pen
+VENUE_BOTTLES	Ten Green Bottles Barı	Бар «Ten Green Bottles»	Bar Ten Green Bottles	Ten Green Bottles Bar
+VENUE_PIZZA	Pizza Stack	Pizza Stack	Pizza Stack	Pizza Stack
+VENUE_GYM	Ganton Spor Salonu	Спортзал Гантона	Gimnasio de Ganton	Ganton Gym
+VENUE_CLUCKIN	Cluckin' Bell	Cluckin' Bell	Cluckin' Bell	Cluckin' Bell
+VENUE_GROVE	Grove Street	Грув-стрит	Grove Street	Grove Street
+VENUE_ZERO	Zero'nun Dükkanı	Магазин Зеро	Tienda de Zero	Zero's Shop
+VENUE_JIZZY	Jizzy'nin Kulübü	Клуб Джиззи	Club de Jizzy	Jizzy's Club
+VENUE_BURGER	Burger Shot	Burger Shot	Burger Shot	Burger Shot
+VENUE_COMEALOT	Come-A-Lot Kumarhanesi	Казино «Come-A-Lot»	Casino Come-A-Lot	Come-A-Lot Casino
+VENUE_CALIGULA	Caligula's Sarayı	Дворец Калигулы	Palacio de Calígula	Caligula's Palace
+VENUE_HORSES	At Yarışı Pisti	Ипподром	Hipódromo	Horse Track
+ROMANCE_GOODBYE	Canım, biraz dinlenmem lazım. Sonra yine görüşelim.	Милый, мне нужно отдохнуть. Ещё увидимся.	Cariño, necesito descansar. Nos vemos luego.	Honey, I need some rest. Let us meet again soon.
+ROMANCE_HOME_OFFER	Seninle vakit geçirmek güzeldi. Eve geçelim mi?	Мне было хорошо с тобой. Пойдём домой?	Me gustó estar contigo. ¿Vamos a casa?	I enjoyed our time together. Shall we go home?
+ROMANCE_HOME_ACCEPT	BİRLİKTE EVE GİT	ПОЙТИ ДОМОЙ ВМЕСТЕ	IR A CASA JUNTOS	GO HOME TOGETHER
+ROMANCE_FAMILY	Ailemiz	Наша семья	Nuestra familia	Our family
+ROMANCE_NO_CHILD	Birlikte çocuğumuz yok.	Общих детей пока нет.	Aún no tenemos hijos juntos.	We have no child together yet.
+ROMANCE_EXPECTING	Bir çocuk bekliyoruz.	Мы ждём ребёнка.	Esperamos un bebé.	We are expecting a child.
+ROMANCE_HOME_COUNT	Birlikte evde: {0}	Домашних вечеров: {0}	Veladas en casa: {0}	Evenings at home: {0}
+ROMANCE_FAMILY_SAVED	Aile kaydı kalıcıdır.	Семейная запись сохранена.	La familia queda guardada.	Family progress is saved.
+ROMANCE_PLAN_HINT	5 iyi buluşma, 2 ev ziyareti.	5 хороших встреч, 2 вечера дома.	5 buenas citas, 2 visitas a casa.	5 good dates, 2 home visits.
+ROMANCE_PLAN	AİLE KURMAYI KONUŞ	ОБСУДИТЬ СЕМЬЮ	HABLAR DE FORMAR FAMILIA	DISCUSS STARTING A FAMILY
+ROMANCE_PLAN_ACCEPTED	Birlikte aile kurmaya karar verdiniz. Oynanış için bekleme süresi 7 oyun günü; ilerleme aile ekranında saklanır.	Вы решили создать семью. Для игрового процесса ожидание занимает 7 игровых дней. Прогресс сохраняется.	Decidís formar una familia. La espera se comprime a 7 días de juego y se guarda.	You both decided to start a family. The wait is compressed to 7 in-game days; progress is saved.
+ROMANCE_PLAN_EXISTS	Aile süreci zaten kayıtlı.	Семейный процесс уже записан.	El proceso familiar ya está guardado.	Family progress is already recorded.
+ROMANCE_PLAN_WAIT	Henüz hazır değil. 5 iyi buluşma, 2 ev ziyareti ve güçlü bir ilişki gerekiyor.	Пока не готова. Нужно 5 хороших встреч, 2 вечера дома и крепкие отношения.	Aún no está lista. Necesitas 5 buenas citas, 2 visitas a casa y una relación sólida.	She is not ready yet. You need 5 good dates, 2 home visits and a strong relationship.
+ROMANCE_BIRTH	Çocuğunuz dünyaya geldi. Telefonda Ailemiz bölümüne bak.	Ваш ребёнок родился. Открой раздел «Наша семья».	Ha nacido vuestro bebé. Mira Nuestra familia en el teléfono.	Your child was born. Check Our family on the phone.
+ROMANCE_EX	Eski eş	Бывший супруг	Expareja	Former spouse
+PHONE_MEET_OUTSIDE	Dışarıdaki kaldırımda buluşun.	Встретьтесь снаружи, на тротуаре.	Reuníos fuera, en la acera.	Meet outside on the sidewalk.
+PHONE_NO_CHILD	Çocuğu yok	Нет детей	Sin hijos	No children
+PHONE_MESSAGES	Mesajlar	Сообщения	Mensajes	Messages
+PHONE_WRITE	Mesaj seç	Выбрать сообщение	Elegir mensaje	Choose message
+PHONE_CALL	Ara	Позвонить	Llamar	Call
+PHONE_MESSAGE	Mesaj gönder	Отправить сообщение	Enviar mensaje	Send message
+PHONE_ACTIONS	İletişim	Связь	Comunicación	Contact actions
+PHONE_ACTIONS_HINT	Mesaj, arama ve birlikte planlar.	Сообщения, звонки и планы.	Mensajes, llamadas y planes.	Messages, calls and shared plans.
+PHONE_OPEN_ACTIONS	İLETİŞİMİ AÇ	ОТКРЫТЬ СВЯЗЬ	ABRIR COMUNICACIÓN	OPEN CONTACT ACTIONS
+PHONE_MESSAGES_HINT	Konuşma geçmişini oku.	Прочитать переписку.	Leer la conversación.	Read your conversation history.
+PHONE_ACTIVITIES	Birlikte plan yap	Совместные планы	Hacer planes	Plan an activity
+PHONE_ROUTINE	Günlük düzen	Распорядок	Rutina diaria	Daily routine
+PHONE_ROUTINE_ROUTE	BULUŞABİLECEĞİN YERİ GÖSTER	ПОКАЗАТЬ МЕСТО	MOSTRAR UBICACIÓN	SHOW USUAL LOCATION
+ROUTINE_WORK_HOURS	08:00–17:00: İş çevresi	08:00–17:00: у работы	08:00–17:00: trabajo	08:00–17:00: near work
+ROUTINE_SOCIAL_HOURS	17:00–22:00: Takıldığı yer	17:00–22:00: отдых	17:00–22:00: ocio	17:00–22:00: usual hangout
+ROUTINE_HOME_HOURS	22:00–08:00: Ev çevresi	22:00–08:00: у дома	22:00–08:00: cerca de casa	22:00–08:00: near home
+ROUTINE_NOT_READY	Günlük düzeni henüz bilinmiyor.	Распорядок пока неизвестен.	Aún no conoces su rutina.	You do not know their routine yet.
+ROUTINE_ROUTE_READY	Genelde bulunduğu yer minimapte. Meşgul olabilir.	Обычное место отмечено. Может быть занят.	Su sitio habitual está marcado. Puede estar ocupado.	Their usual spot is on the map. They may be busy.
+MAIL_EMPTY	Henüz mesaj yok.	Сообщений пока нет.	Aún no hay mensajes.	No messages yet.
+MAIL_REPLY_HINT	ENTER: Yanıtla / →: Yaz	ENTER: ответ / →: написать	ENTER: responder / →: escribir	ENTER: reply / →: compose
+MAIL_ACCEPT_INVITE	ENTER: Plan seç / →: Yaz	ENTER: планы / →: написать	ENTER: plan / →: escribir	ENTER: choose plan / →: compose
+MAIL_SEND_HINT	YUKARI/ASAGI: Seç  ENTER: Gönder	ВВЕРХ/ВНИЗ: выбор  ENTER: отправить	ARRIBA/ABAJO: elegir  ENTER: enviar	UP/DOWN: choose  ENTER: send
+MAIL_NEW_MESSAGE	Telefonuna yeni mesaj geldi.	Новое сообщение на телефоне.	Tienes un mensaje nuevo.	You have a new phone message.
+MAIL_INVITATION	CJ, boşsan buluşup biraz takılalım mı? Telefondan plan seçebilirsin.	CJ, если свободен, встретимся? Выбери занятие в телефоне.	CJ, ¿quedamos si estás libre? Elige un plan en el teléfono.	CJ, want to hang out if you are free? Pick a plan on your phone.
+MAIL_FAMILY_PLANS	Bugün aileme uğrayacağım CJ. Muhabbeti başka gün tamamlayalım.	Сегодня навещаю семью, CJ. Поговорим в другой день.	Hoy visito a mi familia, CJ. Hablamos otro día.	I am visiting family today, CJ. Let us catch up another day.
+MAIL_NETWORK_WARNING	{0} ile yaşananları duydum. Sana bakışım değişti CJ.	Я слышал, что случилось с {0}. Теперь смотрю на тебя иначе.	He oído lo de {0}. Ya no te veo igual, CJ.	I heard what happened with {0}. I see you differently now, CJ.
+MAIL_NETWORK_THANKS	{0} için yaptığını duydum. Sağ ol CJ, bunu unutmam.	Слышал, как ты помог {0}. Спасибо, CJ. Не забуду.	Me enteré de cómo ayudaste a {0}. Gracias, CJ. No lo olvido.	I heard how you helped {0}. Thanks, CJ. I will remember that.
+MAIL_GOOD_OUTING	Bugün iyi vakit geçirdim CJ. Yine yapalım.	Хорошо провели время, CJ. Давай повторим.	Me lo pasé bien hoy, CJ. Repitamos.	I had a good time today, CJ. Let us do it again.
+MAIL_BLOCKED	Şu an seninle konuşmak istemiyorum.	Сейчас не хочу с тобой говорить.	Ahora no quiero hablar contigo.	I do not want to talk to you right now.
+MAIL_CALL_BUSY	İşteyim CJ, şu an açamam. Mesaj at.	Я на работе, CJ, не могу ответить. Напиши.	Estoy trabajando, CJ. No puedo cogerlo. Escríbeme.	I am at work, CJ. Cannot pick up. Send a message.
+CALL_HELLO	Selam, ben CJ. Nasılsın, konuşabilir miyiz?	Привет, это CJ. Как дела, можешь говорить?	Hola, soy CJ. ¿Qué tal? ¿Podemos hablar?	Hey, it is CJ. How are you? Can we talk?
+AI_WAITING	Mesaj gönderildi. Cevap gelene kadar oynamaya devam edebilirsin.	Отправлено. Пока ждёшь ответ, можно продолжать играть.	Enviado. Puedes seguir jugando mientras llega la respuesta.	Message sent. You can keep playing while waiting for a reply.
+AI_UNAVAILABLE	Şu an cevap alınamadı. Yerel model çalışmıyor veya zaman aşımı oldu. İlişkin değişmedi.	Ответ не получен. Локальная модель недоступна. Отношения не изменились.	No llegó respuesta. El modelo local no está disponible. La relación no ha cambiado.	No reply received. The local model is unavailable or timed out. Your relationship did not change.
+AI_DISABLED	Yerel konuşma modeli henüz etkin değil.	Локальная модель ещё не включена.	El modelo local aún no está activo.	The local dialogue model is not enabled yet.
+ACT_MEAL	Yemek molası ($20)	Перекус ($20)	Comer juntos ($20)	Meal break ($20)
+ACT_POOL	Oyunun bilardosuna git	Пойти играть в бильярд	Ir a jugar al billar	Go to the native pool game
+ACT_DRIVE	Arabayla gezinti (500 m)	Поездка (500 м)	Paseo en coche (500 m)	Drive together (500 m)
+ACT_WALK	Birlikte yürü (150 m)	Прогулка (150 м)	Pasear juntos (150 m)	Walk together (150 m)
+ACT_STOP	Birlikte planı bitir	Закончить встречу	Terminar el plan	End the shared plan
+ACT_ASK	Nasıl gidiyor diye sor	Спросить, как дела	Preguntar cómo está	Ask how things are going
+ACT_JOKE	Bir şaka yap	Пошутить	Contar un chiste	Tell a joke
+ACT_LISTEN	Derdini dinle	Выслушать	Escuchar sus problemas	Listen to their worries
+ACT_MEAL_START	Bir şeyler atıştırıp konuşalım mı? Biraz vaktim var.	Перекусим и поговорим? У меня есть время.	¿Comemos algo y hablamos? Tengo un rato.	Shall we grab a bite and talk? I have some time.
+ACT_POOL_START	Buralarda bilardo var. Sen oyuna gir, sonra yine görüşelim.	Тут есть бильярд. Сыграй, потом увидимся.	Hay billar por aquí. Juega y luego nos vemos.	There is a pool table around here. Play a round; we will catch up afterwards.
+ACT_DRIVE_START	Arabayla bir tur atalım. Durunca boş koltuğa geçerim.	Прокатимся. Остановись, сяду на свободное место.	Demos una vuelta. Para y subo al asiento libre.	Let us take a drive. Stop and I will get in a free seat.
+ACT_WALK_START	Biraz yürüyelim CJ. Seninle konuşmak iyi geliyor.	Прогуляемся, CJ. Приятно с тобой говорить.	Paseemos, CJ. Me gusta hablar contigo.	Let us walk, CJ. It is good talking with you.
+ACT_CONTROLS	Birlikte plan başladı. ALT+G: Konuş / ALT+J: Dinle. F6 iletişimden üç sohbet seçeneği var.	Встреча началась. ALT+G: говорить, ALT+J: слушать. Три темы в телефоне F6.	Plan iniciado. ALT+G: hablar, ALT+J: escuchar. Hay tres temas en F6.	Activity started. ALT+G: talk, ALT+J: listen. F6 contact actions has three conversation choices.
+ACT_REPLY_CATCHUP	İş güç derken günler geçiyor. Seninle durup konuşmak iyi geldi.	Дни уходят на работу. Хорошо остановиться и поговорить.	Los días se van trabajando. Me alegra parar y hablar contigo.	Work keeps the days flying by. It is good to stop and talk with you.
+ACT_REPLY_LISTEN	Bazen birinin dinlemesi yetiyor. Sağ ol CJ.	Иногда достаточно, чтобы выслушали. Спасибо, CJ.	A veces basta con que alguien escuche. Gracias, CJ.	Sometimes I just need someone to listen. Thanks, CJ.
+ACT_REPLY_JOKE	Hah! Nereden buluyorsun bunları CJ?	Ха! Откуда ты это берёшь, CJ?	¡Ja! ¿De dónde sacas esas cosas, CJ?	Ha! Where do you come up with these, CJ?
+ACT_REPLY_BAD_JOKE	Bugün pek havamda değilim CJ. Başka konu konuşalım.	Не в настроении, CJ. Сменим тему.	Hoy no estoy de humor, CJ. Cambiemos de tema.	I am not in the mood today, CJ. Let us change the subject.
+ACT_ABORT_ARGUMENT	Böyle konuşacaksan buluşmanın anlamı yok. Ben gidiyorum.	Если будешь так говорить, встречи не будет. Я ухожу.	Si vas a hablarme así, me voy.	If you are going to talk like that, this meetup is over. I am leaving.
+ACT_GOOD_END	Bugün güzel geçti CJ. Tekrar haberleşelim.	Хороший день, CJ. Будем на связи.	Lo he pasado bien, CJ. Hablamos pronto.	That was a good day, CJ. Let us keep in touch.
+ACT_BAD_END	Bugün pek anlaşamadık CJ. Başka zaman belki.	Сегодня не поладили, CJ. Может, в другой раз.	Hoy no hemos conectado, CJ. Quizá otro día.	We did not really click today, CJ. Maybe another time.
+ACT_NO_MONEY	Yemek için $20 gerekiyor.	Для еды нужно $20.	Necesitas $20 para comer.	You need $20 for the meal.
+ACT_LEFT_BEHIND	Arkadaşını geride bıraktın; birlikte plan bitti.	Ты оставил друга позади. Встреча закончена.	Has dejado atrás a tu amigo. El plan terminó.	You left your friend behind; the shared activity ended.
+ACT_COMPANION_CHAT	Şehrin telaşından biraz uzaklaşmak iyi geldi CJ.	Хорошо отвлечься от городской суеты, CJ.	Me viene bien alejarme del ruido de la ciudad, CJ.	It is good to get away from the rush of the city for a bit, CJ.
+ACT_CANCELLED	Birlikte plan sona erdi.	Совместный план закончен.	El plan compartido ha terminado.	The shared plan has ended.
+MEM_BATTERY	Düzelttiğin akü hâlâ sağlam CJ. Yardımını unutmadım.	Аккумулятор после твоего ремонта работает, CJ. Помню твою помощь.	La batería que arreglaste sigue bien, CJ. No olvido tu ayuda.	That battery you fixed is still going strong, CJ. I remember your help.
+MEM_ROBBERY	Paramı aldığını unutmadım. Benden uzak dur.	Не забыл, как ты забрал мои деньги. Держись подальше.	No olvido que me robaste. Mantén la distancia.	I have not forgotten you taking my money. Keep your distance.
+MEM_ARGUMENT	Son konuşmamız hâlâ aklımda CJ. Biraz mesafe iyi gelir.	Помню наш прошлый разговор, CJ. Давай держать дистанцию.	Aún recuerdo nuestra última conversación, CJ. Necesito espacio.	I still remember our last conversation, CJ. Some distance would help.
+MEM_OUTING	Geçen birlikte takıldığımız gün güzeldi. Yine yapalım CJ.	В прошлый раз было здорово. Давай повторим, CJ.	Lo pasé bien la última vez. Repitamos, CJ.	I enjoyed hanging out last time. Let us do it again, CJ.
+TXT_HELLO	Selam, ben CJ.	Привет, это CJ.	Hola, soy CJ.	Hey, it is CJ.
+TXT_CHECK	Nasıl gidiyor?	Как дела?	¿Cómo te va?	How is it going?
+TXT_MEMORY	Geçen olanları hatırlıyor musun?	Помнишь нашу последнюю встречу?	¿Recuerdas lo que pasó?	Remember what happened last time?
+TXT_SORRY	Geçen olanlar için üzgünüm.	Прости за то, что случилось.	Siento lo que pasó.	Sorry about what happened.
+TXT_INSULT	Seninle uğraşanın aklına tüküreyim.	Зря я вообще с тобой связался.	Menuda pérdida de tiempo eres.	You are a waste of my time.
+TXT_BYE	Sonra görüşürüz.	До встречи.	Nos vemos.	See you around.
+TXT_WAIT	Biraz bekle. Daha yeni konuştunuz.	Подожди, вы только что говорили.	Espera un poco. Acabáis de hablar.	Give it a moment. You just spoke.
+TXT_REPLY_HELLO_0	Hey CJ! Senden haber almak güzel.	Эй, CJ! Рад тебя слышать.	¡CJ! Qué bueno saber de ti.	Hey CJ! Good to hear from you.
+TXT_REPLY_HELLO_1	CJ, tam seni düşünüyordum. Neler yapıyorsun?	CJ, как раз о тебе вспоминалось. Чем занят?	CJ, estaba pensando en ti. ¿Qué haces?	CJ, I was just thinking about you. What is up?
+TXT_REPLY_HELLO_2	Selam! Mahallede her şey yolunda mı?	Привет! Как там дела в районе?	¡Hola! ¿Todo bien por el barrio?	Hey! Everything good in the neighborhood?
+TXT_REPLY_COLD	Şu an seninle konuşasım yok.	Сейчас не хочется с тобой говорить.	Ahora no quiero hablar contigo.	I do not feel like talking to you right now.
+TXT_REPLY_CHECK_0	Aynı koşturmaca. Biraz nefes almaya çalışıyorum.	Всё та же суета. Хочется передохнуть.	Lo de siempre. Intento tomarme un respiro.	Same old grind. Trying to catch a break.
+TXT_REPLY_CHECK_1	Fena değil. Bugün sokaklar biraz hareketli.	Неплохо. Сегодня на улицах оживлённо.	Nada mal. Hoy hay movimiento en la calle.	Not bad. The streets are busy today.
+TXT_REPLY_CHECK_2	İdare eder. Sen de kendine dikkat et.	Держусь. Ты тоже береги себя.	Voy tirando. Cuídate tú también.	Getting by. You take care of yourself too.
+TXT_REPLY_NO_MEMORY	Daha pek bir anımız olmadı. Bir ara takılırız.	У нас пока мало общих воспоминаний. Ещё наверстаем.	Aún no tenemos muchas historias. Ya quedaremos.	We do not have many stories yet. We should hang out sometime.
+TXT_REPLY_NO_FORGIVE	Bir özürle her şey düzelmiyor, CJ.	Одним извинением всё не исправить, CJ.	Una disculpa no lo arregla todo, CJ.	One apology does not fix everything, CJ.
+TXT_REPLY_SORRY	Duydum seni. Ama biraz zamana ihtiyacım var.	Слышу тебя. Но мне нужно время.	Te escucho. Pero necesito tiempo.	I hear you. But I need some time.
+TXT_REPLY_FINE	Aramızda bir sorun yok. Rahat ol.	Между нами всё нормально. Не переживай.	Estamos bien. No te preocupes.	We are good. Do not worry about it.
+TXT_REPLY_INSULT	Ağzından çıkanı kulağın duysun. Böyle konuşacaksan arama.	Следи за словами. С таким тоном больше не звони.	Cuida esa boca. No llames si vas a hablar así.	Watch your mouth. Do not call me with that attitude.
+TXT_REPLY_BYE	Görüşürüz CJ. Kendine dikkat et.	До встречи, CJ. Береги себя.	Nos vemos, CJ. Cuídate.	See you, CJ. Stay safe.
+NIGHT_CALL	Şşt, yakışıklı... Biraz vakit geçirmek ister misin? Seksen dolar.	Эй, красавчик... Хочешь провести время вместе? Восемьдесят долларов.	Psst, guapo... ¿Quieres pasar un rato conmigo? Ochenta dólares.	Psst, handsome... Want to spend some time together? Eighty dollars.
+NIGHT_HINT	Yakında biri sana seslendi. Yaklaş: ALT+G kabul, ALT+J kibarca reddet.	Тебя зовут. Подойди: ALT+G — согласиться, ALT+J — вежливо отказаться.	Te están llamando. Acércate: ALT+G aceptar, ALT+J rechazar con educación.	Someone called you over. Approach: ALT+G accept, ALT+J politely decline.
+NIGHT_ACCEPT	TEKLİFİ KABUL ET ($80)	СОГЛАСИТЬСЯ ($80)	ACEPTAR ($80)	ACCEPT OFFER ($80)
+NIGHT_DECLINE	KİBARCA REDDET	ВЕЖЛИВО ОТКАЗАТЬСЯ	RECHAZAR CON EDUCACIÓN	POLITELY DECLINE
+NIGHT_DECLINED	Peki, iyi geceler. Kendine dikkat et.	Ладно, доброй ночи. Береги себя.	Bueno, buenas noches. Cuídate.	All right, good night. Take care.
+NIGHT_NO_CASH	Kabul etmek için yaya durumda ve dışarıda olmalı, en az $80 taşımalısın.	Нужно быть пешком на улице и иметь хотя бы $80.	Debes estar a pie en la calle y tener al menos $80.	You need to be on foot outdoors with at least $80.
+NIGHT_NO_EXIT	Güvenli bir ev önü bulunamadı. Para alınmadı.	Безопасное место у дома не найдено. Деньги не сняты.	No se encontró un lugar seguro junto a una casa. No se cobró nada.	No safe exterior landing was found. You were not charged.
+NIGHT_MORNING	Sabah oldu. Saat 08.00; evin önündesin.	Настало утро. Сейчас 08:00, ты у дома.	Ya es de mañana. Son las 08:00, estás frente a la casa.	Morning has arrived. It is 08:00; you are outside the house.
+MAIL_TYPING	yazıyor...	печатает...	escribiendo...	typing...
+MAIL_FROM	{0} sana yazdı.	{0} написал(а) тебе.	{0} te ha escrito.	{0} texted you.
+PHONE_ON	Açık	Вкл.	Sí	On
+PHONE_OFF	Kapalı	Выкл.	No	Off
+PHONE_SET_EVENTS	Rastgele olaylar	Случайные события	Eventos aleatorios	Random events
+PHONE_SET_SCALE	Arayüz boyutu	Размер интерфейса	Tamaño de interfaz	Interface size
+PHONE_SET_HINT	Yukarı/Aşağı: seç · Enter: değiştir	Вверх/вниз: выбор · Enter: изменить	Arriba/abajo: elegir · Enter: cambiar	Up/Down: select · Enter: change
+AMB_PICKPOCKET	Biri cüzdanından {0}$ çaldı! Kaçmadan yakala.	Кто-то украл у тебя {0}$! Догони его.	¡Alguien te robó {0}$! Atrápalo antes de que huya.	Someone lifted {0}$ from your wallet! Catch them.
+AMB_PICKPOCKET_CAUGHT	Hırsızı yakaladın, {0}$ geri aldın.	Ты поймал вора и вернул {0}$.	Atrapaste al ladrón y recuperaste {0}$.	You caught the thief and got {0}$ back.
+AMB_PICKPOCKET_LOST	Hırsız kaçtı. Paran gitti.	Вор сбежал. Деньги пропали.	El ladrón escapó. Tu dinero se fue.	The thief got away with your money.
+AMB_MUGGING	Yakında biri soyuluyor! Yardım edebilirsin.	Рядом кого-то грабят! Можешь помочь.	¡Están atracando a alguien cerca! Puedes ayudar.	Someone nearby is being mugged! You can help.
+AMB_MUGGING_THANKS	Kurtardığın kişi teşekkür edip sana {0}$ verdi.	Спасённый поблагодарил и дал тебе {0}$.	La persona que salvaste te dio {0}$ en agradecimiento.	The person you saved thanked you with {0}$.
+AMB_MUGGING_LATE	Çok geç kaldın.	Ты опоздал.	Llegaste demasiado tarde.	You were too late.
+AMB_HOTHEAD	Biri seninle kavga çıkarıyor!	Кто-то лезет к тебе в драку!	¡Alguien busca pelea contigo!	Someone is picking a fight with you!
+AMB_HOTHEAD_LINE	Ne bakıyorsun? Derdin mi var?	Чего уставился? Проблемы?	¿Qué miras? ¿Tienes algún problema?	What are you looking at? Got a problem?
+MENU_LANG_MISSING	Bu dilin oyun metni yok (text\{0}). Oyun çökmesin diye seçim engellendi.	Нет текстового файла игры для этого языка (text\{0}). Выбор отменён, чтобы игра не вылетела.	Falta el texto del juego para este idioma (text\{0}). Se bloqueó para evitar un cierre.	This language's game text is missing (text\{0}). Blocked to prevent a crash.
+PHONE_SET_CONTROLS	SA People Kontrol Ayarları	Управление SA People	Controles de SA People	SA People Control Options
+CTRL_RESET	Varsayılan tuşlara dön	Сбросить клавиши	Restaurar teclas	Restore default keys
+CTRL_RESET_DONE	Tüm tuşlar varsayılana döndü.	Все клавиши сброшены.	Teclas restauradas.	All keys restored to defaults.
+CTRL_PRESS	Bir tuşa bas...	Нажми клавишу...	Pulsa una tecla...	Press a key...
+CTRL_PRESS_HINT	Yeni tuşa bas · Esc: iptal	Нажми новую клавишу · Esc: отмена	Pulsa la nueva tecla · Esc: cancelar	Press the new key · Esc: cancel
+CTRL_HINT	Enter: tuşu değiştir	Enter: сменить клавишу	Enter: cambiar tecla	Enter: change key
+CTRL_FOCUS	Odaklan (basılı)	Выбор (удерж.)	Enfocar (mantener)	Focus (hold)
+CTRL_GREET	Selamla	Поприветствовать	Saludar	Greet
+CTRL_PROVOKE	Kışkırt	Дразнить	Provocar	Provoke
+CTRL_DEFUSE	Sakinleştir	Успокоить	Calmar	Calm down
+CTRL_ROB	Soy	Ограбить	Robar	Rob
+CTRL_REPAIR	Tamir et (basılı)	Чинить (удерж.)	Reparar (mantener)	Repair (hold)
+CTRL_PHONE	Telefon	Телефон	Teléfono	Phone
+CTRL_PHONE_UP	Telefon: yukarı	Телефон: вверх	Teléfono: arriba	Phone: up
+CTRL_PHONE_DOWN	Telefon: aşağı	Телефон: вниз	Teléfono: abajo	Phone: down
+CTRL_PHONE_LEFT	Telefon: sol	Телефон: влево	Teléfono: izquierda	Phone: left
+CTRL_PHONE_RIGHT	Telefon: sağ	Телефон: вправо	Teléfono: derecha	Phone: right
+CTRL_PHONE_SELECT	Telefon: seç	Телефон: выбрать	Teléfono: elegir	Phone: select
+CTRL_PHONE_BACK	Telefon: geri	Телефон: назад	Teléfono: atrás	Phone: back
+CTRL_PHONE_CLOSE	Telefonu kapat	Закрыть телефон	Cerrar teléfono	Close phone
+CTRL_VITALS	Onur paneli	Панель чести	Panel de honor	Honor panel
+CTRL_CONTACTS	Telefon: rehber	Телефон: контакты	Teléfono: contactos	Phone: contacts
+CTRL_MEETINGS	Telefon: buluşmalar	Телефон: встречи	Teléfono: citas	Phone: meetings
+CTRL_SAVE	Mod kaydını al	Сохранить мод	Guardar mod	Save mod data
+MEET_CANCEL_PROVOKE	{0} buluşmayı iptal etti.	{0} отменил(а) встречу.	{0} canceló la cita.	{0} called off the meeting.
+ACT_MEAL_SCENE	Hadi oturalım, ben ısmarlıyorum!	Давай присядем, я угощаю!	¡Sentémonos, yo invito!	Let's sit down, my treat!
+ACT_MEAL_SCENE_DONE	{0} ile yemek yediniz. Bir saat geçti, aranız daha iyi.	Вы поели с {0}. Прошёл час, отношения улучшились.	Comiste con {0}. Pasó una hora y os lleváis mejor.	You ate with {0}. An hour passed and you're closer now.
