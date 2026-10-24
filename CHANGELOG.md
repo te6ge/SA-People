@@ -14,8 +14,6 @@
 - Added regression tests for type mapping, scripted waiting-for-input cancellation,
   setting/mission restoration and unrelated/recycled conversation-slot safety.
 
-Validation: full build and simulation suite passed. Native dealer encounters still need testing across more game/mod setups.
-
 # 0.13.2 beta
 
 - Repeat-message reactions now require consecutive copies of the same preset within the
