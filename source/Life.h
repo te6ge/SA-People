@@ -13,7 +13,7 @@ inline bool nightCandidate(const people::Family &f, int type, unsigned hour, boo
            !f.origin && f.presence.alive && f.social.romance < 3 && !f.social.robbed &&
            !f.social.cutOff && f.social.anger < 30 &&
            !(f.social.events & encounters::bit(encounters::Kind::Visit)) &&
-           (type == 22 || (type == 5 && people::mix(f.id + 919) % 12 == 0)) &&
+           type == 22 && // Only street workers; ordinary women do not proposition CJ.
            people::generate(f)[0].age >= 18;
 }
 struct NightRest {

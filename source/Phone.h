@@ -54,6 +54,7 @@ inline std::string letterText(const people::Registry &r, const people::Letter &m
     for (const char *choice : phonedialogue::choices)
         if (m.body == choice)
             preset = true;
+    preset = preset || m.body.rfind("TXT_", 0) == 0;
     std::string text = m.outgoing && !preset ? m.body : locale::tr(m.body);
     if (m.source && m.source <= r.families.size()) {
         auto pos = text.find("{0}");
@@ -203,21 +204,23 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                  ? dialogue::displayName(registry.families[state.person - 1])
                  : "PHONE_UNKNOWN");
         unsigned start = state.cursor >= 3 ? state.cursor - 2 : 0;
-        for (unsigned row = 0; row < 3 && start + row < 6; ++row) {
-            unsigned choice = start + row;
+        const auto available = phonedialogue::options(registry, state.person);
+        for (unsigned row = 0; row < 3 && start + row < available.size(); ++row) {
+            unsigned index = start + row, choice = available[index];
             float y = 222 + row * 31.0f;
-            if (choice == state.cursor)
+            if (index == state.cursor)
                 box(36, y - 1, 260, 30, dark);
-            text(44, y, 244, 13, phonedialogue::choices[choice], Align::Left,
-                 choice == state.cursor ? screen : ink);
+            text(44, y, 244, 13, phonedialogue::menuLabel(registry, state.person, choice), Align::Left,
+                 index == state.cursor ? screen : ink);
         }
         text(41, 331, 248, 11, "MAIL_SEND_HINT", Align::Center);
     } else if (state.page == Page::Actions || state.page == Page::Activities ||
                state.page == Page::Outing) {
-        const char *actions[] = {"PHONE_MESSAGE", "PHONE_ACTIVITIES", "PHONE_INVITE", "ACT_STOP"};
+        const char *actions[] = {"PHONE_MESSAGE", "PHONE_ACTIVITIES", "PHONE_INVITE",
+                                 "PHONE_FAVOR", "ACT_STOP"};
         const char *activities[] = {"ACT_MEAL", "ACT_POOL", "ACT_DRIVE", "ACT_WALK"};
         const char *choices[] = {"ACT_ASK", "ACT_JOKE", "ACT_LISTEN"};
-        unsigned count = state.page == Page::Actions      ? (state.outing == state.person ? 4u : 3u)
+        unsigned count = state.page == Page::Actions      ? (state.outing == state.person ? 5u : 4u)
                          : state.page == Page::Activities ? 4u
                                                           : 3u;
         if (state.person && state.person <= registry.families.size())

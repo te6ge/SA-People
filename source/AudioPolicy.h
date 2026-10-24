@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Street.h"
 #include <map>
 namespace socialaudio {
@@ -198,8 +198,9 @@ inline const wchar_t *line(street::Action action, unsigned turn, bool friendBefo
 }
 inline int honorCue(street::Action action, int trustBefore, int trustAfter,
                     const street::Reply &reply) {
-    if (action == street::Action::Provoke && trustAfter < trustBefore)
-        return -1;
-    return reply.newJournal || reply.newFriend ? 1 : 0;
+    (void)trustBefore;
+    (void)trustAfter;
+    // Provocations are accounted for by the three-person batch in the native adapter.
+    return action == street::Action::Greet && (reply.newJournal || reply.newFriend) ? 1 : 0;
 }
 } // namespace socialaudio

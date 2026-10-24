@@ -1,0 +1,29 @@
+# Build output
+build/
+release/
+preview/
+*.obj
+*.exp
+*.lib
+*.pdb
+*.ilk
+
+# Player data and logs must never be committed
+people.dat
+people.dat.*
+people.pre-*.dat
+people.corrupt-*.dat
+*.log
+settings.ini
+
+# Local assets that ship only in release downloads
+audio/*.wav
+audio/*.mp3
+backgrounds/
+
+# Local backups
+rollback*/
+backup-*/
+
+# Obtain the ASI loader from its upstream release
+loader/*.dll

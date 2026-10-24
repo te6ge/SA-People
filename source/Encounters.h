@@ -86,7 +86,7 @@ struct Director {
         ++attempts;
     }
     void started(unsigned seed) {
-        next = clock + 90000 + people::mix(seed) % 90001;
+        next = clock + 55000 + people::mix(seed) % 55001; // About one event a minute or two.
         ++completed;
         attempts = 0;
     }

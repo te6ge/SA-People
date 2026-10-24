@@ -223,5 +223,3 @@ Hayır. Mesaj kutusu en yeni **256 mesajı** saklar. Eski bir mesajın silinmesi
 **Bu rehberdeki her akış oyun içinde doğrulandı mı?**
 
 Rehber, 0.12.3'ün mevcut kod davranışına göre hazırlanmıştır. Derleme, kayıt uyumluluğu ve mantık testleri geçmiştir. Son eklenen rutinler, yolcu hareketleri ve aktiviteler için tüm durumları kapsayan canlı GTA testi henüz tamamlanmamıştır.
-
-

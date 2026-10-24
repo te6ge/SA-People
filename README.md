@@ -1,75 +1,70 @@
-# SA People
+# SA People — NPC Interactions · 0.13.3 beta
 
-A single-player social mod for **GTA San Andreas PC 1.0 US**. Every pedestrian gets a persistent
-identity: a name, a job, a family and a memory of what you did. Meet people, keep a phone book,
-text them, arrange meetings at real San Andreas venues, help strangers, make enemies, fall in love.
+A single-player social mod for **GTA San Andreas PC 1.0 US**. Every pedestrian gets a
+persistent identity: a name, a job, a family and memories of what you did. Meet people,
+keep contacts in your phone, text them, arrange outings, help strangers and build relationships.
 
-> Türkçe: GTA San Andreas için tek oyunculu sosyal etkileşim modu. Oyuncu rehberi:
-> [docs/OYUNCU-REHBERI-TR.md](docs/OYUNCU-REHBERI-TR.md)
+## Download and update
 
-**Status:** beta. Download the ready-to-play build (setup, voices, menu pictures) from the
-[Releases](../../releases) page. This repository contains the source code.
+- **Existing installation:** download [the 0.13.3 manual update ZIP](downloads/SA-People-0.13.3-update.zip?raw=true).
+  Close GTA SA and copy the ZIP contents into the folder containing `gta_sa.exe`, replacing
+  matching mod files. No EXE is required. The update keeps your settings and relationships.
+- **First installation:** install the full package from [Releases](../../releases) first,
+  then apply the update ZIP above. The update ZIP contains the latest plugin, translations
+  and one repaired voice file; it is not the full voice/artwork/ASI-loader package.
+- Back up `SA-People/people.dat` and your game saves before updating.
+
+## What's new
+
+- Fixed dealer conversation conflicts: correct pedestrian type, scripted Y/N prompt handoff
+  and restoration of native conversation permissions during story missions.
+- Contextual phone replies and consecutive-message spam detection. A new event or a different
+  message starts a fresh conversation instead of triggering a mistaken repeat complaint.
+- Revised passenger boarding, more automatic outing conversation, familiar farewells and a
+  rest period after outings so contacts do not immediately ask for another ride.
+- Three distinct greetings earn honor; three distinct provocations reduce it. Honor affects
+  willingness to talk. Active street offenders are distinguished from innocent pedestrians.
+- Honor audio queue fixes, more varied street remarks and the `IMARTHURMORGAN` honor cheat.
+
+See the English [changelog](CHANGELOG.md) and [validation notes](docs/VALIDATION-0.13.3.md).
 
 ## Features
 
-- Persistent identities for ambient pedestrians, deterministic names and families,
-  continuity when the same person comes back.
-- Persona-aware conversations (civilians, police, gangs, street people, medics), individual
-  patience, puzzlement → number deleted → police arrest.
-- SA CELL phone: contacts, family and connection pages, chat-style messages, meetings,
-  settings and fully rebindable controls.
-- Meetings at real venues, meal dates, relationships and partners, blood feuds.
-- Random and sudden street events: help requests, passenger rides, pickpockets, muggings,
-  hotheads.
-- Honor system on the stats panel, RDR2-style menu theme with picture backgrounds.
-- Four mod languages: Türkçe, English, Русский, Español.
-- Story missions and cutscenes suspend the mod.
+- Persistent identities, families, learned details, relationships, friends and enemies.
+- Conversations shaped by personality, trust, patience and pedestrian role.
+- SA CELL phone with contacts, messages, meetings, family connections and rebindable controls.
+- Outings at San Andreas venues, meals, drives, walks, dates and partners.
+- Street help requests, paid passenger rides, pickpockets, muggings and other incidents.
+- Honor panel, street interaction prompts, notifications and a themed frontend.
+- Turkish, Russian, Spanish and English mod text.
+- Social gameplay suspends during story missions and cutscenes.
 
-## Requirements
+## Controls
 
-- GTA San Andreas PC **1.0 US** (`gta_sa.exe`, 14,383,616 bytes). Other executables are refused.
-- [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader).
+Hold **Left Alt** to focus a pedestrian. **G** greets, **H** provokes, **J** calms down,
+**R** robs. **F6** opens the phone; hold **TAB** for the honor panel. Keys can be rebound
+in phone settings. Player guide: [Turkish](docs/OYUNCU-REHBERI-TR.md).
 
-## Building
+## Compatibility
 
-Requires Windows, Visual Studio (x86 C++ toolset) and the Windows SDK.
+The supported target is **classic PC 1.0 US**. Steam/Launcher executables, 1.01, 3.0,
+Definitive Edition, SA-MP and open.mp are not supported targets. An ASI loader is required;
+[Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) is bundled with full releases.
+This remains a beta; native task behavior can vary with other installed mods.
 
-```bat
-Build.cmd
-```
+## Build and contribute
 
-`Build.cmd` builds `SA-People.asi`, runs the logic tests (`PeopleTests.exe`), builds the
-checker tools, the layout preview generator and `Installer.exe`. Engine addresses and
-references are documented in [BUILDING.md](BUILDING.md).
+On Windows with Visual Studio's x86 C++ toolset and Windows SDK, run `Build.cmd`.
+It builds the ASI, runs logic tests and generates interface previews. See
+[BUILDING.md](BUILDING.md) for engine references and [MakeRelease.ps1](MakeRelease.ps1)
+for packaging. Voice files and menu backgrounds are distributed separately from the source.
 
-To make release packages (voice clips in `audio/` and pictures in `backgrounds/` are optional
-and not part of this repository):
+Translation corrections are welcome: `languages.tsv` is UTF-8 with columns
+`key`, Turkish, Russian, Spanish and English. For bugs, include your game executable
+version, other mods, reproduction steps and `SA-People/SA-People.log`.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File MakeRelease.ps1
-```
+## License and credits
 
-## Layout
-
-| Path | Contents |
-| --- | --- |
-| `source/Plugin.cpp` | ASI entry, hooks, persistence, rendering |
-| `source/People.h`, `World.h` | Identity archive, bindings, spatial index |
-| `source/Street.h`, `Persona.h`, `Dialogue.h` | Conversations and reactions |
-| `source/Phone*.h/.inc` | Phone UI and input |
-| `source/*Events.inc`, `Ambush.inc` | Encounters and sudden incidents |
-| `source/Controls.h` | Rebindable keys |
-| `source/Installer.cpp` | Single-file setup |
-| `source/Tests.cpp` | Logic tests run by `Build.cmd` |
-| `languages.tsv` | Translations (key, TR, RU, ES, EN) |
-
-## Translations
-
-`languages.tsv` is UTF-8 with five tab-separated columns: key, Turkish, Russian, Spanish,
-English. Pull requests with corrections are welcome; the build fails on malformed rows.
-
-## License
-
-Code, text and documentation: MIT, see [LICENSE](LICENSE). Voice clips, menu pictures and icons
-belong to their author. Not affiliated with Rockstar Games or Take-Two Interactive; no game
-files are included.
+Code, text and documentation: MIT, see [LICENSE](LICENSE). Optional voices and artwork
+have separate provenance. Some voices were created with AI; AI tools also assisted development.
+Not affiliated with Rockstar Games or Take-Two Interactive.

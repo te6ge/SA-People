@@ -218,7 +218,9 @@ bool offerLife(Pool *pool, Byte *player, encounters::Kind kind, unsigned preferr
             primaryOccupied(ped) || armed(ped))
             continue;
         auto &f = registry.families[id - 1];
-        if (f.social.events & encounters::bit(kind) || f.social.robbed || f.social.anger >= 30 ||
+        if (!socialprogress::availableForEvent(f.daily.busyUntil, registry.worldMinutes,
+                hasAppointment(id), companionOwns(id), f.social.romance) ||
+            f.social.events & encounters::bit(kind) || f.social.robbed || f.social.anger >= 30 ||
             f.social.cutOff)
             continue;
         int type = *reinterpret_cast<int *>(ped + 0x598);
@@ -286,7 +288,7 @@ bool offerLife(Pool *pool, Byte *player, encounters::Kind kind, unsigned preferr
         if (nightOfferAfter.size() >= 256)
             nightOfferAfter.erase(nightOfferAfter.begin());
         nightOfferAfter[chosen] = GetTickCount() + 600000;
-        nextNightOffer = GetTickCount() + 90000;
+        nextNightOffer = GetTickCount() + 480000; // At most one night offer every 8 minutes.
     }
     lifeEvent.fare =
         life::rideFare(chosen + GetTickCount(), std::sqrt(distance2(position(player), target)));
@@ -378,12 +380,16 @@ bool converseLife(Byte *player) {
             return true;
         }
         *reinterpret_cast<short *>(ped + 0x756) = static_cast<short>(wallet);
+        const bool alreadyKnown = dialogue::knows(f, people::Name);
         bool first = life::complete(f, kind);
         say(f, locale::tr(kind == encounters::Kind::Beggar ? "LIFE_THANK_BEGGAR"
                                                            : "LIFE_THANK_ADDICT") +
-                   " " + locale::format("LIFE_MY_NAME", people::generate(f)[0].name));
+                   (alreadyKnown ? "" : " " + locale::format("LIFE_MY_NAME", people::generate(f)[0].name)));
         if (first)
             reputation(kind == encounters::Kind::Beggar ? 1 : -1);
+        if (first && kind == encounters::Kind::Beggar)
+            later::schedule(registry, f.id, later::Thanks);
+        justMet(f);
         discoverNetwork(f.id);
         network::news(registry, f.id, kind == encounters::Kind::Addict);
         dirty = true;
@@ -406,7 +412,7 @@ bool converseLife(Byte *player) {
             return true;
         }
         reinterpret_cast<void(__thiscall *)(void *, Byte *, int, bool)>(0x640340)(
-            task, car, freeSeat(car), true);
+            task, car, socialcontext::passengerDoor(freeSeat(car)), false);
         setTask(taskManager(ped), task, 3);
         lifeEvent.task = task;
         auto slot = static_cast<unsigned>((car - cars->objects) / 0xA18);
@@ -468,11 +474,11 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
         reinterpret_cast<void(__cdecl *)(const Vec *)>(0x40ED80)(&target);
         reinterpret_cast<void(__cdecl *)(const Vec *)>(0x40EB70)(&target);
         if (!streetPoint(target, player, landing, 12) || !clearGround(landing, player)) {
+            // The far door did not stream in: CJ wakes up on the street where the night began.
             reinterpret_cast<void(__cdecl *)(const Vec *)>(0x40ED80)(&previousPosition);
             reinterpret_cast<void(__cdecl *)(const Vec *)>(0x40EB70)(&previousPosition);
-            cancelLife();
-            help("NIGHT_NO_EXIT");
-            return;
+            if (!streetPoint(previousPosition, player, landing, 12) || !clearGround(landing, player))
+                landing = previousPosition;
         }
         if (!lifeEvent.nightRest.pay(*money)) {
             cancelLife();
@@ -490,6 +496,9 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
             romance::advance(parent, skipped);
         familyClock = 8 * 60;
         life::complete(f, encounters::Kind::Visit);
+        f.social.known |= people::Name;
+        f.social.journal = true;
+        later::schedule(registry, f.id, later::Visit);
         auto &health = *reinterpret_cast<float *>(player + 0x540);
         health = std::max(health, std::min(100.0f, *reinterpret_cast<float *>(player + 0x544)));
         lifeEvent.stage = 5;
@@ -560,7 +569,9 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
                 panelInvalid = true;
                 save();
                 help("LIFE_SIX_HOURS");
-                say(f, locale::format("LIFE_MY_NAME", people::generate(f)[0].name));
+                say(f, lifeEvent.partner || f.social.journal || f.daily.outings
+                    ? locale::tr("LIFE_VISIT_KNOWN")
+                    : locale::format("LIFE_MY_NAME", people::generate(f)[0].name));
             }
             fadeVisit(false);
             lifeEvent.faded = false;
@@ -637,6 +648,7 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
     }
     if (paid) {
         auto money = playerMoney(player);
+        const bool alreadyKnown = dialogue::knows(f, people::Name);
         if (money && *money >= 0 && *money < 999999999 &&
             life::complete(f, encounters::Kind::Ride)) {
             *money += static_cast<int>(
@@ -644,8 +656,11 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
             reputation(1);
             discoverNetwork(f.id);
             network::news(registry, f.id, false);
+            later::helped(registry, f.id);
+            justMet(f);
             help(locale::format("LIFE_RIDE_PAID", std::to_string(lifeEvent.fare)));
-            say(f, locale::format("LIFE_RIDE_THANK", people::generate(f)[0].name));
+            say(f, alreadyKnown ? locale::tr("LIFE_RIDE_THANK_KNOWN")
+                : locale::format("LIFE_RIDE_THANK", people::generate(f)[0].name));
             dirty = true;
             panelInvalid = true;
             save();
@@ -711,4 +726,3 @@ void updateFeud(Pool *pool, Byte *player) {
         }
     }
 }
-

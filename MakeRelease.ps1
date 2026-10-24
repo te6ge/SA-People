@@ -1,4 +1,4 @@
-﻿# Builds the public beta packages in .\release\. Run after Build.cmd. Packs the owner's voice clips
+# Builds the public beta packages in .\release\. Run after Build.cmd. Packs the owner's voice clips
 # and the three original menu pictures; never saves, logs or rollback folders.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -12,17 +12,25 @@ if (-not (Test-Path "$root\build\SA-People.asi")) { throw 'Run Build.cmd first' 
 $out = "$root\release"
 $name = "SA-People-$version-beta"
 $stage = "$out\$name"
+if ([IO.Path]::GetFullPath($out) -ne [IO.Path]::GetFullPath((Join-Path $root 'release'))) { throw 'Unexpected release cleanup path' }
 if (Test-Path $out) { Remove-Item $out -Recurse -Force }
 New-Item -ItemType Directory -Force "$stage\SA-People\assets", "$stage\SA-People\audio", "$stage\SA-People\backgrounds" | Out-Null
 
 Copy-Item "$root\build\SA-People.asi" $stage
 Copy-Item "$root\languages.tsv" "$stage\SA-People\"
 Copy-Item "$root\assets\*.png" "$stage\SA-People\assets\"
-Copy-Item "$root\audio\*" "$stage\SA-People\audio\" -Include *.wav, *.mp3
-foreach ($n in 8, 9, 10) { Copy-Item "$root\backgrounds\gtasanandreas$n.*" "$stage\SA-People\backgrounds\" } # Owner-made art only.
+New-Item -ItemType Directory -Force "$stage\loader", "$stage\SA-People\licenses" | Out-Null
+Copy-Item "$root\loader\dinput8.dll" "$stage\loader\"
+Copy-Item "$root\loader\Ultimate-ASI-Loader-LICENSE.txt" "$stage\loader\"
+Copy-Item "$root\loader\Ultimate-ASI-Loader-LICENSE.txt" "$stage\SA-People\licenses\"
+if (Test-Path "$root\audio") { Copy-Item "$root\audio\*" "$stage\SA-People\audio\" -Include *.wav, *.mp3 }
+foreach ($n in 8, 9, 10) {
+    if (Test-Path "$root\backgrounds\gtasanandreas$n.*") { Copy-Item "$root\backgrounds\gtasanandreas$n.*" "$stage\SA-People\backgrounds\" }
+} # Owner-made art only; source-only checkouts may supply media separately.
 foreach ($f in 'README.md', 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd', 'TEST-CHECKLIST-TR.md') {
     Copy-Item "$root\release-template\$f" $stage
 }
+Copy-Item "$root\INSTALLER-VALIDATION-TR.md" $stage
 Copy-Item "$root\CHANGELOG.md" $stage
 Copy-Item "$root\OYUNCU-REHBERI-TR.md" $stage
 
@@ -73,11 +81,13 @@ function New-Setup($stageDir, $setupPath) {
     $fs = [IO.File]::Open($setupPath, 'Open', 'ReadWrite')
     $fs.Seek(0, 'End') | Out-Null
     $entries = @()
-    $files = @(Get-Item "$stageDir\SA-People.asi") + @(Get-ChildItem "$stageDir\SA-People" -Recurse -File)
+    $files = @(Get-Item "$stageDir\SA-People.asi") + @(Get-ChildItem "$stageDir\SA-People" -Recurse -File) + @(Get-Item "$stageDir\loader\dinput8.dll")
     foreach ($f in $files) {
         $rel = $f.FullName.Substring($stageDir.Length + 1).Replace('\', '/')
+        $mode = if ($rel -eq 'SA-People/settings.ini') { 1 } elseif ($rel -eq 'loader/dinput8.dll') { 2 } else { 0 }
+        if ($mode -eq 2) { $rel = 'dinput8.dll' } # Lands in the game root, only if no loader exists.
         $bytes = [IO.File]::ReadAllBytes($f.FullName)
-        $entries += [pscustomobject]@{ Path = $rel; Mode = [byte]($(if ($rel -eq 'SA-People/settings.ini') { 1 } else { 0 })); Offset = [uint64]$fs.Position; Size = [uint64]$bytes.Length }
+        $entries += [pscustomobject]@{ Path = $rel; Mode = [byte]$mode; Offset = [uint64]$fs.Position; Size = [uint64]$bytes.Length }
         $fs.Write($bytes, 0, $bytes.Length)
     }
     $indexAt = [uint64]$fs.Position
@@ -101,9 +111,13 @@ New-Zip $stage $binaryZip
 $src = "$out\$name-source"
 New-Item -ItemType Directory -Force "$src\source" | Out-Null
 Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc
-foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1') { Copy-Item "$root\$f" $src }
+foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini', 'OYUNCU-REHBERI-TR.md') { Copy-Item "$root\$f" $src }
 Copy-Item "$root\assets" "$src\assets" -Recurse
+foreach ($folder in 'loader', 'release-template', 'tests') {
+    if (Test-Path "$root\$folder") { Copy-Item "$root\$folder" "$src\$folder" -Recurse }
+}
 foreach ($f in 'README.md', 'LICENSE.txt') { Copy-Item "$root\release-template\$f" $src }
+Copy-Item "$root\INSTALLER-VALIDATION-TR.md" $src
 New-Zip $src "$out\$name-source.zip"
 
 # Verify: nothing private or third-party may be inside.
@@ -116,6 +130,9 @@ foreach ($zip in $binaryZip, "$out\$name-source.zip") {
     }
     $archive.Dispose()
 }
-Remove-Item $stage, $src -Recurse -Force
+foreach ($cleanup in $stage, $src) {
+    if ([IO.Path]::GetFullPath((Split-Path -Parent $cleanup)) -ne [IO.Path]::GetFullPath($out)) { throw 'Unexpected staging cleanup path' }
+    Remove-Item -LiteralPath $cleanup -Recurse -Force
+}
 if ($bad) { $bad; throw 'Forbidden files found in a package' }
 Get-ChildItem $out -Filter *.zip | Select-Object Name, @{n = 'KB'; e = { [int]($_.Length / 1KB) } }

@@ -12,16 +12,7 @@ bool phoneUp = false, phoneDown = false, phoneLeft = false, phoneRight = false, 
      phoneBack = false;
 unsigned short *phoneControl = nullptr;
 bool phoneOwnsControl = false;
-struct MeetingRun {
-    people::Handle actor{};
-    void *task = nullptr;
-    int blip = -1;
-    DWORD nextSpawn = 0;
-    bool notified = false, waiting = false, spotResolved = false, activityStarted = false;
-    DWORD progressAt = 0, nextResolve = 0;
-    unsigned spawnFails = 0;
-    float bestDistance = 1000000000.0f;
-};
+using MeetingRun = meetings::Run;
 std::unordered_map<unsigned, MeetingRun> meetingRuns;
 std::unordered_map<unsigned, DWORD> nextInvitation;
 void changeLanguage(int direction) {
@@ -76,8 +67,17 @@ void clearMeetingRuns() {
         releaseMeetingActor(item.second);
         if (item.second.blip != -1)
             reinterpret_cast<void(__cdecl *)(int)>(0x587CE0)(item.second.blip);
+        if (!companionOwns(item.first) && !departureOwns(item.first)) releaseActor(item.first);
     }
     meetingRuns.clear();
+}
+void resetMeetingRun(unsigned id) {
+    meetings::forgetRun(meetingRuns, id, [](MeetingRun &run) {
+        releaseMeetingActor(run);
+        if (run.blip != -1)
+            reinterpret_cast<void(__cdecl *)(int)>(0x587CE0)(run.blip);
+    });
+    if (!companionOwns(id) && !departureOwns(id)) releaseActor(id);
 }
 bool visiblePoint(Vec point) {
     Vec screen{};
@@ -132,7 +132,9 @@ void inviteContact(Byte *player) {
         }
     }
     bool mission = reinterpret_cast<bool(__cdecl *)()>(0x464D50)();
-    if (mission || !onFoot(player) || player[0x2F] != 0 || busy(player)) {
+    const bool driveFromCar = phoneState.activity == 2 && drivenCar(player) &&
+                              stoppedCar(drivenCar(player));
+    if (mission || (!onFoot(player) && !driveFromCar) || player[0x2F] != 0 || busy(player)) {
         phoneState.notice = "PHONE_INVITE_SAFE";
         return;
     }
@@ -170,6 +172,8 @@ void inviteContact(Byte *player) {
         phoneState.notice = "PHONE_INVITE_FULL";
         return;
     }
+    // A new appointment must not inherit activityStarted, route or spawn failures from the last.
+    resetMeetingRun(id);
     for (auto &a : registry.appointments)
         if (a.person == id && meetings::active(a))
             a.activity = phoneState.activity;
@@ -216,7 +220,8 @@ void teleportActor(Byte *ped, Vec position) {
 void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
     bool safe = !mission;
     for (auto &a : registry.appointments) {
-        auto &run = meetingRuns[a.person];
+        if (!a.person || a.person > registry.families.size())
+            continue;
         auto &f = registry.families[a.person - 1];
         if (!f.presence.alive && meetings::active(a)) {
             a.state = 4;
@@ -228,13 +233,10 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
                 help(locale::format("PHONE_MEETING_MISSED", dialogue::displayName(f)));
         }
         if (!meetings::active(a)) {
-            releaseMeetingActor(run);
-            if (run.blip != -1) {
-                reinterpret_cast<void(__cdecl *)(int)>(0x587CE0)(run.blip);
-                run.blip = -1;
-            }
+            resetMeetingRun(a.person);
             continue;
         }
+        auto &run = meetingRuns[a.person];
         Vec place{a.x, a.y, a.z};
         if (!run.spotResolved && safe && player[0x2F] == 0 &&
             distance2(position(player), place) < 14400 && due(GetTickCount(), run.nextResolve)) {
@@ -293,10 +295,13 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
             auto manager = taskManager(ped);
             if (!manager)
                 continue;
+            retainActor(actor, a.person);
             if (!(run.actor == actor)) {
                 releaseMeetingActor(run);
                 run.actor = actor;
                 run.waiting = false;
+                run.progressAt = 0;
+                run.bestDistance = 1000000000.0f;
             }
             const auto actorPosition = position(ped);
             const float currentDistance = distance2(actorPosition, place);
@@ -324,15 +329,27 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
             }
             if (run.task && at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12) != run.task)
                 run.task = nullptr;
-            float distance = distance2(position(ped), place);
+            // Once CJ is at the venue the contact walks up to him, not to a fixed spot he may
+            // never stand on (a contact waiting a few metres away used to stall the meeting).
+            auto car = drivenCar(player);
+            const bool fromCar = a.activity == 2 && car && stoppedCar(car) &&
+                                 freeSeat(car) >= 0;
+            const bool playerAtVenue = ((a.activity != 2 && onFoot(player)) || fromCar) &&
+                                       distance2(position(player), place) <= 225;
+            const Vec goal = playerAtVenue ? position(player) : place;
+            float distance = distance2(position(ped), goal);
+            if (run.task && run.waiting && distance > 25) {
+                releaseMeetingActor(run);
+                run.waiting = false;
+            }
             if (!busy(ped) && !primaryOccupied(ped) && !run.task &&
-                std::abs(position(ped).z - place.z) <= 2) {
+                std::abs(position(ped).z - goal.z) <= 2.5f) {
                 if (distance > 9) {
                     auto task = reinterpret_cast<void *(__cdecl *)(unsigned)>(0x61A5A0)(0x60);
                     if (task) {
                         reinterpret_cast<void(__thiscall *)(void *, int, const Vec &, float, float,
                                                             float, bool, int, bool)>(0x66EA30)(
-                            task, 4, place, 2.0f, 3.0f, 2.0f, false, -1, true);
+                            task, 4, goal, 2.0f, 3.0f, 2.0f, false, -1, true);
                         setTask(manager, task, 3);
                         run.task = task;
                         run.waiting = false;
@@ -348,14 +365,24 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
                     }
                 }
             }
-            if (distance <= 16 && !run.notified) {
+            if (distance2(position(ped), place) <= 16 && !run.notified) {
                 run.notified = true;
                 help(locale::format("PHONE_ARRIVED", dialogue::displayName(f)));
             }
-            bool together = onFoot(player) && std::abs(position(ped).z - place.z) <= 2 &&
-                            std::abs(position(player).z - place.z) <= 2 && distance <= 49 &&
-                            distance2(position(player), place) <= 64 &&
-                            distance2(position(player), position(ped)) <= 25 && visibleTarget(ped);
+            // A drive date may start with CJ waiting in a stopped car beside the contact.
+            const float apart = distance2(position(player), position(ped));
+            const bool validDrive = a.activity != 2 || socialcontext::driveReady(
+                car != nullptr, car && at<int>(reinterpret_cast<std::uintptr_t>(car) + 0x590) == 0,
+                fromCar, car && freeSeat(car) >= 0);
+            if (a.activity == 2 && !validDrive && distance2(position(player), place) < 1600 &&
+                due(clock, run.nextHint)) {
+                help("ACT_DRIVE_CAR_REQUIRED");
+                run.nextHint = clock + 20000;
+            }
+            bool together = validDrive && (onFoot(player) || fromCar) &&
+                            std::abs(position(ped).z - position(player).z) <= 2.5f &&
+                            distance2(position(player), place) <= (fromCar ? 1600.0f : 400.0f) &&
+                            apart <= (fromCar ? 144.0f : 25.0f) && visibleTarget(ped);
             if (a.state == 2 && together && !run.activityStarted) {
                 releaseMeetingActor(run);
                 run.activityStarted = beginCompanion(a, f, actor);
@@ -403,6 +430,55 @@ void captureControl() {
     }
     // Swallow the press so the new key does not also trigger its old meaning this frame.
     phoneUp = phoneDown = phoneLeft = phoneRight = phoneEnter = phoneBack = true;
+}
+// Phone → contact → Ask a favor (Favors.h). Effects apply at once; the friend texts back.
+void askFavor(Byte *player, unsigned id) {
+    if (auto reason = favors::refusal(registry, id)) {
+        phoneState.notice = reason;
+        return;
+    }
+    auto perk = favors::perk(registry.families[id - 1]);
+    std::string done = std::string(favors::label(perk)) + "_DONE";
+    if (perk == favors::Perk::Repair) {
+        auto car = drivenCar(player);
+        if (!car) {
+            phoneState.notice = "FAVOR_NEED_CAR";
+            return;
+        }
+        auto &health = *reinterpret_cast<float *>(car + 0x4C0);
+        health = std::max(health, 1000.0f);
+    } else if (perk == favors::Perk::Heal) {
+        auto &health = *reinterpret_cast<float *>(player + 0x540);
+        health = std::min(std::max(health, *reinterpret_cast<float *>(player + 0x544)),
+                          health + 40.0f);
+    } else if (perk == favors::Perk::Armor) {
+        auto &armor = *reinterpret_cast<float *>(player + 0x548);
+        armor = std::max(armor, 50.0f);
+    } else if (perk == favors::Perk::Wanted) {
+        auto wanted = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E230)(0);
+        unsigned level = wanted ? *reinterpret_cast<unsigned *>(wanted + 0x2C) : 0;
+        if (!level || level > 6) {
+            phoneState.notice = "FAVOR_NO_WANTED";
+            return;
+        }
+        reinterpret_cast<void(__thiscall *)(Byte *, int)>(0x562470)(wanted,
+                                                                   static_cast<int>(level) - 1);
+    } else {
+        auto money = playerMoney(player);
+        unsigned amount = favors::cash(registry, id);
+        if (!money || *money < 0 || *money > 999999999 - static_cast<int>(amount)) {
+            phoneState.notice = "FAVOR_NO";
+            return;
+        }
+        *money += static_cast<int>(amount);
+        done = locale::format("FAVOR_CASH_DONE", std::to_string(amount));
+    }
+    favors::granted(registry, id, perk);
+    phoneState.notice = done;
+    dirty = true;
+    panelInvalid = true;
+    save();
+    log("FAVOR " + std::string(favors::label(perk)) + " identity=" + std::to_string(id));
 }
 void openCompose(bool call) {
     phoneState.page = phone::Page::Compose;
@@ -469,12 +545,15 @@ void processPhone(Byte *player) {
         return;
     }
     if (page == phone::Page::Compose) {
+        const auto available = phonedialogue::options(registry, phoneState.person);
+        const auto count = static_cast<unsigned>(available.size());
+        phoneState.cursor %= count;
         if (up)
-            phoneState.cursor = (phoneState.cursor + 5) % 6;
+            phoneState.cursor = (phoneState.cursor + count - 1) % count;
         if (down)
-            phoneState.cursor = (phoneState.cursor + 1) % 6;
+            phoneState.cursor = (phoneState.cursor + 1) % count;
         if (enter) {
-            unsigned choice = phoneState.cursor, id = phoneState.person;
+            unsigned choice = available[phoneState.cursor], id = phoneState.person;
             openThread(id);
             sendPhoneChoice(id, choice, false);
         }
@@ -482,7 +561,7 @@ void processPhone(Byte *player) {
     }
     if (page == phone::Page::Actions || page == phone::Page::Activities ||
         page == phone::Page::Outing) {
-        unsigned count = page == phone::Page::Actions ? (companionOwns(phoneState.person) ? 4u : 3u)
+        unsigned count = page == phone::Page::Actions ? (companionOwns(phoneState.person) ? 5u : 4u)
                          : page == phone::Page::Activities ? 4u
                                                            : 3u;
         phoneState.cursor %= count;
@@ -492,6 +571,7 @@ void processPhone(Byte *player) {
             phoneState.cursor = (phoneState.cursor + 1) % count;
         if (enter) {
             if (page == phone::Page::Outing) {
+                closePhone(); // Let the spoken answer appear in the world, not behind the phone.
                 companionChoice(phoneState.cursor);
                 return;
             }
@@ -519,6 +599,10 @@ void processPhone(Byte *player) {
                 return;
             }
             if (action == 3) {
+                askFavor(player, phoneState.person);
+                return;
+            }
+            if (action == 4) {
                 cancelCompanion(true);
                 save();
                 phoneState.notice = "ACT_CANCELLED";
@@ -714,4 +798,3 @@ void processPhone(Byte *player) {
         phoneState.cursor = 0;
     }
 }
-

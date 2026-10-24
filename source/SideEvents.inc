@@ -11,6 +11,7 @@ struct SmallEvent {
 bool ambushActive();
 void endAmbush();
 bool startAmbush(Pool *pool, Byte *player, unsigned kind);
+void endStandoff(bool restore);
 
 struct DelayedFlee {
     people::Handle owner{};
@@ -33,6 +34,7 @@ void cancelSmallEvent() {
 void cancelEvents() {
     clearEventBlip();
     endAmbush();
+    endStandoff(true);
     cancelLife();
     cancelRoadside();
     cancelSmallEvent();
@@ -105,7 +107,10 @@ bool offerSmallEvent(Pool *pool, Byte *player, encounters::Kind preferred) {
         if (!id || !eligible(ped, player) || !onFoot(ped) || ped[0x2F] != 0 || busy(ped) ||
             primaryOccupied(ped) || armed(ped) || !canFight(ped))
             continue;
-        const auto &social = registry.families[id - 1].social;
+        const auto &eventPerson = registry.families[id - 1];
+        if (!socialprogress::availableForEvent(eventPerson.daily.busyUntil, registry.worldMinutes,
+                hasAppointment(id), false, eventPerson.social.romance)) continue;
+        const auto &social = eventPerson.social;
         if (social.anger >= 30 || social.robbed || social.cutOff ||
             (social.events & encounters::bit(preferred)))
             continue;
@@ -200,8 +205,11 @@ bool converseSmallEvent(Byte *player) {
                ? "Cok sag ol CJ! Ben " + people::generate(f)[0].name + ". Yetismemi sagladin."
                : "Tabelalari takip edecegim. Ben " + people::generate(f)[0].name +
                      ". Sag ol CJ, iyi ki sordum.");
-    if (helped)
+    if (helped) {
         reputation(1);
+        later::helped(registry, f.id);
+    }
+    justMet(f);
     dirty = true;
     panelInvalid = true;
     cancelSmallEvent();
@@ -223,9 +231,9 @@ bool trySideEvent(Pool *pool, Byte *player, bool manual) {
     }
     // Two in five automatic events are sudden incidents rather than a request for help.
     if (!manual && onFoot(player) && people::mix(GetTickCount() * 31) % 5 < 2) {
-        unsigned first = people::mix(GetTickCount()) % 3;
-        for (unsigned i = 0; i < 3; ++i)
-            if (startAmbush(pool, player, 1 + (first + i) % 3)) {
+        unsigned first = people::mix(GetTickCount()) % 4;
+        for (unsigned i = 0; i < 4; ++i)
+            if (startAmbush(pool, player, 1 + (first + i) % 4)) {
                 eventDirector.started(GetTickCount());
                 return true;
             }
@@ -339,8 +347,10 @@ void robPerson(Pool *pool, Byte *player) {
     live.last = now;
     live.next = now + 60000;
     reputation(-2);
+    companionWitness(f.id, socialcontext::Witness::Provoke);
     discoverNetwork(f.id);
     network::news(registry, f.id, true, true);
+    later::robbed(registry, f.id);
     nextSpeech = now + 3000;
     dirty = true;
     panelInvalid = true;

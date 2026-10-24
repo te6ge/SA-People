@@ -142,6 +142,16 @@ int main() {
                              std::to_wstring(page) + L".png");
                 if (!render(scene, phone::layout(width, height), size[0], size[1], path, png))
                     return 2;
+                if (page == 11) {
+                    auto contextual = registry;
+                    contextual.letters.clear();
+                    contextual.post(1, "MAIL_LATER_THANKS1");
+                    auto contextScene = phone::compose(contextual, state, "14:35");
+                    auto contextPath = std::filesystem::path("preview") /
+                        (L"phone-context-" + code + L"-" + std::to_wstring(size[0]) + L".png");
+                    if (!render(contextScene, phone::layout(width, height), size[0], size[1], contextPath, png))
+                        return 2;
+                }
             }
             auto stats = vitals::compose(-24, {810, 650, 270, 500, 640}, width, height);
             auto statsPath = std::filesystem::path("preview") /

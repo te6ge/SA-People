@@ -1,4 +1,4 @@
-# SA People 0.12.5 (beta)
+# SA People 0.13.3 (beta)
 
 A single-player social mod for **GTA San Andreas PC, version 1.0 US** (`gta_sa.exe`, 14,383,616 bytes).
 Meet the pedestrians of San Andreas, learn who they are, keep a phone book, arrange meetings,
@@ -11,8 +11,8 @@ message and call them, help strangers, make enemies, fall in love. People rememb
 
 - GTA San Andreas PC **1.0 US**. Other executables (1.01, 3.0, Steam, Rockstar Launcher, SA-MP, open.mp)
   are refused on purpose: the mod patches fixed addresses.
-- An ASI loader such as [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)
-  (`vorbisFile.dll` or `dinput8.dll` next to `gta_sa.exe`). It is **not** included.
+- An ASI loader. [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) (MIT) is included:
+  the setup installs it as `dinput8.dll` only when the game folder has no loader yet.
 - Windows 10/11. No other dependencies, no internet, no AI model.
 
 ## Install
@@ -24,7 +24,8 @@ message and call them, help strangers, make enemies, fall in love. People rememb
 3. Start the game.
 
 Manual install: copy `SA-People.asi` beside `gta_sa.exe` and the `SA-People` folder next to it.
-Your own `settings.ini`, `people.dat`, `audio/` and `backgrounds/` are never overwritten.
+Existing `settings.ini` and `people.dat` are kept. Bundled sound and picture files are updated;
+additional files with other names are kept. Existing `dinput8.dll` is never replaced.
 
 Uninstall: run `Uninstall.cmd` (keeps your relationships file) or delete `SA-People.asi`.
 
@@ -66,6 +67,8 @@ The mod pauses itself during story missions and cutscenes.
 - Sudden incidents: pickpockets, muggings in progress, hotheads looking for a fight.
 - Help encounters (dead battery, directions, bus fare), passenger rides with fares,
   begging and street requests, night offers, house visits.
+- Delayed consequences: people you helped text you (or send money) hours later; someone you
+  robbed may send people after you.
 - Honor instead of respect on the stats panel. Killing someone you know can start a blood feud.
 - Mod languages: Türkçe, English, Русский, Español (phone → Settings). The game's own language
   option in the main menu is untouched.

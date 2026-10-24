@@ -7,6 +7,7 @@
 #include <functional>
 #include <cmath>
 #include <set>
+#include "SocialProgress.h"
 
 // Private DirectShow graphs; never change the game's mixer or device volume.
 namespace socialaudio {
@@ -22,8 +23,8 @@ class Player {
     std::filesystem::path root;
     std::function<void(const std::string &)> logger;
     unsigned voiceLevel = 45, honorLevel = 10, master = 127;
-    DWORD honorAt = 0, lastHonor = 0;
-    int queued = 0;
+    DWORD lastHonor = 0;
+    socialprogress::HonorSounds queued;
     std::set<std::wstring> missing;
     bool enabled = true, comReady = false;
     static bool due(DWORD now, DWORD end) {
@@ -122,7 +123,7 @@ class Player {
     void stop() {
         close(voice);
         close(honor);
-        queued = 0;
+        queued.pending.clear();
     }
     void update(unsigned gameVolume) {
         unsigned next = std::min(127u, gameVolume);
@@ -138,15 +139,14 @@ class Player {
             close(voice);
         if (honor.graph && due(now, honor.until))
             close(honor);
-        if (queued && due(now, honorAt)) {
-            int cue = queued;
-            queued = 0;
-            if (!lastHonor || now - lastHonor >= 8000) {
-                if (play(honor, cue > 0 ? L"high.mp3" : L"low.mp3", honorLevel))
-                    lastHonor = now;
-            }
+        const int cue = queued.take(!voice.graph && !honor.graph &&
+            (!lastHonor || now - lastHonor >= 2500));
+        if (cue && play(honor, cue > 0 ? L"high.mp3" : L"low.mp3", honorLevel)) {
+            lastHonor = now;
+            if (logger) logger(cue > 0 ? "AUDIO honor up" : "AUDIO honor down");
         }
     }
+
     void speak(const wchar_t *name) {
         if (!voice.graph)
             play(voice, name, voiceLevel);
@@ -154,8 +154,7 @@ class Player {
     void reputation(int direction) {
         if (!direction)
             return;
-        queued = direction;
-        honorAt = voice.graph ? voice.until + 200 : GetTickCount() + 200;
+        queued.push(direction);
     }
 };
 } // namespace socialaudio

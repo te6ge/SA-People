@@ -196,11 +196,16 @@ inline bool valid(const Appointment &a, unsigned count) {
 struct Connection {
     unsigned a = 0, b = 0, kind = 0; // 0 friend, 1 sibling, 2 rival
 };
+struct Later {
+    unsigned person = 0, kind = 0, source = 0; // 1 thanks, 2 gift, 3 revenge, 4 favor cooldown
+    std::uint64_t due = 0;                     // World minutes.
+};
 struct Registry {
     std::vector<Family> families;
     std::vector<Appointment> appointments;
     std::vector<Connection> connections;
     std::vector<Letter> letters;
+    std::vector<Later> later;
     std::uint64_t worldMinutes = 0;
     unsigned nextLetter = 1;
     int honor = 0;
@@ -245,6 +250,10 @@ struct Registry {
             if (m.source)
                 keep.insert(m.source);
         }
+        for (const auto &l : later) {
+            keep.insert(l.person);
+            keep.insert(l.source);
+        }
         for (const auto &f : families) {
             if (f.origin)
                 keep.insert(f.origin);
@@ -271,7 +280,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 11\n"
+        out << "SAPEOPLE 13\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -349,6 +358,15 @@ struct Registry {
                 << ' ' << m.outgoing << ' ' << m.unread << ' ' << m.call << ' '
                 << std::quoted(m.body) << '\n';
         }
+        if (later.size() > 64)
+            throw std::runtime_error("Too many consequences");
+        out << "LATER " << later.size() << '\n';
+        for (const auto &l : later) {
+            if (!l.person || l.person > families.size() || l.source > families.size() ||
+                !l.kind || l.kind > 5 || l.due > 1000000000)
+                throw std::runtime_error("Invalid consequence");
+            out << l.person << ' ' << l.kind << ' ' << l.source << ' ' << l.due << '\n';
+        }
         if (!out)
             throw std::runtime_error("Write failed");
     }
@@ -357,7 +375,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 11 || count > MaxFamilies)
+            version > 13 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -526,6 +544,20 @@ struct Registry {
                 m.unread = unread != 0;
                 m.call = call != 0;
                 r.letters.push_back(m);
+            }
+        }
+        if (version >= 12) {
+            std::string marker;
+            unsigned size;
+            if (!(in >> marker >> size) || marker != "LATER" || size > 64)
+                throw std::runtime_error("Corrupt consequences");
+            for (unsigned i = 0; i < size; ++i) {
+                Later l;
+                if (!(in >> l.person >> l.kind >> l.source >> l.due) || !l.person ||
+                    l.person > count || l.source > count || !l.kind || l.kind > (version >= 13 ? 5u : 4u) ||
+                    l.due > 1000000000)
+                    throw std::runtime_error("Corrupt consequence");
+                r.later.push_back(l);
             }
         }
         in >> std::ws;

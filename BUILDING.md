@@ -5,7 +5,11 @@ Run Build.cmd from the project folder. It builds SA-People.asi, the pure logic t
 layout previews, AudioCheck.exe and GlyphCheck.exe. Build.cmd runs the pure tests;
 hardware-dependent audio and graphics checks are separate programs.
 
-The audio folder must contain the 46 supplied CJ clips and high.mp3 / low.mp3.
+Build.cmd also builds the Windows installer stub with an embedded asInvoker manifest.
+Run MakeRelease.ps1, then `python tests/InstallerTests.py` to verify both packaged
+installers in disposable fake game folders. See INSTALLER-VALIDATION-TR.md for scope.
+
+Audio assets are optional for a source-only build. The current distribution has 80 audio files, including high.mp3 and low.mp3.
 Tests check their names. Audio assets are separate from the program source;
 this project does not assign rights to the original game recordings.
 
@@ -15,11 +19,11 @@ not be included in a distribution. The loader must support InitializeASI.
 
 ## Data and localization
 
-Save format: SAPEOPLE 11, reading versions 1 through 10 as well. Relationships,
+Current save format: SAPEOPLE 13, reading versions 1 through 12 as well. Relationships,
 resentment, learned information, event memory and up to eight appointments persist.
 Appointments use foreground gameplay time; menus and missions suspend their timers.
 The upgrade creates people.pre-0.12.dat. Restoring an older ASI also requires restoring
-its matching data backup; older builds cannot read format 11.
+its matching data backup; builds predating V13 cannot read format 13.
 
 V11 adds a sparse LIFE section for stable home/work/leisure anchors, completed
 outings, conversation memories and invitation/remote-reaction budgets, plus a MAIL
@@ -111,4 +115,3 @@ saved identity and model. Loaded actors walk using the game's node routes; unloa
 actors are streamed outside the camera view before walking to the meeting point.
 Mission-owned actors are not moved. Arrival is credited only when both participants
 are physically close and visible; cancellation or expiry removes owned tasks and blips.
-

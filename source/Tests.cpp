@@ -7,6 +7,11 @@
 #include "ModernMenu.h"
 #include "Life.h"
 #include "Vitals.h"
+#include "Later.h"
+#include "Favors.h"
+#include "MeetingRuntime.h"
+#include "SocialContext.h"
+#include "NativeTalk.h"
 #include <filesystem>
 #include <iostream>
 #include <set>
@@ -66,7 +71,7 @@ int main() {
     street::Reply soundReply;
     soundReply.reaction = dialogue::Reaction::Friendly;
     assert(socialaudio::honorCue(street::Action::Greet, 0, 7, soundReply) == 0);
-    assert(socialaudio::honorCue(street::Action::Provoke, 7, -9, soundReply) == -1);
+    assert(socialaudio::honorCue(street::Action::Provoke, 7, -9, soundReply) == 0);
     soundReply.newJournal = true;
     assert(socialaudio::honorCue(street::Action::Greet, 7, 20, soundReply) == 1);
     for (auto action : {street::Action::Greet, street::Action::Provoke})
@@ -470,7 +475,7 @@ int main() {
     assert(director.due());
     director.started(17);
     auto wait = director.next - director.clock;
-    assert(wait >= 90000 && wait <= 180000 && !director.due());
+    assert(wait >= 55000 && wait <= 110000 && !director.due());
     people::Family tense{3, false, 0, {}, {}};
     tense.social.anger = 70;
     tense.social.trust = -30;
@@ -848,4 +853,258 @@ int main() {
                "arrest on the third provocation, V8 persistence.\n";
     }
 #include "SocialTests.inc"
+    {
+        people::Registry book;
+        auto &helper = book.create(false);
+        helper.social.known = people::Name;
+        helper.social.journal = true;
+        helper.social.trust = 50;
+        auto &victim = book.create(true);
+        book.worldMinutes = 100;
+        assert(later::schedule(book, helper.id, later::Gift) &&
+               !later::schedule(book, helper.id, later::Gift) && book.later.size() == 1);
+        assert(!later::schedule(book, 9, later::Thanks) && !later::schedule(book, 1, 4));
+        assert(later::schedule(book, victim.id, later::Revenge, victim.id));
+        people::Later item;
+        assert(!later::next(book, true, item)); // Nothing is due yet.
+        std::stringstream saved;
+        book.write(saved);
+        auto loaded = people::Registry::read(saved);
+        assert(loaded.later.size() == 2 && loaded.later[0].kind == later::Gift &&
+               loaded.later[1].source == victim.id && loaded.later[1].due == book.later[1].due);
+        loaded.worldMinutes += 1300; // Past both delays.
+        assert(later::next(loaded, false, item) && item.kind == later::Gift &&
+               loaded.later.size() == 1);
+        unsigned gift = 0;
+        assert(later::deliver(loaded, item, gift) && gift >= 40 && gift <= 150 &&
+               loaded.letters.back().body == "MAIL_LATER_GIFT" &&
+               loaded.families[0].social.trust == 54);
+        assert(!later::next(loaded, false, item)); // Revenge waits for a safe moment.
+        assert(later::next(loaded, true, item) && item.kind == later::Revenge);
+        loaded.later.push_back(item);
+        loaded.worldMinutes = item.due + later::RevengeExpiry + 1;
+        assert(!later::next(loaded, true, item) && loaded.later.empty()); // Expired.
+        loaded.families[0].social.robbed = 1; // Wronged since: no thank-you arrives.
+        assert(!later::deliver(loaded, {1, later::Thanks, 0, 0}, gift));
+        std::stringstream v11("SAPEOPLE 11\n0\nMEETINGS 0\nWORLD 0 0 0\nLIFE 0 1 0\nMAIL 0\n");
+        assert(people::Registry::read(v11).later.empty());
+        std::cout << "PASS: delayed thanks, gifts and revenge; V12 persistence; expiry.\n";
+    }
+    {
+        people::Registry book;
+        auto &mate = book.create(false);
+        assert(std::string(favors::refusal(book, mate.id)) == "FAVOR_UNKNOWN_JOB");
+        mate.social.known = people::Name | people::Job;
+        mate.social.trust = 20;
+        assert(std::string(favors::refusal(book, mate.id)) == "FAVOR_LOW_TRUST");
+        mate.social.trust = 60;
+        assert(!favors::refusal(book, mate.id));
+        auto perk = favors::perk(mate);
+        favors::granted(book, mate.id, perk);
+        assert(std::string(favors::refusal(book, mate.id)) == "FAVOR_COOLDOWN" &&
+               book.letters.back().body == std::string(favors::label(perk)) + "_MSG");
+        assert(later::pending(book) == 0 && book.later.size() == 1);
+        std::stringstream saved;
+        book.write(saved);
+        auto loaded = people::Registry::read(saved);
+        assert(later::cooling(loaded, mate.id));
+        people::Later item;
+        loaded.worldMinutes += 1441;
+        assert(!later::next(loaded, true, item) && loaded.later.empty() &&
+               !favors::refusal(loaded, mate.id)); // A day later the cooldown is gone.
+        unsigned perks[5] = {};
+        for (unsigned i = 0; i < 40; ++i)
+            ++perks[static_cast<unsigned>(favors::perk(book.create(i % 2 != 0)))];
+        assert(perks[0] && perks[4]);
+        auto amount = favors::cash(book, 1);
+        assert(amount >= 50 && amount <= 150);
+        loaded.families[0].social.robbed = 1;
+        assert(std::string(favors::refusal(loaded, 1)) == "FAVOR_NO");
+        auto &woman = loaded.create(true);
+        woman.presence.alive = true;
+        for (unsigned id = 0; id < 12; ++id) // Ordinary women never proposition CJ.
+            assert(!life::nightCandidate(loaded.create(true), 5, 23, true, 25));
+        assert(life::nightCandidate(woman, 22, 23, true, 25));
+        std::cout << "PASS: job favors, trust gate, day cooldown persisted in V12.\n";
+    }
+    {
+        people::Registry book;
+        auto &pal = book.create(false);
+        pal.presence.alive = true;
+        pal.social.known = people::Name;
+        pal.social.journal = true;
+        pal.social.trust = 40;
+        const char *reply = nullptr;
+        std::vector<std::string> replies;
+        for (unsigned i = 0; i < 7; ++i) {
+            book.worldMinutes += 6;
+            reply = nullptr;
+            assert(phonedialogue::send(book, pal.id, 0, false, 600, &reply) == std::string());
+            replies.push_back(reply ? reply : "");
+        }
+        assert(replies[0].rfind("TXT_REPLY_HELLO_", 0) == 0 &&
+               replies[1].rfind("TXT_REPLY_REPEAT_", 0) == 0 &&
+               replies[3].rfind("TXT_REPLY_SPAM_", 0) == 0 && replies[6].empty() &&
+               pal.social.anger > 0); // Repeats, then annoyance, then silence.
+        auto &stood = book.create(true);
+        stood.presence.alive = true;
+        stood.social.known = people::Name;
+        stood.social.journal = true;
+        stood.social.anger = 30; // Provoked at the meeting.
+        book.worldMinutes += 6;
+        reply = nullptr;
+        assert(phonedialogue::send(book, stood.id, 1, false, 600, &reply) == std::string() &&
+               !reply && book.letters.back().outgoing);
+        book.worldMinutes += 6;
+        assert(phonedialogue::send(book, stood.id, 3, false, 600, &reply) == std::string() &&
+               reply); // An apology still gets an answer.
+        reply = "stale reply";
+        assert(std::string(phonedialogue::send(book, stood.id, 0, false, 600, &reply)) ==
+                   "TXT_WAIT" && !reply);
+        std::cout << "PASS: repeated texts, spam silence, provoked contacts leave texts unread.\n";
+    }
+    {
+        people::Registry book;
+        auto &pal = book.create(false);
+        pal.presence = {7, 4, 10, 20, 3, 0, 100, 0, true, true};
+        pal.social.journal = true;
+        pal.social.known = people::Name;
+        pal.social.trust = 70;
+        std::unordered_map<unsigned, meetings::Run> runs;
+        unsigned releases = 0;
+        // Same contact, four successive activities: fresh route and start state each time.
+        for (unsigned activity = 0; activity < 4; ++activity) {
+            assert(meetings::schedule(book, pal.id, 10, 20, 3, 0));
+            meetings::forgetRun(runs, pal.id, [&](meetings::Run &) { ++releases; });
+            auto &visit = runs[pal.id];
+            assert(!visit.activityStarted && !visit.spotResolved && !visit.waiting &&
+                   !visit.spawnFails && visit.blip == -1 && visit.task == nullptr);
+            auto &appointment = book.appointments[0];
+            appointment.activity = activity;
+            assert(meetings::step(appointment, 250, true));
+            visit.activityStarted = visit.spotResolved = visit.waiting = true;
+            visit.spawnFails = 9;
+            visit.blip = 42;
+            assert(socialworld::complete(book, appointment, pal, true, false));
+            assert(!socialworld::complete(book, appointment, pal, true, false));
+        }
+        assert(releases == 3 && pal.daily.outings == 4 && pal.meetings == 4);
+        meetings::forgetRun(runs, pal.id, [&](meetings::Run &) { ++releases; });
+        meetings::forgetRun(runs, pal.id, [&](meetings::Run &) { ++releases; });
+        assert(runs.empty() && releases == 4);
+
+        street::Encounter helpTalk{pal.id};
+        street::rejectBusy(helpTalk);
+        street::continueAfterHelp(helpTalk, pal.id);
+        assert(street::mayGreet(helpTalk) && !helpTalk.ended && helpTalk.turns == 1);
+        const auto continued = street::exchange(pal, helpTalk, street::Action::Greet, false);
+        assert(!continued.line.empty() && continued.cue != street::Cue::Greeting);
+
+        assert(phonedialogue::answers(pal, 0));
+        socialworld::meetingArgument(pal);
+        assert(!phonedialogue::answers(pal, 0) && !phonedialogue::answers(pal, 4) &&
+               phonedialogue::answers(pal, 3));
+        pal.social.cutOff = 1;
+        assert(!phonedialogue::answers(pal, 3));
+        pal.social.cutOff = 0;
+        pal.presence.alive = false;
+        assert(!phonedialogue::answers(pal, 3));
+
+        socialworld::Travel drive;
+        drive.sample({0, 0, 0}, false, 20);
+        drive.sample({100, 0, 0}, true, 20);
+        for (unsigned x = 110; x <= 600; x += 10)
+            drive.sample({static_cast<float>(x), 0, 0}, true, 20);
+        assert(drive.distance == 500);
+        drive.sample({2000, 0, 0}, true, 20); // A teleport is not a drive.
+        assert(drive.distance == 500);
+        drive.sample({2010, 0, 0}, false, 20);
+        drive.sample({2020, 0, 0}, true, 20);
+        assert(drive.distance == 500); // Neither alone nor rejoining earns distance.
+        socialworld::Travel walk;
+        walk.sample({0, 0, 0}, true, 5);
+        for (unsigned x = 1; x <= 150; ++x)
+            walk.sample({static_cast<float>(x), 0, 0}, true, 5);
+        assert(walk.distance == 150);
+        std::cout << "PASS: repeated appointment cleanup, four activity rewards, help continuation, "
+                     "queued-reply eligibility, measured drive/walk distance and teleport rejection.\n";
+    }
+    {
+        people::Registry contextBook;
+        auto &contactPerson = contextBook.create(true);
+        contactPerson.social.known = people::Name;
+        contactPerson.social.journal = true;
+        contactPerson.social.trust = 60;
+        contactPerson.presence = {93, 5, 0, 0, 13, 0, 100, 0, true, true};
+        assert(std::string(phonedialogue::label(contextBook, 1, 0)) == "TXT_HELLO_AGAIN");
+        const char *incoming[] = {"MAIL_LATER_THANKS1", "MAIL_GOOD_OUTING_1", "MAIL_FAMILY_PLANS", "MAIL_VISIT_0"};
+        const unsigned expected[] = {6, 7, 8, 10};
+        for (unsigned i = 0; i < 4; ++i) {
+            contextBook.worldMinutes += 10;
+            contextBook.post(1, incoming[i]);
+            auto opts = phonedialogue::options(contextBook, 1);
+            assert(opts.front() == expected[i]);
+            std::set<unsigned> unique(opts.begin(), opts.end());
+            assert(unique.size() == opts.size());
+            const char *answer = nullptr;
+            assert(std::string(phonedialogue::send(contextBook, 1, opts.front(), false, 900, &answer)).empty());
+            assert(answer && std::string(answer).rfind("TXT_ACK_", 0) == 0);
+            assert(contextBook.letters.back().outgoing &&
+                   contextBook.letters.back().body == phonedialogue::choices[expected[i]]);
+        }
+        contextBook.post(1, "MAIL_INVITATION", false, 2);
+        auto inviteOpts = phonedialogue::options(contextBook, 1);
+        assert(inviteOpts.front() == 9 && std::set<unsigned>(inviteOpts.begin(), inviteOpts.end()).size() == inviteOpts.size());
+        assert(meetings::schedule(contextBook, 1, 20, 20, 13, 0));
+        auto &date = contextBook.appointments.back();
+        date.state = 2;
+        assert(socialworld::complete(contextBook, date, contactPerson, true, false));
+        assert(!socialworld::spontaneous(contextBook, contactPerson, 900));
+        assert(later::schedule(contextBook, 1, later::Visit));
+        std::stringstream v13;
+        contextBook.write(v13);
+        assert(v13.str().rfind("SAPEOPLE 13", 0) == 0);
+        auto reopened = people::Registry::read(v13);
+        assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
+        reopened.worldMinutes = reopened.later[0].due;
+        people::Later visitMessage;
+        assert(later::next(reopened, false, visitMessage));
+        unsigned noCash = 0;
+        assert(later::deliver(reopened, visitMessage, noCash) && !noCash &&
+               reopened.letters.back().body.rfind("MAIL_VISIT_", 0) == 0);
+        std::stringstream legacyData;
+        reopened.write(legacyData);
+        auto legacyString = legacyData.str();
+        legacyString.replace(0, 11, "SAPEOPLE 12");
+        std::stringstream legacyInput(legacyString);
+        auto legacyRead = people::Registry::read(legacyInput);
+        assert(legacyRead.families[0].social.known == contactPerson.social.known);
+        using namespace socialcontext;
+        assert(passengerDoor(0) == 8 && passengerDoor(1) == 11 && passengerDoor(2) == 9);
+        assert(passengerDoor(-1) == -1 && passengerDoor(3) == -1 && passengerDoor(0, true) == 11);
+        assert(driveReady(true, true, true, true));
+        assert(!driveReady(false, true, true, true) && !driveReady(true, false, true, true) &&
+               !driveReady(true, true, false, true) && !driveReady(true, true, true, false));
+        Topics topicBag;
+        std::set<unsigned> topicsSeen;
+        for (unsigned i = 0; i < 12; ++i) topicsSeen.insert(topicBag.take(12, 31));
+        assert(topicsSeen.size() == 12 && topicBag.take(12, 31) == 12);
+        TalkChoices questions;
+        assert(questions.use(0, 10000) == 1 && questions.use(0, 11000) == 0);
+        assert(questions.use(1, 11000) == 0 && questions.use(1, 14000) == 1);
+        assert(questions.use(0, 18000) == 2 && questions.use(0, 26000) == 3);
+        assert(weather(0.8f, 0.9f, 1, 0, 12) == Weather::Rain);
+        assert(weather(0, 0.8f, 1, 0, 12) == Weather::Fog);
+        assert(weather(0, 0, 1, 0, 12) == Weather::Sun);
+        assert(weather(0, 0, 1, 0, 23) == Weather::Quiet);
+        assert(!witnessCancels(Witness::Help) && witnessCancels(Witness::Provoke) &&
+               witnessCancels(Witness::Violence) && witnessCancels(Witness::Killing));
+        assert(honorTone(60) == 1 && honorTone(-60) == -1 && honorTone(0) == 0);
+        std::cout << "PASS: contextual response menus, known-contact greeting, outing invitation suppression, "
+                     "V13 delayed visit text and V12 import, passenger door safety, drive gates, "
+                     "non-repeating topics, repeatable talk cooldowns, weather and witness policies.\n";
+    }
+
+#include "HonorTests.inc"
+#include "NativeTalkTests.inc"
 }

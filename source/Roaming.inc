@@ -6,6 +6,7 @@ struct LiveTalk {
     bool left = false;
 };
 std::unordered_map<unsigned, LiveTalk> liveTalks;
+void justMet(people::Family &f, people::Handle h = {});
 struct Gesture {
     people::Handle handle;
     void *task;
@@ -71,34 +72,68 @@ bool nativeConversation(Byte *ped) {
            (ped == at<Byte *>(0x9691C0) || *reinterpret_cast<int *>(ped + 0x598) < 4);
 }
 // Native ped-to-player chats (dealer offers with the Y/N prompt) give way to the mod's own
-// conversation for peds that have an identity. Clearing the participant lets the game's own
-// update end the chat; the state is only forced idle if it is still stuck afterwards.
+// conversation for peds that have an identity. Use the native end routine so the audio
+// conversation reservation, speech and look-at state are released as well.
 bool modTalkOverNative = true;
-DWORD nativeTalkCleared = 0;
+nativetalk::ScriptGate dealerScriptGate;
+void updateDealerTalks(Pool *pool, Byte *player, bool enabled) {
+    bool interrupted = false;
+    // CConversationForPed[14], size 0x1C. Separate from CPedToPlayerConversations.
+    for (unsigned slot = 0; slot < 14; ++slot) {
+        const auto address = 0x9691D8u + slot * 0x1Cu;
+        auto ped = at<Byte *>(address + 8);
+        people::Handle actor{};
+        bool valid = false, mute = false;
+        if (ped && validPool(pool)) {
+            const auto base = reinterpret_cast<std::uintptr_t>(pool->objects);
+            const auto pointer = reinterpret_cast<std::uintptr_t>(ped);
+            if (pointer >= base && (pointer - base) % 0x7C4 == 0) {
+                const auto index = (pointer - base) / 0x7C4;
+                if (index < static_cast<unsigned>(pool->size) && !(pool->flags[index] & 0x80)) {
+                    actor = handle(pool, static_cast<unsigned>(index));
+                    valid = true;
+                    mute = nativetalk::replaceDealer(enabled, false, bindings.find(actor) != 0,
+                        ped != player && (ped[0x484] == 1 || leasedActor(ped)), recruited(ped),
+                        *reinterpret_cast<int *>(ped + 0x598));
+                }
+            }
+        }
+        if (dealerScriptGate.apply(slot, actor, valid, mute, at<Byte>(address + 0x18),
+                                   at<unsigned>(address + 0x14))) {
+            interrupted = true;
+            log("NATIVE dealer scripted Y/N interrupted identity=" + std::to_string(bindings.find(actor)));
+        }
+    }
+    if (interrupted)
+        reinterpret_cast<void(__cdecl *)(const char *, bool, bool, bool)>(0x588BE0)(
+            nullptr, true, false, false);
+}
 void suppressNativeTalk(Pool *pool, Byte *player) {
+    updateDealerTalks(pool, player, modTalkOverNative);
     auto &state = at<unsigned>(0x969A20);
     auto &other = at<Byte *>(0x9691C0);
     // The native update only starts a new chat 30 s after its last start time (0x9691B4).
     // Keeping that time at "now" means the dealer's Y/N prompt never opens.
     if (modTalkOverNative && !state)
         at<unsigned>(0x9691B4) = at<unsigned>(0xB7CB84);
-    if (!modTalkOverNative || !state) {
-        nativeTalkCleared = 0;
+    if (!modTalkOverNative || !state)
         return;
-    }
     if (other) {
-        auto delta = other - pool->objects;
-        if (delta < 0 || delta % 0x7C4 || delta / 0x7C4 >= pool->size || !eligible(other, player) ||
+        const auto address = reinterpret_cast<std::uintptr_t>(other);
+        const auto base = reinterpret_cast<std::uintptr_t>(pool->objects);
+        if (address < base)
+            return;
+        const auto delta = address - base;
+        if (delta % 0x7C4 || delta / 0x7C4 >= static_cast<unsigned>(pool->size) ||
+            (pool->flags[delta / 0x7C4] & 0x80) || !eligible(other, player) ||
             !bindings.find(handle(pool, static_cast<unsigned>(delta / 0x7C4))))
             return;
-        other = nullptr;
-        nativeTalkCleared = GetTickCount();
-        return;
     }
-    if (nativeTalkCleared && GetTickCount() - nativeTalkCleared > 400) {
-        state = 0;
-        nativeTalkCleared = 0;
-    }
+    // CPedToPlayerConversations::EndConversation (gta-reversed, 0x43AB10).
+    reinterpret_cast<void(__cdecl *)()>(0x43AB10)();
+    reinterpret_cast<void(__cdecl *)(const char *, bool, bool, bool)>(0x588BE0)(
+        nullptr, true, false, false);
+    at<unsigned>(0x9691B4) = at<unsigned>(0xB7CB84);
 }
 bool busy(Byte *ped) {
     if (recruited(ped) || nativeConversation(ped))
@@ -289,6 +324,7 @@ Vec bonnet(Byte *car) {
     }
     return v;
 }
+bool hasAppointment(unsigned);
 bool offerRoadside(Pool *pool, Byte *player) {
     if (!batteryEvents || roadside.person || player[0x2F] != 0 || !onFoot(player))
         return false;
@@ -306,7 +342,8 @@ bool offerRoadside(Pool *pool, Byte *player) {
             armed(ped) || !visibleTarget(ped))
             continue;
         auto &f = registry.families[id - 1];
-        if (f.social.helped || f.social.robbed || f.social.anger >= 40 || !canFight(ped))
+        if (f.daily.busyUntil > registry.worldMinutes || hasAppointment(id) || f.social.romance >= 3 ||
+            f.social.helped || f.social.robbed || f.social.anger >= 40 || !canFight(ped))
             continue;
         float pd = distance2(origin, position(ped));
         if (pd < 16 || pd > 1024)
@@ -408,7 +445,11 @@ void updateRoadside(Pool *pool, Byte *player, bool mission) {
         onFoot(player) && player[0x2F] == 0 && distance2(position(player), bonnet(car)) < 6.25f;
     bool holding = controls::down(controls::Repair);
     if (street::repairStep(roadside.repair, elapsed, holding, closeEnough)) {
+        bool first = !f.social.helped;
         auto reply = street::batteryHelp(f);
+        if (first)
+            later::helped(registry, f.id);
+        justMet(f);
         say(f, reply.line);
         dirty = true;
         panelInvalid = true;
@@ -442,6 +483,7 @@ int familyClock = -1;
 #include "SideEvents.inc"
 #include "LifeEvents.inc"
 #include "Ambush.inc"
+#include "Gangs.inc"
 bool companionOwns(unsigned id);
 void releaseRoutine(unsigned id);
 void clearRoutines();
@@ -453,9 +495,28 @@ void companionChoice(unsigned);
 void updateSocialWorld(Pool *, Byte *);
 void sendPhoneChoice(unsigned, unsigned, bool);
 void showRoutineRoute(people::Point);
+bool departureOwns(unsigned);
 #include "PhoneNative.inc"
 #include "PhoneMessages.inc"
 #include "SocialNative.inc"
+#include "Ambient.inc"
+void observeCriminalAttack(Pool *pool, Byte *player) {
+    const float health = *reinterpret_cast<float *>(player + 0x540);
+    const bool hurt = observedPlayerHealth >= 0 && health + 0.5f < observedPlayerHealth;
+    observedPlayerHealth = health;
+    if (!hurt) return;
+    auto attacker = *reinterpret_cast<Byte **>(player + 0x764);
+    const auto start = reinterpret_cast<std::uintptr_t>(pool->objects);
+    const auto address = reinterpret_cast<std::uintptr_t>(attacker);
+    if (address < start || (address - start) % 0x7C4) return;
+    const auto slot = (address - start) / 0x7C4;
+    if (slot >= static_cast<unsigned>(pool->size) || (pool->flags[slot] & 0x80)) return;
+    const unsigned id = bindings.find(handle(pool, static_cast<unsigned>(slot)));
+    if (!id || *reinterpret_cast<int *>(attacker + 0x598) != nativetalk::Criminal) return;
+    const auto &s = registry.families[id - 1].social;
+    if (s.provokes || s.robbed || s.feud) return; // CJ cannot manufacture a self-defense bonus.
+    offenderUntil[id] = GetTickCount() + 120000;
+}
 bool visibleTarget(Byte *ped) {
     Vec head = position(ped);
     head.z += 1.0f;
@@ -516,6 +577,21 @@ void updateTalkVisits(Pool *pool, Byte *player) {
             live.left = true;
     }
 }
+// CJ just helped this person: the next greeting continues the same conversation instead of
+// opening like a reunion ("the battery you fixed still works") seconds after the repair.
+void justMet(people::Family &f, people::Handle h) {
+    auto &live = liveTalks[f.id];
+    street::continueAfterHelp(live.encounter, f.id);
+    if (!h.model)
+        bindings.locate(f.id, h);
+    live.lastHandle = h;
+    live.left = false;
+    live.last = GetTickCount();
+    f.daily.memories |= (f.social.helped ? 16u : 0u) | (f.daily.outings ? 128u : 0u);
+    if (f.social.newsKind == 2)
+        f.social.newsKind = 0;
+    companionWitness(f.id, socialcontext::Witness::Help);
+}
 // Police have had enough: a wanted level brings the regular arrest chase, not a scripted busted.
 void arrestByPolice() {
     auto wanted = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E230)(0);
@@ -557,6 +633,8 @@ void interact(Pool *pool, Byte *player, street::Action action) {
             }
         if (called) {
             dirty = true;
+            // Stood up and insulted: they will not answer CJ's texts for a while.
+            socialworld::meetingArgument(f);
             help(locale::format("MEET_CANCEL_PROVOKE", dialogue::displayName(f)));
         }
     }
@@ -645,7 +723,11 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     if (action == street::Action::Provoke)
         live.encounter.ended = false;
     live.lastHandle = focusedHandle;
-    if (action == street::Action::Greet && (busy(ped) || primaryOccupied(ped))) {
+    // Street dealers (type 17) and gang members (7-16) run a hang-out/dealing routine as a
+    // primary task; that is their idle state, not a reason to brush CJ off.
+    const int pedType = *reinterpret_cast<int *>(ped + 0x598);
+    const bool dealer = nativetalk::ambientRoutine(pedType);
+    if (action == street::Action::Greet && (busy(ped) || (primaryOccupied(ped) && !dealer))) {
         street::rejectBusy(live.encounter);
         live.last = now;
         live.next = now + 300000;
@@ -668,7 +750,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     bool friendBefore = street::isFriend(f);
     const std::string nameBefore = dialogue::displayName(f);
     auto reply = street::exchange(f, live.encounter, action, canFight(ped),
-                                  *reinterpret_cast<int *>(ped + 0x598));
+                                  *reinterpret_cast<int *>(ped + 0x598), registry.honor);
     auto context =
         socialaudio::context(action, live.encounter.turns, friendBefore, reply,
                              *reinterpret_cast<int *>(ped + 0x598), f.female, f.social.trust);
@@ -687,7 +769,13 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         if (auto local = socialaudio::localizedInsult(static_cast<unsigned>(locale::language)))
             clip = local;
     audio.speak(clip);
-    int honorCue = socialaudio::honorCue(action, trustBefore, f.social.trust, reply);
+    int honorCue = 0;
+    if (action == street::Action::Greet && live.encounter.turns == 1 &&
+        reply.reaction == dialogue::Reaction::Friendly)
+        honorCue = honorBatch.record(f.id, true, now);
+    else if (action == street::Action::Provoke && f.social.trust < trustBefore)
+        honorCue = honorBatch.record(f.id, false, now);
+    if (!honorCue) honorCue = socialaudio::honorCue(action, trustBefore, f.social.trust, reply);
     reputation(honorCue);
     if (f.social.known & people::Name)
         discoverNetwork(f.id);
@@ -723,13 +811,24 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     save();
     log("WALK SOCIAL identity=" + std::to_string(f.id) +
         " journal=" + std::to_string(f.social.journal));
+    if (action == street::Action::Provoke)
+        companionWitness(f.id, socialcontext::Witness::Provoke);
 }
 void resetRuntime() {
+    updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
+    resetAmbient();
+    honorBatch = {};
+    honorCheat = {};
+    defendedOffenders.clear();
+    offenderUntil.clear();
+    observedPlayerHealth = -1;
     cancelCompanion(false);
     clearRoutines();
     familyClock = -1;
     closePhone();
     clearMeetingRuns();
+    clearDepartures();
+    releaseActors();
     audio.stop();
     cancelEvents();
     auto pool = at<Pool *>(0xB74490);
@@ -740,6 +839,10 @@ void resetRuntime() {
     restored.clear();
     pending = {};
     liveTalks.clear();
+    pendingReplies.clear();
+    nextInvitation.clear();
+    gangRefused.clear();
+    nextGangScan = gangCooldown = 0;
     nightOfferAfter.clear();
     nextNightOffer = nextNightProbe = 0;
     focused = 0;
@@ -758,6 +861,7 @@ void tick() {
     if (at<bool>(0xB7CB48) || at<bool>(0xB7CB49) || at<bool>(0xBA67A4)) {
         closePhone();
         audio.stop();
+        honorCheat = {};
         focusHeld = false;
         focused = 0;
         pauseEvents(GetTickCount());
@@ -770,9 +874,14 @@ void tick() {
         return;
     releaseLeasedExits(player);
     if (*reinterpret_cast<float *>(player + 0x540) <= 0) {
+        updateDealerTalks(pool, player, false);
         closePhone();
         audio.stop();
         cancelEvents();
+        cancelCompanion(true);
+        clearMeetingRuns();
+        clearDepartures();
+        releaseActors();
         focused = 0;
         focusHeld = false;
         lastDirectorTick = GetTickCount();
@@ -790,7 +899,11 @@ void tick() {
     lastGameTime = time;
     DWORD now = GetTickCount();
     bool mission = storyActive();
+    suppressCarSolicit(!mission);
     if (mission) {
+        updateDealerTalks(pool, player, false);
+        honorCheat = {};
+        observedPlayerHealth = -1;
         if (!storySuspended) {
             storySuspended = true;
             closePhone();
@@ -804,6 +917,8 @@ void tick() {
                 cancelCompanion(false);
             clearRoutines();
             clearMeetingRuns();
+            clearDepartures();
+            releaseActors();
             cleanupGestures(pool, true);
             delayedFlees.clear();
             pending = {};
@@ -830,6 +945,7 @@ void tick() {
         sideEvents = GetPrivateProfileIntW(L"World", L"SideEvents", 1, ini.c_str()) != 0;
         modTalkOverNative =
             GetPrivateProfileIntW(L"Interface", L"ModTalkOverNative", 1, ini.c_str()) != 0;
+        gangTalk = GetPrivateProfileIntW(L"World", L"GangTalk", 1, ini.c_str()) != 0;
         eventDirector.initial(
             GetPrivateProfileIntW(L"World", L"FirstEventSeconds", 45, ini.c_str()));
         help("ALT: odaklan / G-H-J-R: etkilesim / F6: gunluk");
@@ -839,6 +955,7 @@ void tick() {
         else if (expiredMeetings)
             help("PHONE_OLD_MEETINGS");
     }
+    observeCriminalAttack(pool, player);
     if (due(now, nextScan)) {
         scan(pool, player);
         updateTalkVisits(pool, player);
@@ -871,6 +988,7 @@ void tick() {
     if (pid != GetCurrentProcessId()) {
         closePhone();
         audio.stop();
+        honorCheat = {};
         focusHeld = false;
         focused = 0;
         pauseEvents(now);
@@ -897,7 +1015,22 @@ void tick() {
         }
     }
     familyClock = clockMinute;
+    for (unsigned key = 0; key < 26; ++key) {
+        const bool down = (GetAsyncKeyState('A' + static_cast<int>(key)) & 0x8000) != 0;
+        if (!panelOpen && !nativeConversation(player) && down && !cheatHeld[key] &&
+            honorCheat.letter(static_cast<char>('A' + key), now)) {
+            registry.honor = 100;
+            audio.reputation(1);
+            help("HONOR_CHEAT");
+            dirty = true;
+            save();
+            log("HONOR cheat activated");
+        }
+        cheatHeld[key] = down;
+    }
+    if (panelOpen) honorCheat = {};
     audio.update(at<Byte>(0xBA6748 + 0x4F));
+    suppressNativeTalk(pool, player);
     if (nativeConversation(player)) {
         closePhone();
         audio.stop();
@@ -918,10 +1051,14 @@ void tick() {
     updateEventBlip(pool);
     updateFeud(pool, player);
     updateAmbush(pool, player, mission);
+    updateGangs(pool, player);
+    updateLater(pool, player, mission,
+                sideEvents && eventSafe && !eventActive() && !focusHeld);
     eventDirector.step(elapsed, eventSafe);
     lastDirectorTick = now;
     updateMeetings(pool, player, elapsed, mission);
     updateSocialWorld(pool, player);
+    updateAmbient(pool, player);
     if (sideEvents && eventSafe && !eventActive() && !focusHeld && due(now, nextNightProbe) &&
         due(now, nextNightOffer) && life::night(at<Byte>(0xB70153))) {
         nextNightProbe = now + 1000;
@@ -940,7 +1077,6 @@ void tick() {
         nextHeartbeat = now + 30000;
         log("WORLD records=" + std::to_string(registry.families.size()));
     }
-    suppressNativeTalk(pool, player);
     bool toggle = pressAction(controls::Phone, heldPanel),
          page = pressAction(controls::Contacts, heldPage),
          archive = pressAction(controls::Meetings, heldArchive), reunion = press(VK_F9, heldReunion),
@@ -955,7 +1091,9 @@ void tick() {
     if (focusHeld) {
         closePhone();
         updateFocus(pool, player);
-        if (rob)
+        if (standoffActive() && (greet || provoke))
+            negotiateGang(player, provoke);
+        else if (rob)
             robPerson(pool, player);
         else if (defuse)
             interact(pool, player, street::Action::Defuse);

@@ -3,7 +3,14 @@ setlocal
 cd /d "%~dp0"
 if not exist build mkdir build
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -all -latest -products * -property installationPath`) do set "VSROOT=%%i"
+set "VSROOT="
+if not exist "%VSWHERE%" (
+  echo Visual Studio Installer not found.
+  exit /b 2
+)
+"%VSWHERE%" -all -latest -products * -property installationPath > build\vs-installation.txt
+if not "%errorlevel%"=="0" exit /b 2
+for /f "usebackq delims=" %%i in ("build\vs-installation.txt") do set "VSROOT=%%i"
 if not defined VSROOT (
   echo Visual Studio installation not found.
   exit /b 2
@@ -26,11 +33,6 @@ cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Preview.cpp /Febuild\P
 if not "%errorlevel%"=="0" exit /b 7
 build\PanelPreview.exe
 if not "%errorlevel%"=="0" exit /b 8
-cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Installer.cpp /Febuild\Installer.exe /Fobuild\Installer.obj /link /SUBSYSTEM:WINDOWS user32.lib ole32.lib shell32.lib
+cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Installer.cpp /Febuild\Installer.exe /Fobuild\Installer.obj /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED /MANIFESTUAC:"level='asInvoker' uiAccess='false'" user32.lib ole32.lib shell32.lib
 if not "%errorlevel%"=="0" exit /b 12
 echo Build and simulation tests passed.
-
-
-
-
-

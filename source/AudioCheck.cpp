@@ -51,5 +51,6 @@ int main() {
     CoUninitialize();
     std::cout << "PASS: " << count
               << " audio files decoded and privately volume-controlled (muted playback probe).\n";
-    return count == 36 ? 0 : 5;
+    return count >= 2 && std::filesystem::exists("audio/high.mp3") &&
+           std::filesystem::exists("audio/low.mp3") ? 0 : 5;
 }

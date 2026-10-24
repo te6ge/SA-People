@@ -21,6 +21,26 @@ inline bool available(const people::Family &f) {
 inline bool canHangOut(const people::Family &f) {
     return available(f) && f.social.journal && f.social.trust >= 35;
 }
+inline void meetingArgument(people::Family &f) {
+    f.social.anger = std::max(30u, f.social.anger);
+    f.social.resentment = std::max(15u, f.social.resentment);
+    f.daily.memories |= 2;
+}
+struct Travel {
+    people::Point previous{};
+    float distance = 0;
+    bool tracking = false;
+    void sample(people::Point point, bool together, float maxSegment) {
+        if (tracking && together) {
+            const float dx = point.x - previous.x, dy = point.y - previous.y;
+            const float segment = std::sqrt(dx * dx + dy * dy);
+            if (segment < maxSegment)
+                distance += segment;
+        }
+        previous = point;
+        tracking = together;
+    }
+};
 inline unsigned unread(const people::Registry &r) {
     unsigned count = 0;
     for (const auto &m : r.letters)
@@ -79,7 +99,10 @@ inline bool complete(people::Registry &r, people::Appointment &a, people::Family
         return false;
     f.daily.outings = std::min(1000000u, f.daily.outings + 1);
     f.daily.memories |= 4;
-    r.post(f.id, "MAIL_GOOD_OUTING", false, 4);
+    f.daily.busyUntil = static_cast<unsigned>(std::min<std::uint64_t>(1000000000, r.worldMinutes + 180));
+    f.daily.lastInvitation = static_cast<unsigned>(r.worldMinutes / 1440 + 1);
+    static const char *pool[] = {"MAIL_GOOD_OUTING", "MAIL_GOOD_OUTING_1", "MAIL_GOOD_OUTING_2", "MAIL_GOOD_OUTING_3"};
+    r.post(f.id, pool[(f.daily.outings - 1) % 4], false, 4);
     return true;
 }
 inline bool spontaneous(people::Registry &r, people::Family &f, unsigned minute) {
@@ -88,7 +111,8 @@ inline bool spontaneous(people::Registry &r, people::Family &f, unsigned minute)
         minute > 21 * 60 || f.daily.lastInvitation == day)
         return false;
     f.daily.lastInvitation = day;
-    bool family = people::mix(f.id + day) % 5 == 0 && f.origin == 0;
+    bool family = people::mix(f.id + day) % 5 == 0 && f.origin == 0 &&
+                  (people::hasSpouse(f) || people::hasChild(f));
     if (family)
         f.daily.busyUntil =
             static_cast<unsigned>(std::min<std::uint64_t>(1000000000, r.worldMinutes + 180));

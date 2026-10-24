@@ -3,7 +3,7 @@
 Her maddeyi oyunda bir kez dene, sonucu işaretle. Hata olursa `SA-People/SA-People.log` dosyasını sakla.
 
 ## Başlangıç
-- [ ] Oyun açılıyor, log'da "SA People 0.12.5 initialized" var.
+- [ ] Oyun açılıyor, log'da "SA People 0.13.0 initialized" var.
 - [ ] Ana menüde oyunun kendi "Dil Seçimi" çalışıyor; mod dili telefon → Ayarlar'dan değişiyor.
 - [ ] Menüden Yeni/Yükle/Sil sayfaları bozulmadan açılıyor.
 - [ ] Paketle gelen sesler çalıyor, menüde 8/9/10 numaralı resimler görünüyor.

@@ -1,6 +1,7 @@
 #pragma once
 #include "Dialogue.h"
 #include "Persona.h"
+#include "SocialProgress.h"
 namespace street {
 enum class Action { Greet, Provoke, Defuse };
 enum class Cue {
@@ -37,6 +38,12 @@ inline void rejectBusy(Encounter &e) {
     e.busyRejected = true;
     e.refused = true;
     e.ended = true;
+}
+inline void continueAfterHelp(Encounter &e, unsigned id) {
+    e.id = id;
+    e.turns = std::max(e.turns, 1u);
+    e.ended = e.busyRejected = e.refused = false;
+    e.farewells = 0;
 }
 inline bool farewell(Encounter &e) {
     if (!mayGreet(e) || !e.refused)
@@ -86,7 +93,7 @@ inline void addMeaning(people::Family &f, unsigned amount, unsigned note) {
         s.journal = true;
 }
 inline Reply exchange(people::Family &f, Encounter &e, Action action, bool combatAllowed,
-                      int pedType = 4) {
+                      int pedType = 4, int honor = 0) {
     Reply r;
     if ((e.ended && action == Action::Greet) || (action == Action::Greet && !mayGreet(e)))
         return r;
@@ -197,7 +204,8 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
         } else if (e.turns == 1) {
             int open[] = {25, 10, -6, -18};
             int score = 25 + open[dialogue::temperament(f)] + s.trust / 3 -
-                        static_cast<int>(s.anger) / 2 + static_cast<int>(seed % 31) - 15;
+                        static_cast<int>(s.anger) / 2 + static_cast<int>(seed % 31) - 15 +
+                        socialprogress::openness(honor);
             if (score < 5) {
                 r.line = score < -15             ? "Seninle konusmak istemiyorum."
                          : f.social.romance >= 3 ? "ROMANCE_GOODBYE"
@@ -219,7 +227,9 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                                                   "Selam. Bugun sokaklar hareketli.",
                                                   "Hey, nasil gidiyor?",
                                                   "Merhaba. Bir sey mi soracaktin?",
-                                                  "Selam dostum. Hava almaya mi ciktin?"};
+                                                  "Selam dostum. Hava almaya mi ciktin?",
+                                                  "STREET_HELLO_6", "STREET_HELLO_7", "STREET_HELLO_8",
+                                                  "STREET_HELLO_9", "STREET_HELLO_10", "STREET_HELLO_11"};
                 static const char *contacts[] = {
                     "CJ, yine denk geldik! Nasilsin?", "Hey CJ! Uzun zaman oldu.",
                     "CJ, mahallede haber var mi?", "Bak kim gelmis! Nasil gidiyor CJ?"};
@@ -227,7 +237,11 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                                                 "Kardesim CJ! Keyfin yerinde mi?",
                                                 "CJ, iyi ki denk geldik. Neler yapiyorsun?",
                                                 "Hey dostum! Bugun nasil gidiyor?"};
-                auto manner = persona::greeting(kind, seed);
+                static socialprogress::LineDeck openings[5];
+                const unsigned opening = openings[static_cast<unsigned>(kind)].take(
+                    kind == persona::Kind::Civilian ? 12u : kind == persona::Kind::Vulnerable ? 5u :
+                    kind == persona::Kind::Service ? 4u : 5u, seed);
+                auto manner = persona::greeting(kind, opening);
                 static const char *partner[] = {"Askim! Seni gormek ne guzel.",
                                                 "Hey yakisikli! Seni ozledim.",
                                                 "CJ, bugun de gelmissin. Cok sevindim."};
@@ -236,8 +250,10 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                                 : isFriend(f)         ? friends[seed % 4]
                                                       : contacts[seed % 4])
                          : !manner.empty() ? manner
-                                           : strangers[seed % 6];
+                                           : strangers[opening];
                 r.cue = Cue::Greeting;
+                if (pedType == 8 && !dialogue::knows(f, people::Name))
+                    r.line = "AMBIENT_GROVE_0";
             }
         } else {
             adjust(5, -5);

@@ -29,12 +29,23 @@ template <std::size_t N> inline const char *pick(const char *const (&pool)[N], u
 }
 inline std::string greeting(Kind kind, unsigned seed) {
     static const char *const cop[] = {"Gunaydin. Bir sorun mu var?",
-                                      "Sokaklar bugun sakin degil. Dikkatli ol."};
+                                      "Sokaklar bugun sakin degil. Dikkatli ol.",
+                                      "Kimlik sormuyorum, merak etme. Ne istiyorsun?",
+                                      "Ellerini gorebilecegim yerde tut, sonra konusalim.",
+                                      "Bu bolgede devriyedeyim. Bir sey mi gordun?"};
     static const char *const street[] = {"Hey, kimsin sen? Burasi bizim mahalle.",
-                                         "Ne ariyorsun burada?"};
-    static const char *const weak[] = {"Merhaba. Bir sey mi lazim?", "Selam. Vaktin var mi?"};
+                                         "Ne ariyorsun burada?",
+                                         "Yuzun tanidik geliyor. Grove'dan misin sen?",
+                                         "Dur bakalim. Bana mi bakiyordun?",
+                                         "Is mi konusacagiz, laf mi? Cabuk ol."};
+    static const char *const weak[] = {"Merhaba. Bir sey mi lazim?", "Selam. Vaktin var mi?",
+                                       "Kimse durup konusmaz benimle. Sen farklisin.",
+                                       "Selam yakisikli. Gecen seni bu sokakta gormustum.",
+                                       "Bugun hava soguk, degil mi? Neyse, nasilsin?"};
     static const char *const service[] = {"Gorev basindayiz. Bir sorun mu var?",
-                                          "Yardim lazimsa soyle, isimizi yapiyoruz."};
+                                          "Yardim lazimsa soyle, isimizi yapiyoruz.",
+                                          "Yaralanan var mi? Yoksa acele etmem gerek.",
+                                          "Uzun bir vardiya oldu. Kisa tutalim, olur mu?"};
     switch (kind) {
     case Kind::Cop:
         return pick(cop, seed);
@@ -50,10 +61,19 @@ inline std::string greeting(Kind kind, unsigned seed) {
 }
 inline std::string smallTalk(Kind kind, unsigned seed) {
     static const char *const cop[] = {"Devriye uzun suruyor. Sen burada ne yapiyorsun?",
-                                      "Bir sey gorursen bana soyle. Bu mahalle emanet."};
+                                      "Bir sey gorursen bana soyle. Bu mahalle emanet.",
+                                      "Bu hafta uc araba calindi. Sen bir sey duydun mu?",
+                                      "Kahvemi bile bitiremedim, telsiz susmuyor.",
+                                      "Tenpenny'nin adamlari gibi degilim. Isimi yapiyorum."};
     static const char *const street[] = {"Mahallede gozum uzerinde. Bir sey olursa duyarim.",
-                                         "Dikkat et, buralarda herkes birbirini tanir."};
-    static const char *const weak[] = {"Sokakta gunler uzun. Insan yalniz kaliyor."};
+                                         "Dikkat et, buralarda herkes birbirini tanir.",
+                                         "Ballas'lar dun gece yine buradaydi. Gozunu acik tut.",
+                                         "Para kazanmak istiyorsan dogru kisileri tanimalisin.",
+                                         "Polis son gunlerde cok dolasiyor. Bir dalavere var."};
+    static const char *const weak[] = {"Sokakta gunler uzun. Insan yalniz kaliyor.",
+                                       "Eskiden bir isim, bir evim vardi. Hayat iste.",
+                                       "Bu sehirde kimse kimseyi gormuyor. Sen gordun ama.",
+                                       "Bir gun buradan gidecegim. Belki Las Venturas'a."};
     switch (kind) {
     case Kind::Cop:
         return pick(cop, seed);

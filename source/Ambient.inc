@@ -1,0 +1,138 @@
+// Optional native car solicitation gives way to the mod's on-foot encounters. Only this
+// three-byte entry patch is owned here; mission/cutscene code sees the original routine.
+struct SolicitPatch {
+    Byte original[3]{};
+    bool initialized = false, applied = false, unavailable = false;
+} solicitPatch;
+void suppressCarSolicit(bool enable) {
+    auto target = reinterpret_cast<Byte *>(0x611790); // CPopulation::CanSolicitPlayerInCar(int).
+    const Byte replacement[3] = {0x31, 0xC0, 0xC3};
+    if (solicitPatch.unavailable) return;
+    if (!solicitPatch.initialized) {
+        // Stock 1.0 US starts by loading the model argument. Leave any other hook alone.
+        const Byte expected[3] = {0x8B, 0x44, 0x24};
+        if (std::memcmp(target, expected, 3) != 0) {
+            solicitPatch.unavailable = true;
+            log("NATIVE solicitation guard skipped: entry differs from stock 1.0 US.");
+            return;
+        }
+        std::memcpy(solicitPatch.original, target, 3);
+        solicitPatch.initialized = true;
+    }
+    if (solicitPatch.applied == enable) return;
+    const auto current = solicitPatch.applied ? replacement : solicitPatch.original;
+    if (std::memcmp(target, current, 3) != 0) { solicitPatch.unavailable = true; return; }
+    DWORD old = 0;
+    if (!VirtualProtect(target, 3, PAGE_EXECUTE_READWRITE, &old)) return;
+    std::memcpy(target, enable ? replacement : solicitPatch.original, 3);
+    FlushInstructionCache(GetCurrentProcess(), target, 3);
+    DWORD ignored = 0;
+    VirtualProtect(target, 3, old, &ignored);
+    solicitPatch.applied = enable;
+}
+unsigned outfitFingerprint(Byte *player) {
+    auto data = *reinterpret_cast<Byte **>(player + 0x480);
+    auto clothes = data ? *reinterpret_cast<Byte **>(data + 4) : nullptr;
+    if (!clothes) return 0;
+    unsigned hash = 2166136261u;
+    for (unsigned i = 0; i < 28; ++i) // CPedClothesDesc: 10 model + 18 texture keys.
+        hash = (hash ^ reinterpret_cast<unsigned *>(clothes)[i]) * 16777619u;
+    return hash;
+}
+DWORD nextAmbient = 0, outfitChangedAt = 0;
+unsigned lastOutfit = 0;
+bool outfitInitialized = false;
+std::unordered_map<unsigned, DWORD> ambientAfter;
+socialcontext::Topics ambientTopics;
+void resetAmbient() {
+    nextAmbient = outfitChangedAt = lastOutfit = 0;
+    outfitInitialized = false; ambientAfter.clear(); ambientTopics = {};
+    suppressCarSolicit(false);
+}
+void clearOldCarSolicit(Pool *pool, Byte *player) {
+    if (!solicitPatch.applied) return;
+    for (unsigned slot = 0; slot < static_cast<unsigned>(pool->size); ++slot) {
+        if (pool->flags[slot] & 0x80) continue;
+        auto ped = pedAt(pool, slot);
+        if (ped[0x484] != 1 || *reinterpret_cast<int *>(ped + 0x598) != 22 || recruited(ped)) continue;
+        auto manager = taskManager(ped);
+        if (!manager) continue;
+        for (int index = 0; index < 5; ++index) {
+            auto task = at<void *>(reinterpret_cast<std::uintptr_t>(manager) + index * 4);
+            if (!task) continue;
+            auto table = *reinterpret_cast<std::uintptr_t **>(task);
+            if (reinterpret_cast<int(__thiscall *)(void *)>(table[4])(task) == 1309 &&
+                *reinterpret_cast<Byte **>(static_cast<Byte *>(task) + 0xC) == player) {
+                setTask(manager, nullptr, index);
+                const char *text = reinterpret_cast<const char *(__thiscall *)(void *, const char *)>(
+                    0x6A0050)(reinterpret_cast<void *>(0xC1B340), "PROS_04");
+                if (text) reinterpret_cast<void(__cdecl *)(const char *)>(0x69EA30)(text);
+            }
+        }
+    }
+}
+void updateAmbient(Pool *pool, Byte *player) {
+    const DWORD now = GetTickCount();
+    const unsigned outfit = outfitFingerprint(player);
+    clearOldCarSolicit(pool, player);
+    if (outfit) {
+        if (outfitInitialized && lastOutfit != outfit) outfitChangedAt = now;
+        lastOutfit = outfit; outfitInitialized = true;
+    }
+    if (!onFoot(player) || player[0x2F] || panelOpen || focusHeld || companion.person ||
+        eventActive() || standoffActive() || now < subtitleUntil || !due(now, nextSpeech) ||
+        !due(now, nextAmbient)) return;
+    nextAmbient = now + 12000;
+    people::Handle candidate{};
+    unsigned identity = 0;
+    float best = 225;
+    for (unsigned slot = 0; slot < static_cast<unsigned>(pool->size); ++slot) {
+        if (pool->flags[slot] & 0x80) continue;
+        auto ped = pedAt(pool, slot);
+        const auto h = handle(pool, slot);
+        const auto id = bindings.find(h);
+        if (!id || !eligible(ped, player) || !onFoot(ped) || ped[0x2F] || busy(ped) ||
+            *reinterpret_cast<float *>(ped + 0x540) <= 0 || hasAppointment(id) ||
+            (ambientAfter.count(id) && !due(now, ambientAfter[id])) || !visibleTarget(ped)) continue;
+        float distance = distance2(position(player), position(ped));
+        if (distance < best) { best = distance; candidate = h; identity = id; }
+    }
+    if (!identity) return;
+    auto ped = pedAt(pool, candidate.slot);
+    auto &f = registry.families[identity - 1];
+    if (!socialworld::available(f) || f.social.anger >= 20) return;
+    const bool changed = outfitChangedAt && now - outfitChangedAt < 240000;
+    const bool grove = *reinterpret_cast<int *>(ped + 0x598) == 8;
+    const auto weather = socialcontext::weather(at<float>(0xC81324), at<float>(0xC81300),
+        std::max(at<float>(0xC812E0), at<float>(0xC812F8)), at<float>(0xC812F0), at<Byte>(0xB70153));
+    static const char *groveLines[] = {"AMBIENT_GROVE_0", "AMBIENT_GROVE_1", "AMBIENT_GROVE_2"};
+    static const char *rain[] = {"AMBIENT_RAIN_0", "AMBIENT_RAIN_1", "AMBIENT_RAIN_2"};
+    static const char *fog[] = {"AMBIENT_FOG_0", "AMBIENT_FOG_1"};
+    static const char *sun[] = {"AMBIENT_SUN_0", "AMBIENT_SUN_1"};
+    static socialprogress::LineDeck greetingDeck, knownDeck, groveDeck, rainDeck, fogDeck, sunDeck;
+    const unsigned seed = people::mix(identity + now / 1000);
+    const char *line = "AMBIENT_HELLO";
+    if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
+    else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(3, seed)];
+    else if (registry.honor <= -40 && seed % 3 == 0) line = "AMBIENT_HONOR_LOW";
+    else if (registry.honor >= 40 && seed % 3 == 0) line = "AMBIENT_HONOR_HIGH";
+    else if (weather == socialcontext::Weather::Rain && seed % 3 == 0) line = rain[rainDeck.take(3, seed)];
+    else if (weather == socialcontext::Weather::Fog && seed % 3 == 0) line = fog[fogDeck.take(2, seed)];
+    else if (weather == socialcontext::Weather::Sun && seed % 3 == 0) line = sun[sunDeck.take(2, seed)];
+    else if (weather == socialcontext::Weather::Wind && seed % 3 == 0) line = "AMBIENT_WIND";
+    else if (f.social.known & people::Name) {
+        static const char *known[] = {"AMBIENT_KNOWN", "AMBIENT_KNOWN_1", "AMBIENT_KNOWN_2", "AMBIENT_KNOWN_3"};
+        line = known[knownDeck.take(4, seed)];
+    } else {
+        if (seed % 3) return;
+        static const char *greetings[] = {"AMBIENT_HELLO", "AMBIENT_HELLO_1", "AMBIENT_HELLO_2", "AMBIENT_HELLO_3"};
+        line = greetings[greetingDeck.take(4, seed)];
+    } // Ordinary strangers often just carry on.
+    say(f, line);
+    ambientAfter[identity] = now + 300000;
+    if (ambientAfter.size() > 512)
+        for (auto it = ambientAfter.begin(); it != ambientAfter.end();)
+            if (due(now, it->second)) it = ambientAfter.erase(it); else ++it;
+    nextAmbient = now + 45000 + seed % 30000;
+    nextSpeech = now + 4500;
+}

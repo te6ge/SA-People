@@ -26,6 +26,12 @@
 #include "SocialWorld.h"
 #include "Romance.h"
 #include "Vitals.h"
+#include "Later.h"
+#include "Favors.h"
+#include "MeetingRuntime.h"
+#include "SocialContext.h"
+#include "SocialProgress.h"
+#include "NativeTalk.h"
 namespace {
 using Byte = unsigned char;
 template <class T> T &at(std::uintptr_t a) {
@@ -63,8 +69,14 @@ bool storySuspended = false;
 bool vitalsInstalled = false;
 unsigned expiredMeetings = 0;
 bool recovered = false;
+// CGangWars::State 0x96AB64 (waves of a war CJ started) and State2 0x96AB4C (a rival gang
+// attacking CJ's territory); plugin-sdk 1.0 US addresses. The mod stands down like on a mission.
+bool gangWarActive() {
+    return at<int>(0x96AB64) != 0 || at<int>(0x96AB4C) != 0;
+}
 bool storyActive() {
-    return at<bool>(0xB5F851) || reinterpret_cast<bool(__cdecl *)()>(0x464D50)();
+    return at<bool>(0xB5F851) || reinterpret_cast<bool(__cdecl *)()>(0x464D50)() ||
+           gangWarActive();
 }
 bool heldPage = false, heldArchive = false, heldReunion = false, heldSave = false;
 bool heldPanel = false, panelOpen = false, panelInvalid = true;
@@ -98,7 +110,9 @@ void reputation(int cue) {
     if (!cue)
         return;
     // Good deeds weigh more than single slips, so honor can be earned back (help +4, provoke -2).
+    const int before = registry.honor;
     network::honor(registry, cue > 0 ? cue * 4 : cue * 2);
+    if (before == registry.honor) return;
     audio.reputation(cue > 0 ? 1 : -1);
     dirty = true;
 }
@@ -150,6 +164,49 @@ bool exists(Pool *p, people::Handle h) {
     return h.slot < static_cast<unsigned>(p->size) && !(p->flags[h.slot] & 0x80) &&
            handle(p, h.slot) == h;
 }
+struct ActorLease { people::Handle handle; unsigned person; Byte createdBy; };
+std::unordered_map<unsigned, ActorLease> actorLeases;
+bool leasedActor(Byte *ped) {
+    auto pool = at<Pool *>(0xB74490);
+    if (!pool || !pool->objects || ped < pool->objects) return false;
+    const auto delta = ped - pool->objects;
+    if (delta % 0x7C4 || delta / 0x7C4 >= pool->size) return false;
+    const unsigned slot = static_cast<unsigned>(delta / 0x7C4);
+    auto it = actorLeases.find(slot);
+    return it != actorLeases.end() && exists(pool, it->second.handle);
+}
+void retainActor(people::Handle h, unsigned id) {
+    auto pool = at<Pool *>(0xB74490);
+    if (!exists(pool, h)) return;
+    auto ped = pedAt(pool, h.slot);
+    if (leasedActor(ped) || ped[0x484] != 1) return;
+    actorLeases[h.slot] = {h, id, ped[0x484]};
+    // Native setter maintains population accounting and installs the mission decision maker.
+    reinterpret_cast<void(__thiscall *)(Byte *, int)>(0x5E47E0)(ped, 2);
+}
+void releaseActor(unsigned id) {
+    auto pool = at<Pool *>(0xB74490);
+    for (auto it = actorLeases.begin(); it != actorLeases.end();) {
+        if (it->second.person != id) { ++it; continue; }
+        if (pool && exists(pool, it->second.handle)) {
+            auto ped = pedAt(pool, it->first);
+            if (ped[0x484] == 2)
+                reinterpret_cast<void(__thiscall *)(Byte *, int)>(0x5E47E0)(ped, it->second.createdBy);
+        }
+        it = actorLeases.erase(it);
+    }
+}
+void releaseActors() {
+    while (!actorLeases.empty()) releaseActor(actorLeases.begin()->second.person);
+}
+void companionWitness(unsigned, socialcontext::Witness);
+bool activeOffender(unsigned);
+socialprogress::HonorBatch honorBatch;
+socialprogress::Cheat honorCheat;
+bool cheatHeld[26]{};
+std::unordered_set<unsigned> defendedOffenders;
+std::unordered_map<unsigned, DWORD> offenderUntil;
+float observedPlayerHealth = -1;
 bool recruited(Byte *ped) {
     return *reinterpret_cast<int *>(ped + 0x598) >= 4 &&
            reinterpret_cast<char(__cdecl *)(Byte *)>(0x5F7F10)(ped) != 0;
@@ -160,7 +217,7 @@ bool femaleModel(int model) {
 bool eligible(Byte *ped, Byte *player) {
     int type = *reinterpret_cast<int *>(ped + 0x598),
         model = *reinterpret_cast<short *>(ped + 0x22);
-    return ped != player && !recruited(ped) && ped[0x484] == 1 && type >= 4 && type <= 23 &&
+    return ped != player && !recruited(ped) && (ped[0x484] == 1 || leasedActor(ped)) && type >= 4 && type <= 23 &&
            model >= 0 && model <= 311;
 }
 void capture(people::Family &f, Byte *ped) {
@@ -180,12 +237,28 @@ void capture(people::Family &f, Byte *ped) {
         return;
     f.female = femaleModel(p.model);
     bool died = f.presence.alive && !p.alive;
+    const bool hurt = p.health + 0.5f < f.presence.health;
     f.presence = p;
+    bool defense = activeOffender(f.id);
+    if (hurt && !storyActive()) {
+        auto attacker = *reinterpret_cast<Byte **>(ped + 0x764);
+        auto cj = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
+        auto vehicle = reinterpret_cast<Byte *(__cdecl *)(int, bool)>(0x56E0D0)(0, false);
+        const bool byCJ = attacker && (attacker == cj || attacker == vehicle);
+        if (socialprogress::defended(defense, byCJ, p.health) &&
+            defendedOffenders.insert(f.id).second) {
+            reputation(1);
+            companionWitness(f.id, socialcontext::Witness::Help);
+            log("HONOR stopped active offender identity=" + std::to_string(f.id));
+        } else if (byCJ && !defense)
+            companionWitness(f.id, died ? socialcontext::Witness::Killing : socialcontext::Witness::Violence);
+    }
     if (died) {
         auto attacker = *reinterpret_cast<Byte **>(ped + 0x764);
         auto player = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
         auto car = reinterpret_cast<Byte *(__cdecl *)(int, bool)>(0x56E0D0)(0, false);
         if (attacker && (attacker == player || attacker == car)) {
+            if (defense) { spatial.update(f); dirty = true; return; }
             network::news(registry, f.id, true, true);
             if ((f.social.known & people::Name) && network::feud(registry, f.id))
                 help(locale::format("FEUD_START", people::generate(f)[0].name));
@@ -294,7 +367,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.12.5 initialized; persistent identities=" +
+    log("SA People 0.13.3 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -364,7 +437,7 @@ void scan(Pool *pool, Byte *player) {
             bindings.bind(h, id);
         }
         // A story script may adopt a formerly random actor; stop managing it then.
-        if (ped[0x484] == 1)
+        if (ped[0x484] == 1 || leasedActor(ped))
             capture(registry.families[id - 1], ped);
     }
     if (added)
@@ -481,6 +554,8 @@ void advanceReturn(Pool *pool, Byte *player, bool mission) {
     auto slot = static_cast<unsigned>(offset / 0x7C4);
     if (!bindings.bind(handle(pool, slot), f.id))
         throw std::runtime_error("Duplicate identity blocked");
+    if (pending.appointment)
+        retainActor(handle(pool, slot), f.id);
     if (!pending.appointment)
         restored.insert(f.id);
     *reinterpret_cast<float *>(ped + 0x540) = std::clamp(p.health, 1.0f, 10000.0f);
@@ -769,6 +844,11 @@ void __cdecl processHook() {
         audio.stop();
         cancelEvents();
         clearMeetingRuns();
+        suppressCarSolicit(false);
+        updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
+        cancelCompanion(false);
+        clearDepartures();
+        releaseActors();
         disabled = true;
         log(e.what());
     } catch (...) {
@@ -776,6 +856,11 @@ void __cdecl processHook() {
         audio.stop();
         cancelEvents();
         clearMeetingRuns();
+        suppressCarSolicit(false);
+        updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
+        cancelCompanion(false);
+        clearDepartures();
+        releaseActors();
         disabled = true;
     }
 }
