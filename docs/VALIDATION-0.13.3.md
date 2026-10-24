@@ -22,3 +22,5 @@ References:
 - https://github.com/DK22Pac/plugin-sdk/blob/master/plugin_sa/game_sa/enums/ePedType.h
 - https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/Conversations/ConversationForPed.h
 - https://github.com/gta-reversed/gta-reversed/blob/master/source/game_sa/Conversations/Conversations.cpp
+
+Full release packages: both CMD and EXE installers passed 61 disposable-folder checks, including updates, user-data preservation, Unicode assets, loader handling, read-only targets and malformed packages. The manual ZIP contains no EXE.

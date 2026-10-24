@@ -30,9 +30,9 @@ foreach ($n in 8, 9, 10) {
 foreach ($f in 'README.md', 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd', 'TEST-CHECKLIST-TR.md') {
     Copy-Item "$root\release-template\$f" $stage
 }
-Copy-Item "$root\INSTALLER-VALIDATION-TR.md" $stage
+Copy-Item "$root\docs\VALIDATION-0.13.3.md" $stage
 Copy-Item "$root\CHANGELOG.md" $stage
-Copy-Item "$root\OYUNCU-REHBERI-TR.md" $stage
+Copy-Item "$root\docs\OYUNCU-REHBERI-TR.md" $stage
 
 [IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
 [World]
@@ -103,7 +103,7 @@ function New-Setup($stageDir, $setupPath) {
 }
 $setup = "$out\$name-Setup.exe"
 New-Setup $stage $setup
-Copy-Item $setup "$stage\SA-People-Setup.exe"
+# The standalone setup is distributed separately; keep the manual ZIP free of EXEs.
 $binaryZip = "$out\$name.zip"
 New-Zip $stage $binaryZip
 
@@ -111,13 +111,13 @@ New-Zip $stage $binaryZip
 $src = "$out\$name-source"
 New-Item -ItemType Directory -Force "$src\source" | Out-Null
 Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc
-foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini', 'OYUNCU-REHBERI-TR.md') { Copy-Item "$root\$f" $src }
+foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini') { Copy-Item "$root\$f" $src }
 Copy-Item "$root\assets" "$src\assets" -Recurse
 foreach ($folder in 'loader', 'release-template', 'tests') {
     if (Test-Path "$root\$folder") { Copy-Item "$root\$folder" "$src\$folder" -Recurse }
 }
 foreach ($f in 'README.md', 'LICENSE.txt') { Copy-Item "$root\release-template\$f" $src }
-Copy-Item "$root\INSTALLER-VALIDATION-TR.md" $src
+Copy-Item "$root\docs" "$src\docs" -Recurse
 New-Zip $src "$out\$name-source.zip"
 
 # Verify: nothing private or third-party may be inside.

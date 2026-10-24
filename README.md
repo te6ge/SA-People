@@ -6,13 +6,18 @@ keep contacts in your phone, text them, arrange outings, help strangers and buil
 
 ## Download and update
 
-- **Existing installation:** download [the 0.13.3 manual update ZIP](downloads/SA-People-0.13.3-update.zip?raw=true).
-  Close GTA SA and copy the ZIP contents into the folder containing `gta_sa.exe`, replacing
-  matching mod files. No EXE is required. The update keeps your settings and relationships.
-- **First installation:** install the full package from [Releases](../../releases) first,
-  then apply the update ZIP above. The update ZIP contains the latest plugin, translations
-  and one repaired voice file; it is not the full voice/artwork/ASI-loader package.
-- Back up `SA-People/people.dat` and your game saves before updating.
+**[Download SA People 0.13.3 beta](https://github.com/te6ge/SA-People/releases/tag/v0.13.3-beta)**
+
+- **Full manual ZIP:** includes the mod, voices, menu artwork, ASI loader and Install.cmd.
+  This ZIP contains no EXE. Use it for a first installation or an update.
+- **Optional Setup.exe:** the same full mod with a Windows folder-selection installer.
+- **Small update ZIP:** for an existing full installation; latest plugin, translations and
+  the repaired voice file only.
+- **Source ZIP:** for developers; it is not the ready-to-play download.
+
+Close GTA SA before installing. Existing settings and relationships are kept by the
+installers. Back up `SA-People/people.dat` and your game saves before updating.
+The files are listed under **Assets** on the release page above.
 
 ## What's new
 

@@ -1,5 +1,9 @@
 # 0.13.3 beta — dealer hotfix
 
+- Full downloads are available in GitHub Releases: an EXE-free manual ZIP, optional
+  standalone setup, small update and source package. CMD installation now rejects
+  read-only bundled targets before replacing any game file.
+
 - Corrected the native pedestrian-type mapping used by the routine-task exemption:
   DEALER is 17 and CRIMINAL is 20. Dealers no longer receive an automatic busy refusal
   just because their ambient routine occupies the primary slot. Combat and recruited

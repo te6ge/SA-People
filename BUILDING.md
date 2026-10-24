@@ -7,7 +7,7 @@ hardware-dependent audio and graphics checks are separate programs.
 
 Build.cmd also builds the Windows installer stub with an embedded asInvoker manifest.
 Run MakeRelease.ps1, then `python tests/InstallerTests.py` to verify both packaged
-installers in disposable fake game folders. See INSTALLER-VALIDATION-TR.md for scope.
+installers in disposable fake game folders. See docs/VALIDATION-0.13.3.md for scope.
 
 Audio assets are optional for a source-only build. The current distribution has 80 audio files, including high.mp3 and low.mp3.
 Tests check their names. Audio assets are separate from the program source;

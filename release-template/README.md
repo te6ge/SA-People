@@ -17,7 +17,8 @@ message and call them, help strangers, make enemies, fall in love. People rememb
 
 ## Install
 
-1. Run `SA-People-Setup.exe`, pick your GTA San Andreas folder and you are done.
+1. Optional installer: download `SA-People-0.13.3-beta-Setup.exe` separately from GitHub Releases,
+   run it and select your GTA San Andreas folder.
    (Windows may show a SmartScreen warning because the setup is not signed: More info → Run anyway.)
 2. Or extract the archive and run `Install.cmd` with your GTA San Andreas folder.
    It copies `SA-People.asi` and the `SA-People/` data folder, and backs up anything it replaces.
@@ -31,7 +32,7 @@ Uninstall: run `Uninstall.cmd` (keeps your relationships file) or delete `SA-Peo
 
 ## Voices and menu pictures
 
-The package includes CJ voice lines made by the author with AI voice tools, and three original
+The full package includes CJ voice clips and AI-generated lines, and three original
 menu pictures. You can replace or add files:
 
 - **Voices**: `SA-People/audio/`. Names are listed in `SA-People/audio/README.txt`; a missing

@@ -36,6 +36,9 @@ set "VSIZE=0"
 if exist "%GAME%\vorbisFile.dll" for %%F in ("%GAME%\vorbisFile.dll") do set "VSIZE=%%~zF"
 if %VSIZE% GTR 100000 set "NEEDLOADER="
 if exist "%GAME%\dinput8.dll" set "NEEDLOADER="
+rem Refuse read-only bundled targets before any game file is replaced.
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $base=$PWD.Path; $files=@(Get-Item -LiteralPath 'SA-People.asi')+@(Get-ChildItem -LiteralPath 'SA-People' -Recurse -File | Where-Object {$_.Name -ne 'settings.ini'}); foreach($f in $files){$relative=$f.FullName.Substring($base.Length+1); $target=Join-Path $env:GAME $relative; if((Test-Path -LiteralPath $target -PathType Leaf) -and ((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReadOnly)){throw ('Read-only target: '+$target)}}" >nul
+if errorlevel 1 goto failed
 set "STAMP="
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss-fff"') do set "STAMP=%%i"
 if not defined STAMP (
