@@ -16,7 +16,7 @@
 
 # 0.13.2 beta
 
-- Repeat-message reactions now require consecutive copies of the same preset within the
+- Repeat message reactions now require consecutive copies of the same preset within the
   current conversation. A different preset, a new event message or a stale conversation
   breaks the streak. Repeating an acknowledgement after a later outing is safe.
 - Automatic outing conversation begins after four seconds and continues roughly every
