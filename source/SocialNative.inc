@@ -568,6 +568,12 @@ void updateSocialWorld(Pool *pool, Byte *player) {
     for (auto &f : registry.families) {
         if (!f.social.journal && !f.daily.ready)
             continue;
+        // Existing helpful relationships can enter the new chain after updating as well.
+        if (f.social.journal && f.social.helped && socialworld::available(f) &&
+            !(f.daily.memories & later::StoryStarted) && later::schedule(registry,f.id,later::FollowUp)) {
+            f.daily.memories |= later::StoryStarted;
+            dirty = true;
+        }
         prepareRoutine(f, player);
         if (!companionOwns(f.id) && !hasAppointment(f.id) && !f.social.feud &&
             (f.social.robbed || (f.social.trust < -10 && f.social.resentment >= 25)) &&
@@ -577,12 +583,17 @@ void updateSocialWorld(Pool *pool, Byte *player) {
                 auto ped = pedAt(pool, actor.slot);
                 if (eligible(ped, player) && onFoot(ped) && !busy(ped) && !primaryOccupied(ped) &&
                     distance2(position(ped), position(player)) < 64 && startFlee(ped, player))
-                    avoidAfter[f.id] = GetTickCount() + 120000;
+                {
+                    avoidAfter[f.id] = GetTickCount() + 300000;
+                    if (due(GetTickCount(), nextSpeech) && due(GetTickCount(), subtitleUntil)) {
+                        say(f, "RECOG_AVOID"); nextSpeech = GetTickCount() + 5000;
+                    }
+                }
             }
         }
         if (!socialworld::available(f) || !f.daily.ready || hasAppointment(f.id) ||
             companionOwns(f.id) || lifeEvent.person == f.id || roadside.person == f.id ||
-            smallEvent.person == f.id || focused == f.id) {
+            smallEvent.person == f.id || focused == f.id || recognitionOwns(f.id)) {
             releaseRoutine(f.id);
             continue;
         }

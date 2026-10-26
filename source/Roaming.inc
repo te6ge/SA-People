@@ -478,6 +478,7 @@ Byte *drivenCar(Byte *);
 bool stoppedCar(Byte *);
 bool hasAppointment(unsigned);
 bool companionOwns(unsigned);
+bool recognitionOwns(unsigned);
 void closePhone();
 int familyClock = -1;
 #include "SideEvents.inc"
@@ -498,6 +499,7 @@ void showRoutineRoute(people::Point);
 bool departureOwns(unsigned);
 #include "PhoneNative.inc"
 #include "PhoneMessages.inc"
+bool recognitionOwns(unsigned);
 #include "SocialNative.inc"
 #include "Ambient.inc"
 void observeCriminalAttack(Pool *pool, Byte *player) {
@@ -727,7 +729,11 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     // primary task; that is their idle state, not a reason to brush CJ off.
     const int pedType = *reinterpret_cast<int *>(ped + 0x598);
     const bool dealer = nativetalk::ambientRoutine(pedType);
-    if (action == street::Action::Greet && (busy(ped) || (primaryOccupied(ped) && !dealer))) {
+    // Interior patrons keep their existing idle/walking task. Script actors remain excluded
+    // by eligible(); event responses and native conversations still take precedence.
+    const bool interiorPatron = player[0x2F] && ped[0x2F] == player[0x2F] &&
+        ped[0x484] == 1 && (pedType == 4 || pedType == 5);
+    if (action == street::Action::Greet && (busy(ped) || (primaryOccupied(ped) && !dealer && !interiorPatron))) {
         street::rejectBusy(live.encounter);
         live.last = now;
         live.next = now + 300000;
@@ -784,6 +790,11 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     live.last = now;
     live.next = now + (reply.leaves ? 300000 : 3000);
     nextSpeech = now + 2800;
+    if (player[0x2F] && action == street::Action::Greet && live.encounter.turns == 1 &&
+        reply.reaction == dialogue::Reaction::Friendly && !reply.leaves) {
+        static socialprogress::LineDeck interiorDeck;
+        reply.line = neighborhood::interiorLine(interiorDeck.take(4, now + f.id));
+    }
     say(f, reply.line);
     dirty = true;
     panelInvalid = true;
@@ -906,6 +917,9 @@ void tick() {
         observedPlayerHealth = -1;
         if (!storySuspended) {
             storySuspended = true;
+            clearRecognition();
+            endStandoff(true);
+            restoreGangs();
             closePhone();
             audio.stop();
             cleanupResponses(pool, true);
@@ -1091,8 +1105,10 @@ void tick() {
     if (focusHeld) {
         closePhone();
         updateFocus(pool, player);
-        if (standoffActive() && (greet || provoke))
-            negotiateGang(player, provoke);
+        if ((greet || defuse || provoke) && focused && exists(pool,focusedHandle) &&
+            talkRival(pool,player,focusedHandle,provoke)) {
+            // A truce is permission to pass, not an automatic personal introduction.
+        }
         else if (rob)
             robPerson(pool, player);
         else if (defuse)

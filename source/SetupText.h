@@ -1,0 +1,66 @@
+#pragma once
+#include <cstddef>
+namespace setuptext {
+enum class Language { English, Turkish, Russian, Spanish };
+enum Key { Subtitle, Headline, Intro, People, PeopleBody, Phone, PhoneBody, Memory, MemoryBody,
+    Folder, Browse, Hint, Preserve, Install, Close, Installing, Complete, Failed, Pick,
+    Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, Count };
+inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español"};
+inline constexpr const wchar_t *copy[4][Count] = {
+    {L"NPC INTERACTIONS  /  PC 1.0 US", L"A city full of people.",
+     L"Make friends. Make enemies. Give the streets a memory.",
+     L"Meet the city", L"Names, families and relationships.", L"Stay connected",
+     L"Texts, contacts and plans in SA CELL.", L"Leave a mark", L"People remember how you treat them.",
+     L"GAME FOLDER", L"Browse…", L"Choose the folder containing gta_sa.exe. Close the game first.",
+     L"Your existing settings and relationships are kept.", L"Install SA People", L"Close",
+     L"Installing SA People…", L"Welcome to the neighbourhood.", L"Installation could not finish.",
+     L"Select your GTA San Andreas folder", L"The setup package is damaged.",
+     L"gta_sa.exe was not found in this folder. Choose another folder.",
+     L"This gta_sa.exe does not look like version 1.0 US. The mod may not run. Install anyway?",
+     L"A file could not be written. Close the game and check write permissions:",
+     L"Check folder permissions, read-only files and conflicting file paths.",
+     L"Ultimate ASI Loader was installed too (dinput8.dll).", L"Language"},
+    {L"NPC ETKİLEŞİMLERİ  /  PC 1.0 US", L"Her köşede bir hikâye.",
+     L"Arkadaş edin. Düşman kazan. Sokaklarda iz bırak.",
+     L"Şehri tanı", L"İsimler, aileler ve ilişkiler.", L"Bağlantıda kal",
+     L"SA CELL ile mesajlar, rehber ve planlar.", L"İz bırak", L"İnsanlar onlara nasıl davrandığını hatırlar.",
+     L"OYUN KLASÖRÜ", L"Göz at…", L"gta_sa.exe dosyasının bulunduğu klasörü seç. Önce oyunu kapat.",
+     L"Mevcut ayarların ve ilişkilerin korunur.", L"SA People’ı kur", L"Kapat",
+     L"SA People kuruluyor…", L"Mahalleye hoş geldin.", L"Kurulum tamamlanamadı.",
+     L"GTA San Andreas klasörünü seç", L"Kurulum paketi bozuk.",
+     L"Bu klasörde gta_sa.exe bulunamadı. Başka bir klasör seç.",
+     L"Bu gta_sa.exe, 1.0 US sürümü gibi görünmüyor. Mod çalışmayabilir. Yine de kurulsun mu?",
+     L"Bir dosya yazılamadı. Oyunu kapat ve yazma izinlerini kontrol et:",
+     L"Klasör izinlerini, salt okunur dosyaları ve çakışan dosya yollarını kontrol et.",
+     L"Ultimate ASI Loader da kuruldu (dinput8.dll).", L"Dil"},
+    {L"ВЗАИМОДЕЙСТВИЯ С NPC  /  PC 1.0 US", L"У каждого своя история.",
+     L"Находи друзей. Наживай врагов. Оставь свой след в городе.",
+     L"Знакомься с городом", L"Имена, семьи и отношения.", L"Будь на связи",
+     L"Сообщения, контакты и встречи в SA CELL.", L"Оставь свой след", L"Люди помнят, как ты к ним относишься.",
+     L"ПАПКА ИГРЫ", L"Обзор…", L"Выбери папку с gta_sa.exe. Сначала закрой игру.",
+     L"Твои настройки и отношения сохранятся.", L"Установить SA People", L"Закрыть",
+     L"Установка SA People…", L"Добро пожаловать в район.", L"Не удалось завершить установку.",
+     L"Выбери папку GTA San Andreas", L"Установочный пакет повреждён.",
+     L"В этой папке нет gta_sa.exe. Выбери другую папку.",
+     L"Этот gta_sa.exe не похож на версию 1.0 US. Мод может не работать. Всё равно установить?",
+     L"Не удалось записать файл. Закрой игру и проверь права доступа:",
+     L"Проверь права доступа, файлы только для чтения и конфликты путей.",
+     L"Также установлен Ultimate ASI Loader (dinput8.dll).", L"Язык"},
+    {L"INTERACCIONES CON NPC  /  PC 1.0 US", L"Cada persona, una historia.",
+     L"Haz amigos. Gánate enemigos. Deja tu huella en la ciudad.",
+     L"Conoce la ciudad", L"Nombres, familias y relaciones.", L"Sigue en contacto",
+     L"Mensajes, contactos y planes en SA CELL.", L"Deja tu huella", L"La gente recuerda cómo la tratas.",
+     L"CARPETA DEL JUEGO", L"Examinar…", L"Elige la carpeta que contiene gta_sa.exe. Cierra el juego primero.",
+     L"Se conservan tus ajustes y relaciones.", L"Instalar SA People", L"Cerrar",
+     L"Instalando SA People…", L"Bienvenido al barrio.", L"No se pudo completar la instalación.",
+     L"Selecciona tu carpeta de GTA San Andreas", L"El paquete de instalación está dañado.",
+     L"No se encontró gta_sa.exe en esta carpeta. Elige otra.",
+     L"Este gta_sa.exe no parece ser la versión 1.0 US. El mod podría no funcionar. ¿Instalar de todos modos?",
+     L"No se pudo escribir un archivo. Cierra el juego y comprueba los permisos:",
+     L"Revisa los permisos, los archivos de solo lectura y los conflictos de rutas.",
+     L"También se instaló Ultimate ASI Loader (dinput8.dll).", L"Idioma"}
+};
+inline const wchar_t *get(Language language, Key key) {
+    return copy[static_cast<std::size_t>(language)][key];
+}
+} // namespace setuptext

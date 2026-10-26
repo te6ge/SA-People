@@ -27,12 +27,10 @@ if (Test-Path "$root\audio") { Copy-Item "$root\audio\*" "$stage\SA-People\audio
 foreach ($n in 8, 9, 10) {
     if (Test-Path "$root\backgrounds\gtasanandreas$n.*") { Copy-Item "$root\backgrounds\gtasanandreas$n.*" "$stage\SA-People\backgrounds\" }
 } # Owner-made art only; source-only checkouts may supply media separately.
-foreach ($f in 'README.md', 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd', 'TEST-CHECKLIST-TR.md') {
+foreach ($f in 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd') {
     Copy-Item "$root\release-template\$f" $stage
 }
-Copy-Item "$root\docs\VALIDATION-0.13.3.md" $stage
-Copy-Item "$root\CHANGELOG.md" $stage
-Copy-Item "$root\docs\OYUNCU-REHBERI-TR.md" $stage
+Copy-Item "$root\README.md" $stage
 
 [IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
 [World]
@@ -51,18 +49,6 @@ Enabled=1
 HonorPercent=10
 VoicePercent=45
 "@, $utf8)
-
-# List the sound files the mod looks for, straight from the source.
-$policy = [IO.File]::ReadAllText("$root\source\AudioPolicy.h", [Text.Encoding]::UTF8) + [IO.File]::ReadAllText("$root\source\Audio.h", [Text.Encoding]::UTF8)
-$names = [regex]::Matches($policy, 'L"([^"]+\.(?:wav|mp3))"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
-[IO.File]::WriteAllText("$stage\SA-People\audio\README.txt", (@(
-    'Voice clips used by the mod. You can replace any of them with your own file of the same name;',
-    'a missing file is simply skipped (logged once in SA-People.log). Names the mod looks for:',
-    '') + $names) -join "`r`n", $utf8)
-[IO.File]::WriteAllText("$stage\SA-People\backgrounds\README.txt", @(
-    'Menu pictures (JPG, PNG or BMP). Add your own here.',
-    'Files whose names start with "gtasanandreas" appear 95% of the time; any other picture 5%.',
-    'Without pictures the menu uses a plain dark background.') -join "`r`n", $utf8)
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 # Zip with forward-slash entry names so every unzip tool agrees.
@@ -107,30 +93,48 @@ New-Setup $stage $setup
 $binaryZip = "$out\$name.zip"
 New-Zip $stage $binaryZip
 
+# ModLoader: a single flat folder, no installer or replacement loader DLL.
+$modStage = "$out\SA-People"
+New-Item -ItemType Directory -Path $modStage | Out-Null
+Copy-Item "$stage\SA-People.asi" $modStage
+Copy-Item "$stage\SA-People\*" $modStage -Recurse
+Move-Item -LiteralPath "$modStage\settings.ini" -Destination "$modStage\settings.example.ini"
+$modZip = "$out\$name-modloader.zip"
+New-Zip $modStage $modZip
+
 # Source package.
 $src = "$out\$name-source"
 New-Item -ItemType Directory -Force "$src\source" | Out-Null
 Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc
-foreach ($f in 'Build.cmd', 'BUILDING.md', 'CHANGELOG.md', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini') { Copy-Item "$root\$f" $src }
+foreach ($f in 'Build.cmd', 'README.md', 'LICENSE.txt', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini') { Copy-Item "$root\$f" $src }
 Copy-Item "$root\assets" "$src\assets" -Recurse
 foreach ($folder in 'loader', 'release-template', 'tests') {
     if (Test-Path "$root\$folder") { Copy-Item "$root\$folder" "$src\$folder" -Recurse }
 }
-foreach ($f in 'README.md', 'LICENSE.txt') { Copy-Item "$root\release-template\$f" $src }
-Copy-Item "$root\docs" "$src\docs" -Recurse
 New-Zip $src "$out\$name-source.zip"
+
+# One public download. Auxiliary archives above are local build/test artifacts only.
+$publicStage = "$out\SA-People-$version"
+New-Item -ItemType Directory -Force "$publicStage\Manual", "$publicStage\ModLoader" | Out-Null
+Copy-Item "$root\README.md" $publicStage
+Copy-Item "$root\LICENSE.txt" $publicStage
+Copy-Item $setup "$publicStage\SA-People-Setup.exe"
+Get-ChildItem $stage | Where-Object { $_.Name -ne 'README.md' } | Copy-Item -Destination "$publicStage\Manual" -Recurse
+Copy-Item $modStage "$publicStage\ModLoader\SA-People" -Recurse
+$publicZip = "$out\$name-complete.zip"
+New-Zip $publicStage $publicZip
 
 # Verify: nothing private or third-party may be inside.
 $bad = @()
-foreach ($zip in $binaryZip, "$out\$name-source.zip") {
+foreach ($zip in $binaryZip, $modZip, "$out\$name-source.zip", $publicZip) {
     $archive = [IO.Compression.ZipFile]::OpenRead($zip)
     foreach ($e in $archive.Entries) {
-        $allowed = ($zip -eq $binaryZip) -and ($e.FullName -match '/SA-People/audio/[^/]+\.(wav|mp3)$|/SA-People/backgrounds/gtasanandreas(8|9|10)\.(jpg|png)$')
+        $allowed = ($zip -ne "$out\$name-source.zip") -and ($e.FullName -match '(?:^|/)SA-People/audio/[^/]+\.(wav|mp3)$|(?:^|/)SA-People/backgrounds/gtasanandreas(8|9|10)\.(jpg|png)$')
         if (-not $allowed -and $e.FullName -match '\.(wav|mp3|ogg|jpg|jpeg|bmp|log|bak|webp)$|people\.dat|people\.pre|rollback') { $bad += "$zip : $($e.FullName)" }
     }
     $archive.Dispose()
 }
-foreach ($cleanup in $stage, $src) {
+foreach ($cleanup in $stage, $src, $modStage, $publicStage) {
     if ([IO.Path]::GetFullPath((Split-Path -Parent $cleanup)) -ne [IO.Path]::GetFullPath($out)) { throw 'Unexpected staging cleanup path' }
     Remove-Item -LiteralPath $cleanup -Recurse -Force
 }

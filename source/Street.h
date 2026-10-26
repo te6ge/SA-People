@@ -2,6 +2,8 @@
 #include "Dialogue.h"
 #include "Persona.h"
 #include "SocialProgress.h"
+#include "Introductions.h"
+#include "Locale.h"
 namespace street {
 enum class Action { Greet, Provoke, Defuse };
 enum class Cue {
@@ -22,6 +24,8 @@ struct Encounter {
     bool ended = false, busyRejected = false, refused = false, apologyUsed = false,
          brokenTruce = false;
     unsigned farewells = 0;
+    bool disclosed = false;
+    socialprogress::LineDeck topics;
 };
 struct Reply {
     std::string line;
@@ -89,7 +93,7 @@ inline void addMeaning(people::Family &f, unsigned amount, unsigned note) {
     auto &s = f.social;
     s.meaningful = std::min(1000000u, s.meaningful + amount);
     s.lastNote = note;
-    if ((s.known & people::Name) && (s.helped || (s.meaningful >= 3 && s.trust >= 16)))
+    if (introductions::contact(f))
         s.journal = true;
 }
 inline Reply exchange(people::Family &f, Encounter &e, Action action, bool combatAllowed,
@@ -252,22 +256,35 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                          : !manner.empty() ? manner
                                            : strangers[opening];
                 r.cue = Cue::Greeting;
-                if (pedType == 8 && !dialogue::knows(f, people::Name))
-                    r.line = "AMBIENT_GROVE_0";
+                if (pedType == 8 && !dialogue::knows(f, people::Name)) {
+                    static socialprogress::LineDeck groveDeck;
+                    static const char *grove[] = {"AMBIENT_GROVE_0", "AMBIENT_GROVE_1", "AMBIENT_GROVE_2",
+                        "AMBIENT_GROVE_3", "AMBIENT_GROVE_4", "AMBIENT_GROVE_5", "AMBIENT_GROVE_6", "AMBIENT_GROVE_7"};
+                    r.line = grove[groveDeck.take(8, seed)];
+                }
             }
         } else {
             adjust(5, -5);
             ++e.positive;
             r.reaction = dialogue::Reaction::Friendly;
-            if (!dialogue::knows(f, people::Name)) {
+            if (!dialogue::knows(f, people::Name) && introductions::name(f,pedType) && !e.disclosed) {
                 s.known |= people::Name;
-                r.line = "Bu arada, ben " + p[0].name + ". Memnun oldum CJ.";
+                e.disclosed = true;
+                static const char *introductions[] = {"INTRO_NAME_0","INTRO_NAME_1","INTRO_NAME_2"};
+                r.line = locale::format(introductions[seed%3],p[0].name);
                 addMeaning(f, 1, 1);
-            } else if (!dialogue::knows(f, people::Job)) {
+            } else if (!dialogue::knows(f, people::Name)) {
+                static const char *boundaries[] = {"INTRO_BOUNDARY_0", "INTRO_BOUNDARY_1", "INTRO_BOUNDARY_2", "INTRO_BOUNDARY_3"};
+                r.line = boundaries[e.topics.take(4,seed)];
+                r.cue = Cue::Neutral;
+                if(!(e.shared&2)) {e.shared|=2; addMeaning(f,1,1);}
+            } else if (!dialogue::knows(f, people::Job) && introductions::job(f,pedType) && !e.disclosed) {
                 s.known |= people::Job;
+                e.disclosed = true;
                 r.line = p[0].job + " olarak calisiyorum. Gecinip gidiyoruz.";
                 addMeaning(f, 2, 2);
-            } else if (!(e.shared & 1) && s.trust >= 24) {
+            } else if (!(e.shared & 1) && introductions::personal(f) && !e.disclosed) {
+                e.disclosed = true;
                 e.shared |= 1;
                 unsigned fields[] = {people::Child, people::Spouse, people::Sibling, people::Mother,
                                      people::Father};
@@ -287,7 +304,8 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                     }
                 if (!revealed)
                     r.line = "Aileyi de tanidin artik! Bir gun daha uzun otururuz.";
-            } else if (!dialogue::knows(f, people::Background) && s.trust >= 35) {
+            } else if (!dialogue::knows(f, people::Background) && s.encounters>=4 && s.trust>=45 && !e.disclosed) {
+                e.disclosed = true;
                 s.known |= people::Background | people::Age;
                 r.line = "San Andreas'ta buyudum. " + std::to_string(p[0].age) +
                          " yasindayim; daha yapacak cok is var.";
@@ -306,7 +324,7 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
                     "Otobuse yetisecegim diye kostum, yanlis yone gidiyormusum!",
                     "Bazen gune hic baslamasam diyorum. Isler birikiyor.",
                     "Bir gun isim duserse sana sorabilir miyim, dostum?"};
-                unsigned topic = seed % 12;
+                unsigned topic = e.topics.take(12,seed);
                 if (topic == 11 && !isFriend(f))
                     topic = 6;
                 r.line = smallTalk[topic];
@@ -327,7 +345,13 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
     s.lastReaction = static_cast<unsigned>(r.reaction);
     if (r.leaves && action == Action::Greet)
         r.cue = Cue::Depart;
+    // Keep a newly disclosed detail visible instead of replacing it with a contact offer.
+    if(!hadJournal && e.disclosed) s.journal=false;
     r.newJournal = !hadJournal && s.journal;
+    if(r.newJournal) {
+        static const char *offers[]={"INTRO_CONTACT_OFFER","INTRO_CONTACT_OFFER_1","INTRO_CONTACT_OFFER_2"};
+        r.line=offers[seed%3];
+    }
     r.newFriend = !wasFriend && isFriend(f);
     return r;
 }

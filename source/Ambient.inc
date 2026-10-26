@@ -44,7 +44,39 @@ unsigned lastOutfit = 0;
 bool outfitInitialized = false;
 std::unordered_map<unsigned, DWORD> ambientAfter;
 socialcontext::Topics ambientTopics;
+struct RecognitionRun {
+    unsigned person = 0;
+    people::Handle actor{};
+    void *task = nullptr;
+    DWORD until = 0;
+    unsigned area = 0;
+} recognition;
+bool recognitionOwns(unsigned id) { return recognition.person == id; }
+void clearRecognition() {
+    auto pool = at<Pool *>(0xB74490);
+    if (recognition.person && validPool(pool) && exists(pool, recognition.actor)) {
+        auto ped = pedAt(pool, recognition.actor.slot);
+        auto manager = taskManager(ped);
+        if (manager && recognition.task &&
+            at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12) == recognition.task)
+            setTask(manager, nullptr, 3);
+    }
+    recognition = {};
+}
+void updateRecognition(Pool *pool, Byte *player) {
+    if (!recognition.person) return;
+    if (!exists(pool,recognition.actor)) {clearRecognition(); return;}
+    auto ped=pedAt(pool,recognition.actor.slot);
+    if (!eligible(ped,player) || player[0x2F] != recognition.area || ped[0x2F] != player[0x2F] ||
+        !onFoot(player) || busy(ped) || nativeConversation(player) || nativeConversation(ped) ||
+        panelOpen || focusHeld || eventActive() || hasAppointment(recognition.person) ||
+        *reinterpret_cast<float *>(ped+0x540)<=0 ||
+        !socialworld::available(registry.families[recognition.person-1]) ||
+        due(GetTickCount(),recognition.until) || distance2(position(player),position(ped)) < 9)
+        clearRecognition();
+}
 void resetAmbient() {
+    clearRecognition();
     nextAmbient = outfitChangedAt = lastOutfit = 0;
     outfitInitialized = false; ambientAfter.clear(); ambientTopics = {};
     suppressCarSolicit(false);
@@ -73,13 +105,14 @@ void clearOldCarSolicit(Pool *pool, Byte *player) {
 }
 void updateAmbient(Pool *pool, Byte *player) {
     const DWORD now = GetTickCount();
+    updateRecognition(pool, player);
     const unsigned outfit = outfitFingerprint(player);
     clearOldCarSolicit(pool, player);
     if (outfit) {
         if (outfitInitialized && lastOutfit != outfit) outfitChangedAt = now;
         lastOutfit = outfit; outfitInitialized = true;
     }
-    if (!onFoot(player) || player[0x2F] || panelOpen || focusHeld || companion.person ||
+    if (!onFoot(player) || panelOpen || focusHeld || companion.person || recognition.person ||
         eventActive() || standoffActive() || now < subtitleUntil || !due(now, nextSpeech) ||
         !due(now, nextAmbient)) return;
     nextAmbient = now + 12000;
@@ -91,7 +124,8 @@ void updateAmbient(Pool *pool, Byte *player) {
         auto ped = pedAt(pool, slot);
         const auto h = handle(pool, slot);
         const auto id = bindings.find(h);
-        if (!id || !eligible(ped, player) || !onFoot(ped) || ped[0x2F] || busy(ped) ||
+        if (!id || !eligible(ped, player) || !onFoot(ped) || ped[0x2F] != player[0x2F] || busy(ped) ||
+            nativeConversation(ped) ||
             *reinterpret_cast<float *>(ped + 0x540) <= 0 || hasAppointment(id) ||
             (ambientAfter.count(id) && !due(now, ambientAfter[id])) || !visibleTarget(ped)) continue;
         float distance = distance2(position(player), position(ped));
@@ -105,15 +139,25 @@ void updateAmbient(Pool *pool, Byte *player) {
     const bool grove = *reinterpret_cast<int *>(ped + 0x598) == 8;
     const auto weather = socialcontext::weather(at<float>(0xC81324), at<float>(0xC81300),
         std::max(at<float>(0xC812E0), at<float>(0xC812F8)), at<float>(0xC812F0), at<Byte>(0xB70153));
-    static const char *groveLines[] = {"AMBIENT_GROVE_0", "AMBIENT_GROVE_1", "AMBIENT_GROVE_2"};
+    static const char *groveLines[] = {"AMBIENT_GROVE_0", "AMBIENT_GROVE_1", "AMBIENT_GROVE_2",
+        "AMBIENT_GROVE_3", "AMBIENT_GROVE_4", "AMBIENT_GROVE_5", "AMBIENT_GROVE_6", "AMBIENT_GROVE_7"};
     static const char *rain[] = {"AMBIENT_RAIN_0", "AMBIENT_RAIN_1", "AMBIENT_RAIN_2"};
     static const char *fog[] = {"AMBIENT_FOG_0", "AMBIENT_FOG_1"};
     static const char *sun[] = {"AMBIENT_SUN_0", "AMBIENT_SUN_1"};
     static socialprogress::LineDeck greetingDeck, knownDeck, groveDeck, rainDeck, fogDeck, sunDeck;
     const unsigned seed = people::mix(identity + now / 1000);
     const char *line = "AMBIENT_HELLO";
-    if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
-    else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(3, seed)];
+    if (neighborhood::canRecognize(f,false,false,false,player[0x2F],best) &&
+        f.daily.busyUntil <= registry.worldMinutes && seed % 3 == 0) {
+        releaseRoutine(f.id);
+        if (auto task=walkingTask(ped,position(player))) {
+            recognition={identity,candidate,task,now+10000,player[0x2F]};
+            line=seed%2 ? "RECOG_APPROACH_0" : "RECOG_APPROACH_1";
+        } else line="AMBIENT_KNOWN";
+    }
+    else if (player[0x2F]) line=neighborhood::interiorLine(greetingDeck.take(4,seed));
+    else if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
+    else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(8, seed)];
     else if (registry.honor <= -40 && seed % 3 == 0) line = "AMBIENT_HONOR_LOW";
     else if (registry.honor >= 40 && seed % 3 == 0) line = "AMBIENT_HONOR_HIGH";
     else if (weather == socialcontext::Weather::Rain && seed % 3 == 0) line = rain[rainDeck.take(3, seed)];

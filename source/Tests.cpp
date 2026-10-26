@@ -12,11 +12,27 @@
 #include "MeetingRuntime.h"
 #include "SocialContext.h"
 #include "NativeTalk.h"
+#include "InstallPaths.h"
+#include "SetupText.h"
+#include "Neighborhood.h"
+#include "GangCombat.h"
 #include <filesystem>
+#include <chrono>
 #include <iostream>
 #include <set>
 #include <cassert>
 int main() {
+    for (unsigned language = 0; language < 4; ++language) {
+        assert(setuptext::names[language][0]);
+        for (unsigned key = 0; key < setuptext::Count; ++key)
+            assert(setuptext::get(static_cast<setuptext::Language>(language),
+                                 static_cast<setuptext::Key>(key))[0]);
+    }
+    assert(std::wstring(setuptext::get(setuptext::Language::Russian, setuptext::Install)) ==
+           L"Установить SA People");
+    assert(std::wstring(setuptext::get(setuptext::Language::Spanish, setuptext::Missing)).find(
+           L"gta_sa.exe") != std::wstring::npos);
+    std::cout << "PASS: complete setup catalog in four languages, including Cyrillic.\n";
     // Recordings are optional and not shipped; skip file checks when the folder is empty.
     const bool audioAvailable = std::filesystem::exists("audio/high.mp3");
     std::cout << std::unitbuf;
@@ -1063,7 +1079,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 13", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 14", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1107,4 +1123,24 @@ int main() {
 
 #include "HonorTests.inc"
 #include "NativeTalkTests.inc"
+#include "InstallPathsTests.inc"
+#include "NeighborhoodTests.inc"
+#include "IntroductionTests.inc"
+    {
+        assert(gangcombat::eligible(7,1,false,false,true,true,25));
+        assert(gangcombat::eligible(9,1,false,false,true,true,625));
+        assert(!gangcombat::eligible(8,1,false,false,true,true,25));
+        assert(!gangcombat::eligible(7,2,false,false,true,true,25));
+        assert(!gangcombat::eligible(7,1,true,false,true,true,25));
+        assert(!gangcombat::eligible(7,1,false,true,true,true,25));
+        assert(!gangcombat::eligible(7,1,false,false,false,true,25));
+        assert(!gangcombat::eligible(7,1,false,false,true,false,25));
+        assert(!gangcombat::eligible(7,1,false,false,true,true,626));
+        assert(gangcombat::ambientTask(1201) && gangcombat::ambientTask(1207) && gangcombat::ambientTask(1212));
+        assert(gangcombat::ambientTask(-1) && !gangcombat::ambientTask(244));
+        assert(!gangcombat::ambientTask(205) && !gangcombat::ambientTask(1000));
+        assert(gangcombat::combatTask(1000) && gangcombat::combatTask(1002));
+        std::cout << "PASS: rejected gang combat accepts armed gang idles, excludes missions, "
+                     "recruits, dead/recycled actors, other interiors, injuries and scripted tasks.\n";
+    }
 }

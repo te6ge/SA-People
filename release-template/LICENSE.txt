@@ -20,7 +20,6 @@ DEALINGS IN THE SOFTWARE.
 
 This license covers the mod's code, text and documentation. The voice clips, menu pictures
 and icon files were supplied by the project owner, who is responsible for their rights.
-No Rockstar Games files are included.
 
 The bundled Ultimate ASI Loader (loader/dinput8.dll) is by ThirteenAG under the MIT license;
 see loader/Ultimate-ASI-Loader-LICENSE.txt.

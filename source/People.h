@@ -280,7 +280,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 13\n"
+        out << "SAPEOPLE 14\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -363,7 +363,7 @@ struct Registry {
         out << "LATER " << later.size() << '\n';
         for (const auto &l : later) {
             if (!l.person || l.person > families.size() || l.source > families.size() ||
-                !l.kind || l.kind > 5 || l.due > 1000000000)
+                !l.kind || l.kind > 7 || l.due > 1000000000)
                 throw std::runtime_error("Invalid consequence");
             out << l.person << ' ' << l.kind << ' ' << l.source << ' ' << l.due << '\n';
         }
@@ -375,7 +375,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 13 || count > MaxFamilies)
+            version > 14 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -554,7 +554,7 @@ struct Registry {
             for (unsigned i = 0; i < size; ++i) {
                 Later l;
                 if (!(in >> l.person >> l.kind >> l.source >> l.due) || !l.person ||
-                    l.person > count || l.source > count || !l.kind || l.kind > (version >= 13 ? 5u : 4u) ||
+                    l.person > count || l.source > count || !l.kind || l.kind > (version >= 14 ? 7u : version >= 13 ? 5u : 4u) ||
                     l.due > 1000000000)
                     throw std::runtime_error("Corrupt consequence");
                 r.later.push_back(l);

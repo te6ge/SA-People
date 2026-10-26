@@ -60,7 +60,7 @@ void __fastcall meetingSpriteHook(void *sprite, void *, const GameRect &r,
     if (drawingMeetingBlip && meetingRomance) {
         auto &icon = meetingRomance >= 3 ? heartImage : interestImage;
         if (icon.draw(at<IDirect3DDevice9 *>(0xC97C28),
-                      directory / L"assets" /
+                      resourceDirectory / L"assets" /
                           (meetingRomance >= 3 ? L"heart.png" : L"heartandqmark.png"),
                       std::min(r.left, r.right) - 2, std::min(r.top, r.bottom) - 2,
                       std::abs(r.right - r.left) + 4, std::abs(r.top - r.bottom) + 4, color.a))

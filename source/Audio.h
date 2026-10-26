@@ -107,8 +107,9 @@ class Player {
 
   public:
     void initialize(const std::filesystem::path &directory,
-                    std::function<void(const std::string &)> log) {
-        root = directory / L"audio";
+                    std::function<void(const std::string &)> log,
+                    const std::filesystem::path &resources = {}) {
+        root = (resources.empty() ? directory : resources) / L"audio";
         logger = std::move(log);
         auto ini = directory / L"settings.ini";
         enabled = GetPrivateProfileIntW(L"Audio", L"Enabled", 1, ini.c_str()) != 0;

@@ -621,8 +621,15 @@ void processPhone(Byte *player) {
             --phoneState.textOffset;
         bool invite = !messages.empty() && !messages.back()->outgoing && messages.back()->kind == 2;
         if (enter && invite && !phoneState.textOffset) {
-            phoneState.page = phone::Page::Activities;
-            phoneState.cursor = 0;
+            const int proposed = neighborhood::plannedActivity(messages.back()->body);
+            if (proposed >= 0) {
+                phoneState.activity = static_cast<unsigned>(proposed);
+                inviteContact(player);
+                panelInvalid = true;
+            } else {
+                phoneState.page = phone::Page::Activities;
+                phoneState.cursor = 0;
+            }
             return;
         }
         if (enter || right)

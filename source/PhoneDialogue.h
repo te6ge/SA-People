@@ -13,6 +13,7 @@ inline Context context(const people::Registry &r, unsigned id) {
         if (it->outgoing) return Context::General;
         if (it->body.rfind("MAIL_VISIT_", 0) == 0) return Context::Visit;
         if (it->body.rfind("MAIL_LATER_", 0) == 0) return Context::Thanks;
+        if (it->body.rfind("MAIL_STORY_", 0) == 0 && it->body != "MAIL_STORY_NEW_CONTACT") return Context::Thanks;
         if (it->body.rfind("MAIL_GOOD_OUTING", 0) == 0) return Context::Outing;
         if (it->body == "MAIL_FAMILY_PLANS") return Context::Family;
         if (it->kind == 2) return Context::Invitation;

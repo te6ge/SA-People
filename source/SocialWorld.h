@@ -116,7 +116,9 @@ inline bool spontaneous(people::Registry &r, people::Family &f, unsigned minute)
     if (family)
         f.daily.busyUntil =
             static_cast<unsigned>(std::min<std::uint64_t>(1000000000, r.worldMinutes + 180));
-    r.post(f.id, family ? "MAIL_FAMILY_PLANS" : "MAIL_INVITATION", false, family ? 3u : 2u);
+    static const char *plans[] = {"MAIL_PLAN_MEAL", "MAIL_PLAN_POOL", "MAIL_PLAN_DRIVE", "MAIL_PLAN_WALK"};
+    const unsigned activity = people::mix(f.id * 31 + day) % 4;
+    r.post(f.id, family ? "MAIL_FAMILY_PLANS" : plans[activity], false, family ? 3u : 2u);
     return true;
 }
 } // namespace socialworld

@@ -33,6 +33,6 @@ cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Preview.cpp /Febuild\P
 if not "%errorlevel%"=="0" exit /b 7
 build\PanelPreview.exe
 if not "%errorlevel%"=="0" exit /b 8
-cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Installer.cpp /Febuild\Installer.exe /Fobuild\Installer.obj /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED /MANIFESTUAC:"level='asInvoker' uiAccess='false'" user32.lib ole32.lib shell32.lib
+cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Installer.cpp /Febuild\Installer.exe /Fobuild\Installer.obj /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED /MANIFESTUAC:"level='asInvoker' uiAccess='false'" user32.lib gdi32.lib ole32.lib shell32.lib
 if not "%errorlevel%"=="0" exit /b 12
 echo Build and simulation tests passed.

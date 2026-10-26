@@ -1,0 +1,40 @@
+    {
+        namespace fs = std::filesystem;
+        auto base = fs::absolute("build") / ("paths-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+        auto game = base / L"İstanbul oyun";
+        auto package = game / L"modloader" / L"SA-People";
+        fs::create_directories(package);
+        fs::create_directories(game / L"SA-People");
+        std::ofstream(package / L"languages.tsv") << "catalog";
+        std::ofstream(package / L"settings.example.ini") << "[Interface]\nLanguage=en\n";
+        std::ofstream(game / L"SA-People" / L"people.dat") << "existing identities";
+        auto rootPaths = installpaths::resolve(game / L"gta_sa.exe", game / L"SA-People.asi");
+        auto modPaths = installpaths::resolve(game / L"gta_sa.exe", package / L"SA-People.asi");
+        assert(rootPaths.state == modPaths.state && modPaths.game == game);
+        assert(installpaths::modLoaderModule(game/L"gta_sa.exe",package/L"SA-People.asi"));
+        assert(!installpaths::modLoaderModule(game/L"gta_sa.exe",game/L"SA-People.asi"));
+        assert(!installpaths::modLoaderModule(game/L"gta_sa.exe",game/L"scripts"/L"SA-People.asi"));
+        assert(rootPaths.resources == game / L"SA-People" && modPaths.resources == package);
+        assert(installpaths::sameDirectory(fs::path(L"C:/GTA"), fs::path(L"c:/gta")));
+        assert(installpaths::seedSettings(modPaths));
+        std::ofstream(modPaths.state / L"settings.ini") << "[Interface]\nLanguage=tr\n";
+        assert(!installpaths::seedSettings(modPaths));
+        std::ifstream config(modPaths.state / L"settings.ini");
+        std::string configText((std::istreambuf_iterator<char>(config)), {});
+        assert(configText.find("Language=tr") != std::string::npos);
+        std::ifstream contacts(modPaths.state / L"people.dat");
+        std::string contactText((std::istreambuf_iterator<char>(contacts)), {});
+        assert(contactText == "existing identities");
+        auto alternate = game / L"scripts" / L"modloader" / L"Custom name";
+        fs::create_directories(alternate / L"SA-People");
+        auto nested = installpaths::resolve(game / L"gta_sa.exe", alternate / L"SA-People.asi");
+        assert(nested.resources == alternate / L"SA-People" && nested.state == rootPaths.state);
+        const auto originalWorkingDir = fs::current_path();
+        fs::current_path(package);
+        auto changedCwd = installpaths::resolve(game / L"gta_sa.exe", package / L"SA-People.asi");
+        fs::current_path(originalWorkingDir);
+        assert(changedCwd.game == game && changedCwd.resources == package);
+        assert(!fs::exists(package / L"people.dat") && !fs::exists(package / L"settings.ini"));
+        std::cout << "PASS: root/flat/nested ModLoader paths, executable-based game data, Unicode, "
+                     "shared identities, preserved settings and changed working directory.\n";
+    }

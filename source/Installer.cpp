@@ -14,6 +14,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "SetupText.h"
+namespace setupui { inline const wchar_t *tr(setuptext::Key key); }
 namespace fs = std::filesystem;
 struct Entry {
     std::string path;
@@ -80,7 +82,7 @@ static std::wstring pickFolder() {
     DWORD options = 0;
     dialog->GetOptions(&options);
     dialog->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
-    dialog->SetTitle(L"GTA San Andreas klasörünü seç / Select your GTA San Andreas folder");
+    dialog->SetTitle(setupui::tr(setuptext::Pick));
     if (SUCCEEDED(dialog->Show(nullptr))) {
         IShellItem *item = nullptr;
         if (SUCCEEDED(dialog->GetResult(&item))) {
@@ -95,6 +97,7 @@ static std::wstring pickFolder() {
     dialog->Release();
     return result;
 }
+#include "SetupUi.h"
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     int argc = 0;
     wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -112,45 +115,25 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         std::ifstream in(fs::path(self), std::ios::binary);
         std::vector<Entry> entries;
         if (!in || !readIndex(in, entries) || entries.empty()) {
-            ask(L"Kurulum paketi bozuk.\nThe setup package is damaged.", MB_ICONERROR);
+            ask(setupui::tr(setuptext::Damaged), MB_ICONERROR);
             return 1;
         }
-        if (!silent &&
-            ask(L"SA People, GTA San Andreas 1.0 US için bir sosyal etkileşim modudur.\n"
-                L"Bir sonraki adımda oyunun klasörünü (gta_sa.exe olan) seçeceksin.\n\n"
-                L"SA People is a social mod for GTA San Andreas 1.0 US.\n"
-                L"Next, select your game folder (the one with gta_sa.exe).\n\nDevam? / Continue?",
-                MB_ICONINFORMATION | MB_OKCANCEL) != IDOK)
-            return 0;
         fs::path game;
-        for (;;) {
-            if (silent) {
-                game = given;
-                if (!fs::exists(game / L"gta_sa.exe"))
-                    return 3;
-                break;
-            }
-            auto chosen = pickFolder();
-            if (chosen.empty())
-                return 0;
-            game = chosen;
-            if (fs::exists(game / L"gta_sa.exe"))
-                break;
-            if (ask(L"Bu klasörde gta_sa.exe yok. Başka bir klasör seç.\n"
-                    L"gta_sa.exe was not found in this folder. Choose another one.",
-                    MB_ICONWARNING | MB_RETRYCANCEL) != IDRETRY)
-                return 0;
+        if (silent) {
+            game = given;
+            if (!fs::exists(game / L"gta_sa.exe")) return 3;
+        } else {
+            game = setupui::choose();
+            if (game.empty()) return 0;
         }
         std::error_code error;
         if (silent && fs::file_size(game / L"gta_sa.exe") != 14383616)
             return 4;
         if (fs::file_size(game / L"gta_sa.exe", error) != 14383616 &&
-            ask(L"Bu gta_sa.exe 1.0 US sürümü gibi görünmüyor; mod büyük ihtimalle çalışmaz.\n"
-                L"This gta_sa.exe does not look like version 1.0 US; the mod will likely not "
-                L"run.\n\n"
-                L"Yine de kurulsun mu? / Install anyway?",
-                MB_ICONWARNING | MB_YESNO) != IDYES)
+            ask(setupui::tr(setuptext::Unsupported), MB_ICONWARNING | MB_YESNO) != IDYES) {
+            setupui::close();
             return 0;
+        }
         bool loader = fs::exists(game / L"vorbisFile.dll") &&
                       fs::file_size(game / L"vorbisFile.dll", error) > 100000;
         loader = loader || fs::exists(game / L"dinput8.dll");
@@ -186,7 +169,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         }
         std::vector<char> buffer;
         bool loaderInstalled = false;
+        unsigned written = 0;
         for (const auto &e : entries) {
+            setupui::progress(++written, static_cast<unsigned>(entries.size()), widen(e.path));
             fs::path target = game / fs::path(widen(e.path));
             if (e.mode == 1 && fs::exists(target))
                 continue;
@@ -207,25 +192,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             if (!in || !out) {
                 if (silent)
                     return 2;
-                ask(L"Bir dosya yazılamadı: " + target.wstring() +
-                        L"\nOyun açıksa kapatıp tekrar dene.\n\nA file could not be written. "
-                        L"If the game is running, close it and try again.",
-                    MB_ICONERROR);
+                ask(std::wstring(setupui::tr(setuptext::WriteError)) + L"\n" + target.wstring(), MB_ICONERROR);
+                setupui::close();
                 return 2;
             }
         }
-        std::wstring done = L"SA People kuruldu!\nSA People is installed!\n\n" + game.wstring();
-        if (loaderInstalled)
-            done += L"\n\nUltimate ASI Loader da kuruldu (dinput8.dll).\nUltimate ASI Loader was "
-                    L"installed too (dinput8.dll).";
-        ask(done, MB_ICONINFORMATION);
+        setupui::addedLoader = loaderInstalled;
+        setupui::finish();
         return 0;
     } catch (const std::exception &) {
-        ask(L"Kurulum tamamlanamadı. Yazma izinlerini, salt okunur dosyaları ve klasör yerine "
-            L"geçen dosyaları kontrol et.\n"
-            L"Installation failed. Check folder permissions, read-only files and conflicting file "
-            L"paths.",
-            MB_ICONERROR);
+        ask(std::wstring(setupui::tr(setuptext::Failed)) + L"\n\n" + setupui::tr(setuptext::Failure), MB_ICONERROR);
+        setupui::close();
         return 2;
     }
 }

@@ -32,6 +32,9 @@
 #include "SocialContext.h"
 #include "SocialProgress.h"
 #include "NativeTalk.h"
+#include "InstallPaths.h"
+#include "Neighborhood.h"
+#include "GangCombat.h"
 namespace {
 using Byte = unsigned char;
 template <class T> T &at(std::uintptr_t a) {
@@ -48,7 +51,8 @@ struct Pool {
 using Process = void(__cdecl *)();
 Process original = nullptr, originalRestart = nullptr, originalDraw = nullptr;
 HMODULE moduleHandle = nullptr;
-std::filesystem::path directory;
+std::filesystem::path directory, resourceDirectory;
+HANDLE instanceGuard = nullptr;
 socialaudio::Player audio;
 unsigned audioVariation = 0;
 socialaudio::Chooser audioChoices;
@@ -125,7 +129,7 @@ void discoverNetwork(unsigned id) {
 }
 bool drawMeetingImage(float x, float y, float w, float h, Byte alpha = 255) {
     return meetingImage.draw(at<IDirect3DDevice9 *>(0xC97C28),
-                             directory / L"assets" / L"meeting.png", x, y, w, h, alpha);
+                             resourceDirectory / L"assets" / L"meeting.png", x, y, w, h, alpha);
 }
 void openPanel() {
     panelOpen = true;
@@ -297,12 +301,21 @@ bool save() {
 }
 void initialize() {
     wchar_t path[32768] = {};
-    if (!GetModuleFileNameW(moduleHandle, path, 32768))
+    // Resolve actual module/executable locations, independent of ModLoader's IAT path translation.
+    auto modulePath = reinterpret_cast<DWORD(WINAPI *)(HMODULE, LPWSTR, DWORD)>(
+        GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "GetModuleFileNameW"));
+    wchar_t executable[32768] = {};
+    if (!modulePath || !modulePath(moduleHandle, path, 32768) ||
+        !modulePath(nullptr, executable, 32768))
         throw std::runtime_error("Module path unavailable");
-    directory = std::filesystem::path(path).parent_path() / L"SA-People";
+    auto paths = installpaths::resolve(executable, path);
+    directory = paths.state;
+    resourceDirectory = paths.resources;
     std::filesystem::create_directories(directory);
+    installpaths::seedSettings(paths);
+    log("PATHS resources=" + resourceDirectory.u8string() + " state=" + directory.u8string());
     {
-        std::ifstream peds(directory.parent_path() / L"data" / L"peds.ide");
+        std::ifstream peds(paths.game / L"data" / L"peds.ide");
         modelTraits.read(peds);
     }
     auto ini = directory / L"settings.ini";
@@ -319,7 +332,7 @@ void initialize() {
         std::min(GetPrivateProfileIntW(L"Interface", L"AutoCloseSeconds", 0, ini.c_str()), 120u);
     developerReunion = GetPrivateProfileIntW(L"Development", L"EnableReunion", 0, ini.c_str()) != 0;
     {
-        std::ifstream translations(directory / L"languages.tsv", std::ios::binary);
+        std::ifstream translations(resourceDirectory / L"languages.tsv", std::ios::binary);
         locale::catalog.read(translations);
     }
     wchar_t language[16] = {};
@@ -329,10 +342,14 @@ void initialize() {
                        : wcscmp(language, L"en") == 0 ? locale::Language::English
                                                       : locale::Language::Turkish;
     controls::load(ini.c_str());
-    gallery.initialize(directory);
-    audio.initialize(directory, log);
+    gallery.initialize(resourceDirectory);
+    audio.initialize(directory, log, resourceDirectory);
     auto archive = directory / L"people.dat";
     if (std::filesystem::exists(archive)) {
+        const auto beforeNeighborhood = directory / L"people.pre-0.14.dat";
+        if (!std::filesystem::exists(beforeNeighborhood) &&
+            !CopyFileW(archive.c_str(), beforeNeighborhood.c_str(), TRUE))
+            throw std::runtime_error("Neighborhood upgrade backup failed");
         try {
             std::ifstream in(archive);
             registry = people::Registry::read(in);
@@ -367,7 +384,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.13.3 initialized; persistent identities=" +
+    log("SA People 0.14.2 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -886,7 +903,7 @@ bool patchCall(std::uintptr_t address, Process replacement, Process &previous) {
     return true;
 }
 #include "MenuHooks.inc"
-bool install() {
+bool supportedExecutable() {
     if (reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr)) != 0x400000)
         return false;
     unsigned signature = at<unsigned>(0x401000);
@@ -895,6 +912,10 @@ bool install() {
     if (GetModuleHandleW(L"samp.dll") || GetModuleHandleW(L"omp-client.dll") ||
         GetModuleHandleW(L"client.dll"))
         return false;
+    return true;
+}
+bool install() {
+    if (!supportedExecutable()) return false;
     if (!patchCall(0x53E981, processHook, original))
         return false;
     if (!patchCall(0x53EBB1, drawHook, originalDraw)) {
@@ -912,10 +933,20 @@ bool install() {
 }
 } // namespace
 extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
-    static bool initialized = false;
-    if (initialized)
+    static volatile LONG initialized = 0;
+    if (InterlockedCompareExchange(&initialized, 1, 0) != 0) return;
+    if (!supportedExecutable()) {
+        OutputDebugStringW(L"SA People: unsupported executable; initialization skipped.");
         return;
-    initialized = true;
+    }
+    const auto guardName = L"Local\\SA-People-runtime-" + std::to_wstring(GetCurrentProcessId());
+    instanceGuard = CreateMutexW(nullptr, FALSE, guardName.c_str());
+    if (!instanceGuard || GetLastError() == ERROR_ALREADY_EXISTS) {
+        if (instanceGuard) CloseHandle(instanceGuard);
+        instanceGuard = nullptr;
+        OutputDebugStringW(L"SA People: another copy is already running; initialization skipped.");
+        return;
+    }
     try {
         initialize();
         if (install())
@@ -934,6 +965,20 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         moduleHandle = module;
         DisableThreadLibraryCalls(module);
+        // ModLoader's std.asi calls LoadLibrary, but not the Ultimate ASI Loader export.
+        // Initialization here does no COM/media playback and creates no worker threads.
+        if (GetModuleHandleW(L"modloader.asi")) {
+            // The root copy must still wait for Ultimate ASI Loader's export callback.
+            // Merely having ModLoader installed is not evidence that it loaded this copy.
+            wchar_t executable[32768]={}, modulePath[32768]={};
+            if(GetModuleFileNameW(nullptr,executable,32768) && GetModuleFileNameW(module,modulePath,32768)) {
+                try {
+                    if(installpaths::modLoaderModule(executable,modulePath)) InitializeASI();
+                } catch(const std::exception &) {
+                    OutputDebugStringW(L"SA People: could not resolve loader startup path.");
+                }
+            }
+        }
     }
     return TRUE;
 }
