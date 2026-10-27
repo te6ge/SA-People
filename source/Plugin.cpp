@@ -35,6 +35,7 @@
 #include "InstallPaths.h"
 #include "Neighborhood.h"
 #include "GangCombat.h"
+#include "Community.h"
 namespace {
 using Byte = unsigned char;
 template <class T> T &at(std::uintptr_t a) {
@@ -48,6 +49,7 @@ struct Pool {
     Byte *flags;
     int size;
 };
+bool validPool(Pool *);
 using Process = void(__cdecl *)();
 Process original = nullptr, originalRestart = nullptr, originalDraw = nullptr;
 HMODULE moduleHandle = nullptr;
@@ -56,6 +58,7 @@ HANDLE instanceGuard = nullptr;
 socialaudio::Player audio;
 unsigned audioVariation = 0;
 socialaudio::Chooser audioChoices;
+npcvoice::Chooser npcVoices;
 glyphs::Renderer glyphRenderer;
 sprites::Image meetingImage, heartImage, interestImage;
 backdrop::Gallery gallery;
@@ -204,6 +207,7 @@ void releaseActors() {
     while (!actorLeases.empty()) releaseActor(actorLeases.begin()->second.person);
 }
 void companionWitness(unsigned, socialcontext::Witness);
+void observeDeed(unsigned,community::Deed);
 bool activeOffender(unsigned);
 socialprogress::HonorBatch honorBatch;
 socialprogress::Cheat honorCheat;
@@ -249,6 +253,13 @@ void capture(people::Family &f, Byte *ped) {
         auto cj = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
         auto vehicle = reinterpret_cast<Byte *(__cdecl *)(int, bool)>(0x56E0D0)(0, false);
         const bool byCJ = attacker && (attacker == cj || attacker == vehicle);
+        auto vehicles=at<Pool *>(0xB74494);
+        if(attacker && validPool(vehicles)) {
+            const auto address=reinterpret_cast<std::uintptr_t>(attacker), base=reinterpret_cast<std::uintptr_t>(vehicles->objects);
+            if(address>=base && (address-base)%0xA18==0 && (address-base)/0xA18<static_cast<unsigned>(vehicles->size) &&
+               !(vehicles->flags[(address-base)/0xA18]&0x80))
+                f.community.accidentAt=static_cast<unsigned>(registry.worldMinutes+1);
+        }
         if (socialprogress::defended(defense, byCJ, p.health) &&
             defendedOffenders.insert(f.id).second) {
             reputation(1);
@@ -263,9 +274,7 @@ void capture(people::Family &f, Byte *ped) {
         auto car = reinterpret_cast<Byte *(__cdecl *)(int, bool)>(0x56E0D0)(0, false);
         if (attacker && (attacker == player || attacker == car)) {
             if (defense) { spatial.update(f); dirty = true; return; }
-            network::news(registry, f.id, true, true);
-            if ((f.social.known & people::Name) && network::feud(registry, f.id))
-                help(locale::format("FEUD_START", people::generate(f)[0].name));
+            // Relatives learn through witnesses and local contacts, rather than globally.
             reputation(-4);
         }
     }
@@ -346,7 +355,7 @@ void initialize() {
     audio.initialize(directory, log, resourceDirectory);
     auto archive = directory / L"people.dat";
     if (std::filesystem::exists(archive)) {
-        const auto beforeNeighborhood = directory / L"people.pre-0.14.dat";
+        const auto beforeNeighborhood = directory / L"people.pre-0.15.dat";
         if (!std::filesystem::exists(beforeNeighborhood) &&
             !CopyFileW(archive.c_str(), beforeNeighborhood.c_str(), TRUE))
             throw std::runtime_error("Neighborhood upgrade backup failed");
@@ -384,7 +393,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.14.2 initialized; persistent identities=" +
+    log("SA People 0.15.0 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -686,8 +695,12 @@ void drawStreetHud(float fw, float fh) {
         hints.canGreet = !target->social.cutOff;
         hints.canRob = robbable(pedAt(pool, focusedHandle.slot));
         hints.robbed = target->social.robbed != 0;
-        hints.angry = target->social.anger > 0;
-        hints.ready = due(GetTickCount(), nextSpeech);
+        const auto live = liveTalks.find(focused);
+        const street::Encounter noEncounter{focused};
+        hints.angry = street::mayDefuse(*target,
+            live == liveTalks.end() ? noEncounter : live->second.encounter,
+            hasOwnedFight(pool, focusedHandle)) || gangNegotiationAvailable(pool, player, focusedHandle);
+        hints.ready = due(GetTickCount(), nextSpeech) && !audio.talking();
         hints.relation = street::relationship(*target);
         {
             const int type = *reinterpret_cast<int *>(pedAt(pool, focusedHandle.slot) + 0x598);
@@ -703,13 +716,16 @@ void drawStreetHud(float fw, float fh) {
         }
         hints.trust = target->social.trust;
         hints.eventAction = eventAction(focused);
+        const auto focusedPed=pedAt(pool,focusedHandle.slot);
+        if(communityEnabled && target->community.accidentAt && *reinterpret_cast<float *>(focusedPed+0x540)>1 &&
+           *reinterpret_cast<float *>(focusedPed+0x540)<=35 && community::mayAid(registry,focused)) {
+            hints.eventAction="RESCUE_AID_OR_DRIVE";hints.defuseAction="RESCUE_CALL_AMBULANCE";
+        }
         if (companionOwns(focused))
             hints.eventAction = "ACT_ASK";
         auto it = liveTalks.find(focused);
         if (it != liveTalks.end()) {
             hints.canGreet = street::mayGreet(it->second.encounter) && !target->social.cutOff;
-            hints.angry = hints.angry && !it->second.encounter.apologyUsed &&
-                          !it->second.encounter.brokenTruce && target->social.resentment < 55;
         }
         hints.canDecline = nightOffer(focused);
         if (!hints.eventAction.empty())

@@ -16,6 +16,8 @@
 #include "SetupText.h"
 #include "Neighborhood.h"
 #include "GangCombat.h"
+#include "NpcVoices.h"
+#include "Community.h"
 #include <filesystem>
 #include <chrono>
 #include <iostream>
@@ -1079,7 +1081,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 14", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 15", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1092,6 +1094,7 @@ int main() {
         reopened.write(legacyData);
         auto legacyString = legacyData.str();
         legacyString.replace(0, 11, "SAPEOPLE 12");
+        legacyString.resize(legacyString.find("COMMUNITY "));
         std::stringstream legacyInput(legacyString);
         auto legacyRead = people::Registry::read(legacyInput);
         assert(legacyRead.families[0].social.known == contactPerson.social.known);
@@ -1126,6 +1129,9 @@ int main() {
 #include "InstallPathsTests.inc"
 #include "NeighborhoodTests.inc"
 #include "IntroductionTests.inc"
+#include "ConflictTests.inc"
+#include "NpcVoiceTests.inc"
+#include "CommunityTests.inc"
     {
         assert(gangcombat::eligible(7,1,false,false,true,true,25));
         assert(gangcombat::eligible(9,1,false,false,true,true,625));

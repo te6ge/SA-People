@@ -391,7 +391,7 @@ bool converseLife(Byte *player) {
             later::schedule(registry, f.id, later::Thanks);
         justMet(f);
         discoverNetwork(f.id);
-        network::news(registry, f.id, kind == encounters::Kind::Addict);
+        if(kind!=encounters::Kind::Addict) observeDeed(f.id,community::Deed::Help);
         dirty = true;
         panelInvalid = true;
         cancelLife();
@@ -406,13 +406,15 @@ bool converseLife(Byte *player) {
             return true;
         }
         releaseLifeTask();
+        const int seat=reservePassenger(car,lifeEvent.actor);
+        const int door=socialcontext::passengerDoor(seat);
+        if(door<0){help("ACT_DRIVE_DOOR_BLOCKED");return true;}
         auto task = reinterpret_cast<void *(__cdecl *)(unsigned)>(0x61A5A0)(0x50);
         if (!task) {
             cancelLife();
             return true;
         }
-        reinterpret_cast<void(__thiscall *)(void *, Byte *, int, bool)>(0x640340)(
-            task, car, socialcontext::passengerDoor(freeSeat(car)), false);
+        reinterpret_cast<void(__thiscall *)(void *, Byte *, int, bool)>(0x640340)(task,car,door,false);
         setTask(taskManager(ped), task, 3);
         lifeEvent.task = task;
         auto slot = static_cast<unsigned>((car - cars->objects) / 0xA18);
@@ -655,7 +657,7 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
                 std::min(lifeEvent.fare, static_cast<unsigned>(999999999 - *money)));
             reputation(1);
             discoverNetwork(f.id);
-            network::news(registry, f.id, false);
+            observeDeed(f.id,community::Deed::Help);
             later::helped(registry, f.id);
             justMet(f);
             help(locale::format("LIFE_RIDE_PAID", std::to_string(lifeEvent.fare)));
@@ -721,6 +723,7 @@ void updateFeud(Pool *pool, Byte *player) {
         if (busy(ped) || primaryOccupied(ped))
             continue;
         if (startFight(ped, player, true)) {
+            log("SOCIAL feud attack identity=" + std::to_string(id));
             say(registry.families[id - 1], "FEUD_LINE");
             audio.speak(audioChoices.choose(socialaudio::Context::Fight, now + id));
         }

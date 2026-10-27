@@ -3,7 +3,37 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <istream>
+#include <ostream>
 namespace people {
+struct CommunityMemory {
+    int opinion = 0;
+    unsigned strain = 0, requests = 0, lastRequest = 0, serviceDay = 0, aidDay = 0;
+    unsigned incident = 0, victim = 0, teller = 0, kind = 0, hops = 0, minute = 0, sharedAt = 0;
+    unsigned drivingWarnings = 0, accidentAt = 0;
+    bool empty() const {
+        return !opinion && !(strain | requests | lastRequest | serviceDay | aidDay | incident |
+                            victim | teller | kind | hops | minute | sharedAt | drivingWarnings | accidentAt);
+    }
+    bool valid(unsigned count) const {
+        return opinion >= -100 && opinion <= 100 && strain <= 100 && requests <= 12 &&
+            lastRequest <= 1000000001 && serviceDay <= 1000000 && aidDay <= 1000000 &&
+            incident <= 1000000000 && victim <= count && teller <= count &&
+            kind <= 4 && hops <= 2 && minute <= 1000000000 && sharedAt <= 1000000001 &&
+            drivingWarnings <= 3 && accidentAt <= 1000000001 &&
+            ((!incident && !kind && !victim && !teller && !hops) || (incident && kind && victim && teller));
+    }
+    void write(std::ostream &out) const {
+        out << opinion << ' ' << strain << ' ' << requests << ' ' << lastRequest << ' '
+            << serviceDay << ' ' << aidDay << ' ' << incident << ' ' << victim << ' ' << teller
+            << ' ' << kind << ' ' << hops << ' ' << minute << ' ' << sharedAt << ' '
+            << drivingWarnings << ' ' << accidentAt;
+    }
+    bool read(std::istream &in, unsigned count) {
+        return static_cast<bool>(in >> opinion >> strain >> requests >> lastRequest >> serviceDay >> aidDay >>
+            incident >> victim >> teller >> kind >> hops >> minute >> sharedAt >> drivingWarnings >> accidentAt) && valid(count);
+    }
+};
 struct Point {
     float x = 0, y = 0, z = 0;
 };

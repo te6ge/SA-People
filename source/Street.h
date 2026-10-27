@@ -38,6 +38,19 @@ struct Reply {
 inline bool mayGreet(const Encounter &e) {
     return !e.busyRejected && (!e.refused || e.farewells < 1);
 }
+inline bool mayDefuse(const people::Family &f, const Encounter &e, bool fighting = false) {
+    return !f.social.cutOff && !f.social.feud && !e.apologyUsed && !e.brokenTruce &&
+           f.social.resentment < 55 && (f.social.anger > 0 || fighting);
+}
+// A passing stranger can stage a random incident; someone CJ has already dealt with
+// keeps that history even before their number is added to the phone.
+inline bool strangerIncident(const people::Family &f) {
+    const auto &s = f.social;
+    return !s.known && !s.journal && !s.encounters && !s.attempts && !s.helped &&
+           !s.romance && !s.feud && !s.robbed && !s.cutOff && !s.provokes &&
+           !s.meaningful && !s.events && !s.anger && !s.resentment && !s.trust &&
+           !f.meetings && !f.daily.outings;
+}
 inline void rejectBusy(Encounter &e) {
     e.busyRejected = true;
     e.refused = true;
@@ -97,7 +110,7 @@ inline void addMeaning(people::Family &f, unsigned amount, unsigned note) {
         s.journal = true;
 }
 inline Reply exchange(people::Family &f, Encounter &e, Action action, bool combatAllowed,
-                      int pedType = 4, int honor = 0) {
+                      int pedType = 4, int honor = 0, bool fighting = false) {
     Reply r;
     if ((e.ended && action == Action::Greet) || (action == Action::Greet && !mayGreet(e)))
         return r;
@@ -119,12 +132,12 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
     auto p = people::generate(f);
     if (action == Action::Defuse) {
         r.cue = Cue::Apology;
-        if (e.apologyUsed || e.brokenTruce || s.resentment >= 55) {
+        if (e.apologyUsed || e.brokenTruce || s.resentment >= 55 || s.feud) {
             r.line = "Az once de aynisini soyledin. Artik sana inanmiyorum.";
             r.reaction = dialogue::Reaction::Angry;
             return r;
         }
-        bool angry = s.anger > 0;
+        bool angry = s.anger > 0 || fighting;
         if (angry) {
             e.apologyUsed = true;
             unsigned floor = s.resentment * 3 / 5;
@@ -209,7 +222,7 @@ inline Reply exchange(people::Family &f, Encounter &e, Action action, bool comba
             int open[] = {25, 10, -6, -18};
             int score = 25 + open[dialogue::temperament(f)] + s.trust / 3 -
                         static_cast<int>(s.anger) / 2 + static_cast<int>(seed % 31) - 15 +
-                        socialprogress::openness(honor);
+                        socialprogress::openness(honor) - static_cast<int>(f.community.strain)/3;
             if (score < 5) {
                 r.line = score < -15             ? "Seninle konusmak istemiyorum."
                          : f.social.romance >= 3 ? "ROMANCE_GOODBYE"

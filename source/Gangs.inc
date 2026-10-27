@@ -3,6 +3,11 @@
 // the global type table is never changed. Personal leases expire or restore on mission,
 // interior entry, failure and restart. Recycled pool slots are never written through.
 bool visibleTarget(Byte *ped);
+bool personalGangPeace(people::Handle actor) {
+    const unsigned id = bindings.find(actor);
+    return id && id <= registry.families.size() &&
+           neighborhood::personalPeace(registry.families[id - 1]);
+}
 bool gangTalk = true;
 struct GangMasks {
     unsigned hate = 0, dislike = 0;
@@ -24,7 +29,7 @@ int gangTaskId(void *task) {
 void updateGangAttacks(Pool *pool, Byte *player) {
     const DWORD now=GetTickCount();
     for(auto it=gangAttacks.begin();it!=gangAttacks.end();) {
-        if(!exists(pool,it->actor) || due(now,it->expires)) {
+        if(!exists(pool,it->actor) || due(now,it->expires) || personalGangPeace(it->actor)) {
             if(due(now,it->expires)) log("GANG attack expired slot="+std::to_string(it->actor.slot));
             it=gangAttacks.erase(it); continue;
         }
@@ -220,7 +225,7 @@ void negotiateGang(Byte *player, bool provoke) {
     log("GANG standoff settled gang=" + std::to_string(gang) + " chance=" + std::to_string(chance));
 }
 bool beginGangTalk(Pool *pool, Byte *player, people::Handle target) {
-    if(!exists(pool,target) || !onFoot(player) || player[0x2F]) return false;
+    if(!exists(pool,target) || !onFoot(player) || player[0x2F] || personalGangPeace(target)) return false;
     auto ped=pedAt(pool,target.slot);
     const int type=*reinterpret_cast<int *>(ped+0x598);
     if(!eligible(ped,player) || !rivalGang(type) || !onFoot(ped) || ped[0x2F] ||
@@ -234,7 +239,9 @@ bool beginGangTalk(Pool *pool, Byte *player, people::Handle target) {
            *reinterpret_cast<int *>(member+0x598)!=type || *reinterpret_cast<float *>(member+0x540)<=0 ||
            distance2(position(player),position(member))>144 || !visibleTarget(member)) continue;
         if(standoff.members.size()>=8) break;
-        auto h=handle(pool,slot); standoff.members.push_back(h);
+        auto h=handle(pool,slot);
+        if(personalGangPeace(h)) continue;
+        standoff.members.push_back(h);
         liftGangMember(pool,h,type,standoff.until+1000); calmMember(member);
     }
     if(standoff.members.empty()) {endStandoff(true); return false;}
@@ -250,12 +257,7 @@ bool talkRival(Pool *pool, Byte *player, people::Handle target, bool provoke) {
     int type=*reinterpret_cast<int *>(ped+0x598);
     if(!rivalGang(type) || !eligible(ped,player)) return false;
     if(!gangHatesPlayer(type) && !gangState[type].lifted) return false;
-    const unsigned id=bindings.find(target);
-    if(id) {
-        const auto &person=registry.families[id-1];
-        if(person.social.journal && (street::isFriend(person) ||
-            (person.social.helped && person.social.trust>=25 && introductions::comfortable(person)))) return false;
-    }
+    if(personalGangPeace(target)) return false;
     const bool member=standoffActive() && std::find(standoff.members.begin(),standoff.members.end(),target)!=standoff.members.end();
     if(provoke) {if(member) {negotiateGang(player,true); return true;} return false;}
     const DWORD now=GetTickCount();
@@ -271,6 +273,20 @@ bool talkRival(Pool *pool, Byte *player, people::Handle target, bool provoke) {
     nextSpeech=now+3500;
     return true;
 }
+bool gangNegotiationAvailable(Pool *pool, Byte *player, people::Handle actor) {
+    if(!gangTalk || !player || player[0x2F] || !onFoot(player) || !exists(pool,actor) ||
+       personalGangPeace(actor)) return false;
+    auto ped=pedAt(pool,actor.slot);
+    const int type=*reinterpret_cast<int *>(ped+0x598);
+    if(!rivalGang(type) || !eligible(ped,player) || !onFoot(ped) || ped[0x2F] ||
+       !gangHatesPlayer(type) ||
+       !introductions::gangRange(distance2(position(player),position(ped)),visibleTarget(ped))) return false;
+    const bool member=standoffActive() &&
+        std::find(standoff.members.begin(),standoff.members.end(),actor)!=standoff.members.end();
+    return member || (!standoffActive() && due(GetTickCount(),gangCooldown) &&
+                     !gangState[type].lifted);
+}
+DWORD nextPersonalGangScan = 0;
 void updateGangs(Pool *pool, Byte *player) {
     updateGangAttacks(pool,player);
     restoreGangMembers(false);
@@ -282,6 +298,20 @@ void updateGangs(Pool *pool, Byte *player) {
             endStandoff(true);
         restoreGangs();
         return;
+    }
+    // Individual relationships survive the temporary gang-wide truce. Refresh only
+    // the person's player/Grove attitude bits; a real betrayal restores native hostility.
+    if(due(now,nextPersonalGangScan)) {
+        nextPersonalGangScan=now+400;
+        for(unsigned slot=0;slot<static_cast<unsigned>(pool->size);++slot) {
+            if(pool->flags[slot]&0x80) continue;
+            auto ped=pedAt(pool,slot);
+            const int type=*reinterpret_cast<int *>(ped+0x598);
+            const auto actor=handle(pool,slot);
+            if(rivalGang(type) && eligible(ped,player) && !ped[0x2F] &&
+               personalGangPeace(actor) && distance2(position(player),position(ped))<=2500)
+                liftGangMember(pool,actor,type,now+1000);
+        }
     }
     for (int type = 0; type < 32; ++type)
         if (gangState[type].lifted && !standoffActive() && due(now, gangState[type].until)) {
@@ -322,6 +352,8 @@ void updateGangs(Pool *pool, Byte *player) {
         if (d > 144)
             continue;
         auto h = handle(pool, slot);
+        if (personalGangPeace(h))
+            continue;
         if (std::find(gangRefused.begin(), gangRefused.end(), h) != gangRefused.end())
             continue;
         found.push_back({h, type, d});

@@ -1,5 +1,6 @@
 #pragma once
 #include "World.h"
+#include "Community.h"
 
 namespace meetings {
 // Transient state belongs to one appointment, never to the contact's lifetime.
@@ -13,6 +14,7 @@ struct Run {
     std::uint32_t nextHint = 0;
     unsigned spawnFails = 0;
     float bestDistance = 1000000000.0f;
+    community::Progress path;
 };
 template <class Cleanup>
 inline void forgetRun(std::unordered_map<unsigned, Run> &runs, unsigned id, Cleanup cleanup) {

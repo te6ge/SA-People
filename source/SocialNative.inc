@@ -36,6 +36,9 @@ struct Companion {
     socialworld::Travel travel;
     float poolPlayed = 0;
     DWORD sceneAt = 0; // Meal scene start (stage 10 = eating, 11 = faded out).
+    community::Progress path;
+    float carHealth=-1;
+    DWORD lastDriveWarning=0;
 } companion;
 struct Departure { unsigned person; people::Handle actor; DWORD expires, retry; };
 std::vector<Departure> departures;
@@ -164,6 +167,7 @@ bool beginCompanion(people::Appointment &a, people::Family &f, people::Handle ac
     if (companion.person || lifeActive() || !socialworld::available(f))
         return false;
     releaseRoutine(f.id);
+    f.community.drivingWarnings=0;
     companion = {};
     companion.person = f.id;
     companion.actor = actor;
@@ -355,6 +359,9 @@ void autoCompanionChat(people::Family &f, DWORD now) {
     if (companion.autoChats <= 2) ++companion.mood;
 }
 void companionWitness(unsigned person, socialcontext::Witness event) {
+    if(event!=socialcontext::Witness::Provoke)
+        observeDeed(person,event==socialcontext::Witness::Help?community::Deed::Help:
+            event==socialcontext::Witness::Killing?community::Deed::Killing:community::Deed::Violence);
     if (!companion.person || person == companion.person || !person ||
         person > registry.families.size() || storyActive()) return;
     auto pool = at<Pool *>(0xB74490);
@@ -373,8 +380,10 @@ void companionWitness(unsigned person, socialcontext::Witness event) {
         companion.helpedWitness = person;
         companion.mood = std::min(8, companion.mood + 2);
         f.social.trust = std::min(100, f.social.trust + 2);
+        f.community.strain=f.community.strain>3?f.community.strain-3:0;
         companion.helpPraiseAt = GetTickCount() + 5000;
     } else {
+        f.community.strain=std::min(100u,f.community.strain+(community::tie(registry,f.id,person)?20u:8u));
         socialworld::meetingArgument(f);
         say(f, event == socialcontext::Witness::Killing ? "ACT_WITNESS_KILL"
                : event == socialcontext::Witness::Provoke ? "ACT_WITNESS_PROVOKE" : "ACT_WITNESS_HURT");
@@ -391,11 +400,12 @@ void updateCompanion(Pool *pool, Byte *player) {
     const DWORD frameElapsed = std::min<DWORD>(250, now - companion.lastTick);
     companion.elapsed += frameElapsed;
     companion.lastTick = now;
+    if(communityPairPauses(companion.person)) return;
     auto &f = registry.families[companion.person - 1];
     bool appointment = false;
     for (const auto &a : registry.appointments)
         if (a.person == f.id && meetings::active(a)) appointment = true;
-    if (!appointment || !socialworld::available(f) ||
+    if (!appointment || !socialworld::available(f) || f.community.strain>=60 ||
         companion.elapsed > (companion.activity == 1 ? 2700000u : 540000u)) {
         help("ACT_CANCELLED");
         cancelCompanion(appointment); dirty = true; return;
@@ -443,6 +453,17 @@ void updateCompanion(Pool *pool, Byte *player) {
         if (!validPool(cars)) return;
         bool aboard = !onFoot(ped);
         if (aboard) {
+            auto ridingCar=carExists(cars,companion.car)?carAt(cars,companion.car.slot):nullptr;
+            if(ridingCar) {
+                const float health=*reinterpret_cast<float *>(ridingCar+0x4C0);
+                const float damage=companion.carHealth<0?0:std::max(0.0f,companion.carHealth-health);
+                if(community::unsafeRide(f,damage,false,now-companion.lastDriveWarning)) {
+                    companion.lastDriveWarning=now;companion.mood-=2;dirty=true;
+                    say(f,f.community.drivingWarnings>=3?"BOUND_DRIVE_END":"BOUND_DRIVE_WARN");
+                    if(f.community.drivingWarnings>=3){cancelCompanion(true);return;}
+                }
+                companion.carHealth=health;
+            }
             if (!carExists(cars, companion.car) ||
                 *reinterpret_cast<Byte **>(ped + 0x58C) != carAt(cars, companion.car.slot) ||
                 *reinterpret_cast<Byte **>(carAt(cars, companion.car.slot) + 0x460) == ped) {
@@ -481,7 +502,7 @@ void updateCompanion(Pool *pool, Byte *player) {
         }
         if (!due(now, companion.nextMove)) return;
         releaseCompanionTask(); // Replace only our waiting/boarding task.
-        const int door = socialcontext::passengerDoor(freeSeat(car));
+        const int door = socialcontext::passengerDoor(reservePassenger(car,companion.actor));
         if (door < 0) { holdCompanion(ped); return; }
         auto task = reinterpret_cast<void *(__cdecl *)(unsigned)>(0x61A5A0)(0x50);
         if (!task) return;
@@ -499,8 +520,16 @@ void updateCompanion(Pool *pool, Byte *player) {
         companion.travel.sample({pos.x, pos.y, pos.z}, apart < 625, 5);
     }
     if (onFoot(player) && onFoot(ped) && apart > 16 && due(now, companion.nextMove)) {
+        if(companion.path.stuck(apart,now) && companion.path.retries>=2) {
+            help("SERVICE_PATH_BLOCKED");cancelCompanion(true);return;
+        }
         releaseCompanionTask();
-        companion.task = walkingTask(ped, position(player));
+        Vec goal=position(player),sidewalk{};
+        if(companion.path.stuck(apart,now)) {
+            companion.path.retried(now);
+            if(streetPoint(goal,player,sidewalk))goal=sidewalk;
+        }
+        companion.task = walkingTask(ped, goal);
         companion.nextMove = now + 3000;
     } else if (apart <= 16) holdCompanion(ped);
     const unsigned choices = ((companion.choices & 1) != 0) + ((companion.choices & 2) != 0) + ((companion.choices & 4) != 0);
@@ -576,7 +605,7 @@ void updateSocialWorld(Pool *pool, Byte *player) {
         }
         prepareRoutine(f, player);
         if (!companionOwns(f.id) && !hasAppointment(f.id) && !f.social.feud &&
-            (f.social.robbed || (f.social.trust < -10 && f.social.resentment >= 25)) &&
+            (f.social.robbed || f.community.opinion<=-15 || (f.social.trust < -10 && f.social.resentment >= 25)) &&
             (!avoidAfter.count(f.id) || due(GetTickCount(), avoidAfter[f.id]))) {
             people::Handle actor{};
             if (bindings.locate(f.id, actor) && exists(pool, actor)) {
@@ -593,7 +622,7 @@ void updateSocialWorld(Pool *pool, Byte *player) {
         }
         if (!socialworld::available(f) || !f.daily.ready || hasAppointment(f.id) ||
             companionOwns(f.id) || lifeEvent.person == f.id || roadside.person == f.id ||
-            smallEvent.person == f.id || focused == f.id || recognitionOwns(f.id)) {
+            smallEvent.person == f.id || focused == f.id || recognitionOwns(f.id) || communityOwns(f.id)) {
             releaseRoutine(f.id);
             continue;
         }

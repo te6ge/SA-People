@@ -74,6 +74,7 @@ struct Family {
     bool originFemale = false;
     unsigned household =
         0; // 0 legacy married parent; 1 single; 2 married parent; 3 separated parent.
+    CommunityMemory community{};
 };
 struct Person {
     unsigned id;
@@ -153,6 +154,7 @@ inline std::array<Person, 6> generateBase(const Family &f) {
 }
 inline std::array<Person, 6> generate(const Family &f) {
     auto result = generateBase(f);
+    if(f.presence.type==18)result[0].job="Paramedik";
     if (!f.origin)
         return result;
     if (f.origin >= f.id || f.role < 1 || f.role > 5)
@@ -208,6 +210,7 @@ struct Registry {
     std::vector<Later> later;
     std::uint64_t worldMinutes = 0;
     unsigned nextLetter = 1;
+    unsigned nextIncident = 1;
     int honor = 0;
     std::uint64_t savedAt = 0;
     Registry() {
@@ -257,6 +260,8 @@ struct Registry {
         for (const auto &f : families) {
             if (f.origin)
                 keep.insert(f.origin);
+            if (f.community.victim) keep.insert(f.community.victim);
+            if (f.community.teller) keep.insert(f.community.teller);
             if (f.social.newsFrom)
                 keep.insert(f.social.newsFrom);
         }
@@ -268,7 +273,7 @@ struct Registry {
                 s.trust || s.anger || s.attempts || s.lastReaction || s.meaningful ||
                 s.encounters || s.helped || s.lastNote || s.journal || s.robbed || s.events ||
                 s.resentment || s.newsFrom || s.newsKind || s.provokes || s.cutOff || s.feud ||
-                s.romance || s.dates || s.homeVisits || s.childStage)
+                s.romance || s.dates || s.homeVisits || s.childStage || !f.community.empty())
                 continue;
             recycleCursor = i + 1;
             return f.id;
@@ -280,7 +285,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 14\n"
+        out << "SAPEOPLE 15\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -367,6 +372,15 @@ struct Registry {
                 throw std::runtime_error("Invalid consequence");
             out << l.person << ' ' << l.kind << ' ' << l.source << ' ' << l.due << '\n';
         }
+        if (!nextIncident || nextIncident > 1000000000) throw std::runtime_error("Invalid incident counter");
+        unsigned memories = 0;
+        for (const auto &f : families) if (!f.community.empty()) ++memories;
+        out << "COMMUNITY " << nextIncident << ' ' << memories << '\n';
+        for (const auto &f : families) if (!f.community.empty()) {
+            if (!f.community.valid(static_cast<unsigned>(families.size())) || f.community.incident >= nextIncident)
+                throw std::runtime_error("Invalid community memory");
+            out << f.id << ' '; f.community.write(out); out << '\n';
+        }
         if (!out)
             throw std::runtime_error("Write failed");
     }
@@ -375,7 +389,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 14 || count > MaxFamilies)
+            version > 15 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -558,6 +572,20 @@ struct Registry {
                     l.due > 1000000000)
                     throw std::runtime_error("Corrupt consequence");
                 r.later.push_back(l);
+            }
+        }
+        if (version >= 15) {
+            std::string marker;
+            unsigned size, previous = 0;
+            if (!(in >> marker >> r.nextIncident >> size) || marker != "COMMUNITY" ||
+                !r.nextIncident || r.nextIncident > 1000000000 || size > count)
+                throw std::runtime_error("Corrupt community header");
+            for (unsigned i=0;i<size;++i) {
+                unsigned id;
+                if (!(in >> id) || id <= previous || id > count ||
+                    !r.families[id-1].community.read(in,count) || r.families[id-1].community.incident >= r.nextIncident)
+                    throw std::runtime_error("Corrupt community memory");
+                previous=id;
             }
         }
         in >> std::ws;

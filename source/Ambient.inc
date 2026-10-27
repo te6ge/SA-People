@@ -158,6 +158,8 @@ void updateAmbient(Pool *pool, Byte *player) {
     else if (player[0x2F]) line=neighborhood::interiorLine(greetingDeck.take(4,seed));
     else if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
     else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(8, seed)];
+    else if (f.community.opinion<=-10) line="COMMUNITY_WARY";
+    else if (f.community.opinion>=10) line="COMMUNITY_WARM";
     else if (registry.honor <= -40 && seed % 3 == 0) line = "AMBIENT_HONOR_LOW";
     else if (registry.honor >= 40 && seed % 3 == 0) line = "AMBIENT_HONOR_HIGH";
     else if (weather == socialcontext::Weather::Rain && seed % 3 == 0) line = rain[rainDeck.take(3, seed)];

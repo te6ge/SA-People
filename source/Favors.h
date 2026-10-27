@@ -7,6 +7,7 @@
 namespace favors {
 enum class Perk : unsigned { Repair, Heal, Armor, Wanted, Cash };
 inline Perk perk(const people::Family &f) {
+    if(f.presence.type==18)return Perk::Heal;
     const auto job = people::generate(f)[0].job;
     if (job == "Tamirci" || job == "Elektrikci")
         return Perk::Repair;
@@ -27,7 +28,7 @@ inline const char *label(Perk p) {
     case Perk::Armor:
         return "FAVOR_ARMOR";
     case Perk::Wanted:
-        return "FAVOR_WANTED";
+        return "SERVICE_PICKUP";
     default:
         return "FAVOR_CASH";
     }
@@ -47,6 +48,7 @@ inline const char *refusal(const people::Registry &r, unsigned id) {
         return "FAVOR_LOW_TRUST";
     if (later::cooling(r, id))
         return "FAVOR_COOLDOWN";
+    if(f.community.serviceDay==r.worldMinutes/1440+1)return "FAVOR_COOLDOWN";
     return nullptr;
 }
 // Cash amount for the Cash perk; deterministic per contact and day.

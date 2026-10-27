@@ -1,6 +1,11 @@
 #pragma once
 #include "SocialWorld.h"
+#include "Introductions.h"
 namespace neighborhood {
+inline bool personalPeace(const people::Family &f) {
+    return (f.social.known & people::Name) && f.social.trust >= 15 &&
+           introductions::comfortable(f);
+}
 // PED.DAT expresses gang rivalry against Grove (type 8), not necessarily PLAYER1.
 constexpr unsigned PlayerAndGrove = (1u << 0) | (1u << 8);
 inline bool hostile(unsigned hate, unsigned dislike) { return ((hate | dislike) & PlayerAndGrove) != 0; }

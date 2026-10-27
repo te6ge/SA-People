@@ -50,6 +50,7 @@
         // Old V13 files still import, while new story event kinds must not be accepted as V13.
         people::Registry empty; std::stringstream compatible; empty.write(compatible);
         auto legacyStory=compatible.str(); legacyStory.replace(0,11,"SAPEOPLE 13");
+        legacyStory.resize(legacyStory.find("COMMUNITY "));
         std::stringstream previous(legacyStory); assert(people::Registry::read(previous).families.empty());
         auto incompatible=savedStory.str(); incompatible.replace(0,11,"SAPEOPLE 13");
         bool oldRejected=false;

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <set>
 #include "SocialProgress.h"
+#include "NpcVoices.h"
 
 // Private DirectShow graphs; never change the game's mixer or device volume.
 namespace socialaudio {
@@ -19,10 +20,12 @@ class Player {
         DWORD until = 0;
         unsigned level = 0;
     };
-    Channel voice, honor;
+    Channel voice, npc, honor;
+    npcvoice::PendingReply npcReply;
     std::filesystem::path root;
     std::function<void(const std::string &)> logger;
-    unsigned voiceLevel = 45, honorLevel = 10, master = 127;
+    unsigned voiceLevel = 45, npcLevel = 30, honorLevel = 10, master = 127;
+    unsigned npcOwner = 0;
     DWORD lastHonor = 0;
     socialprogress::HonorSounds queued;
     std::set<std::wstring> missing;
@@ -117,12 +120,16 @@ class Player {
             std::min(100u, GetPrivateProfileIntW(L"Audio", L"VoicePercent", 45, ini.c_str()));
         honorLevel =
             std::min(100u, GetPrivateProfileIntW(L"Audio", L"HonorPercent", 10, ini.c_str()));
+        npcLevel = std::min(100u, GetPrivateProfileIntW(L"Audio", L"NpcVoicePercent", 30, ini.c_str()));
         if (logger)
             logger("AUDIO ready; voice=" + std::to_string(voiceLevel) +
-                   " honor=" + std::to_string(honorLevel));
+                   " npc=" + std::to_string(npcLevel) + " honor=" + std::to_string(honorLevel));
     }
     void stop() {
         close(voice);
+        close(npc);
+        npcReply = {};
+        npcOwner = 0;
         close(honor);
         queued.pending.clear();
     }
@@ -132,15 +139,21 @@ class Player {
             master = next;
             if (voice.graph && !volume(voice))
                 close(voice);
+            if (npc.graph && !volume(npc)) close(npc);
             if (honor.graph && !volume(honor))
                 close(honor);
         }
         DWORD now = GetTickCount();
         if (voice.graph && due(now, voice.until))
             close(voice);
+        if (npc.graph && due(now, npc.until)) { close(npc); if (npcReply.file.empty()) npcOwner=0; }
         if (honor.graph && due(now, honor.until))
             close(honor);
-        const int cue = queued.take(!voice.graph && !honor.graph &&
+        auto reply = npcReply.take(now, voice.graph || npc.graph);
+        if (!reply.empty() && play(npc, reply.c_str(), npcLevel) && logger)
+            logger("AUDIO npc: " + std::filesystem::path(reply).string());
+        if (!npc.graph && npcReply.file.empty()) npcOwner=0;
+        const int cue = queued.take(!voice.graph && !npc.graph && npcReply.file.empty() && !honor.graph &&
             (!lastHonor || now - lastHonor >= 2500));
         if (cue && play(honor, cue > 0 ? L"high.mp3" : L"low.mp3", honorLevel)) {
             lastHonor = now;
@@ -149,9 +162,23 @@ class Player {
     }
 
     void speak(const wchar_t *name) {
-        if (!voice.graph)
+        if (name && !voice.graph && !npc.graph)
             play(voice, name, voiceLevel);
     }
+    void queueNpc(const wchar_t *name, unsigned owner) {
+        close(npc); // A replaced subtitle must not keep another person's response playing.
+        npcReply.queue(enabled && npcLevel ? name : nullptr, owner, GetTickCount());
+        npcOwner = npcReply.file.empty() ? 0 : owner;
+    }
+    DWORD npcCaptionUntil() const {
+        const DWORD now=GetTickCount();
+        if (npcReply.file.empty()) return now;
+        const DWORD start=voice.graph && !due(now,voice.until) ? voice.until : now+300;
+        return start+npcvoice::duration(npcReply.file.c_str())+300;
+    }
+    bool talking() const { return voice.graph || npc.graph || !npcReply.file.empty(); }
+    unsigned npcSpeaker() const { return npcOwner; }
+    void cancelNpc() { close(npc); npcReply={}; npcOwner=0; }
     void reputation(int direction) {
         if (!direction)
             return;

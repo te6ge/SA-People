@@ -34,6 +34,7 @@ Copy-Item "$root\README.md" $stage
 
 [IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
 [World]
+CommunityLife=1
 AutoRestore=1
 SideEvents=1
 FirstEventSeconds=45
@@ -48,6 +49,7 @@ ModernMenu=1
 Enabled=1
 HonorPercent=10
 VoicePercent=45
+NpcVoicePercent=30
 "@, $utf8)
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -121,6 +123,13 @@ Copy-Item "$root\LICENSE.txt" $publicStage
 Copy-Item $setup "$publicStage\SA-People-Setup.exe"
 Get-ChildItem $stage | Where-Object { $_.Name -ne 'README.md' } | Copy-Item -Destination "$publicStage\Manual" -Recurse
 Copy-Item $modStage "$publicStage\ModLoader\SA-People" -Recurse
+# Ready-to-copy layout: no scripts and no live settings.ini to overwrite on updates.
+$copyStage = "$publicStage\Manual\Copy-to-Game-Folder"
+New-Item -ItemType Directory -Path $copyStage | Out-Null
+Copy-Item "$stage\SA-People.asi" $copyStage
+Copy-Item "$stage\loader\dinput8.dll" $copyStage
+Copy-Item "$stage\SA-People" "$copyStage\SA-People" -Recurse
+Move-Item -LiteralPath "$copyStage\SA-People\settings.ini" -Destination "$copyStage\SA-People\settings.example.ini"
 $publicZip = "$out\$name-complete.zip"
 New-Zip $publicStage $publicZip
 

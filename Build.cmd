@@ -29,6 +29,10 @@ cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\GlyphCheck.cpp /Febuil
 if not "%errorlevel%"=="0" exit /b 10
 cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 /LD source\Plugin.cpp /Febuild\SA-People.asi /Fobuild\Plugin.obj /link user32.lib gdi32.lib gdiplus.lib strmiids.lib ole32.lib windowscodecs.lib d3d9.lib /INCREMENTAL:NO /MACHINE:X86
 if not "%errorlevel%"=="0" exit /b 6
+cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\NativeSafetyTests.cpp /Febuild\NativeSafetyTests.exe /Fobuild\NativeSafetyTests.obj /link user32.lib gdi32.lib gdiplus.lib strmiids.lib ole32.lib windowscodecs.lib d3d9.lib /INCREMENTAL:NO /MACHINE:X86
+if not "%errorlevel%"=="0" exit /b 13
+build\NativeSafetyTests.exe
+if not "%errorlevel%"=="0" exit /b 14
 cl /nologo /std:c++17 /utf-8 /EHsc /MT /W4 /WX /O2 source\Preview.cpp /Febuild\PanelPreview.exe /Fobuild\Preview.obj /link gdiplus.lib user32.lib gdi32.lib
 if not "%errorlevel%"=="0" exit /b 7
 build\PanelPreview.exe

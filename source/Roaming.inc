@@ -32,6 +32,41 @@ struct Roadside {
 } roadside;
 std::unordered_set<unsigned> usedParkedCars;
 bool visibleTarget(Byte *ped);
+bool communityOwns(unsigned);
+bool talkingHold(unsigned);
+void holdSocial(Pool *,unsigned,people::Handle,DWORD);
+void releaseTalkingHold(unsigned);
+void cancelCommunity();
+bool communityAction(Pool *,Byte *,unsigned,street::Action);
+bool beginFriendService(Byte *,unsigned);
+bool communityBusy();
+bool communityPairPauses(unsigned);
+struct PassengerReservation { people::Handle car,actor; int seat; DWORD until; };
+std::vector<PassengerReservation> passengerReservations;
+int reservePassengerInPools(Pool *cars,Pool *pool,Byte *car,people::Handle actor) {
+    if(!validPool(cars) || !validPool(pool) || !exists(pool,actor))return -1;
+    const auto delta=car-cars->objects;
+    if(delta<0 || delta%0xA18 || delta/0xA18>=cars->size)return -1;
+    // Car pool handles use 0xA18 strides, not the pedestrian helper.
+    const people::Handle checked{static_cast<unsigned>(delta/0xA18),cars->flags[delta/0xA18],*reinterpret_cast<short *>(car+0x22)};
+    const DWORD now=GetTickCount();
+    passengerReservations.erase(std::remove_if(passengerReservations.begin(),passengerReservations.end(),[&](const auto &r){
+        return due(now,r.until) || !exists(pool,r.actor) || r.car.slot>=static_cast<unsigned>(cars->size) ||
+            (cars->flags[r.car.slot]&0x80) || cars->flags[r.car.slot]!=r.car.generation;
+    }),passengerReservations.end());
+    for(const auto &r:passengerReservations) if(r.actor==actor && r.car==checked)return r.seat;
+    if(car[0x485] || passengerReservations.size()>=16)return -1;
+    const unsigned count=std::min(3u,static_cast<unsigned>(car[0x488]));
+    for(unsigned seat=0;seat<count;++seat) {
+        if(*reinterpret_cast<Byte **>(car+0x464+seat*4))continue;
+        if(std::any_of(passengerReservations.begin(),passengerReservations.end(),[&](const auto &r){return r.car==checked && r.seat==static_cast<int>(seat);}))continue;
+        passengerReservations.push_back({checked,actor,static_cast<int>(seat),now+30000});return static_cast<int>(seat);
+    }
+    return -1;
+}
+int reservePassenger(Byte *car,people::Handle actor) {
+    return reservePassengerInPools(at<Pool *>(0xB74494),at<Pool *>(0xB74490),car,actor);
+}
 struct OwnedResponse {
     people::Handle handle;
     void *task;
@@ -213,6 +248,14 @@ bool ownResponse(Byte *ped, void *task, unsigned duration, bool combat = false) 
     responses.push_back({h, task, GetTickCount() + duration, combat});
     return true;
 }
+bool hasOwnedFight(Pool *pool, people::Handle h) {
+    if (!validPool(pool) || !exists(pool, h)) return false;
+    auto manager = taskManager(pedAt(pool, h.slot));
+    return manager && std::any_of(responses.begin(), responses.end(), [&](const auto &response) {
+        return response.handle == h && response.combat && !due(GetTickCount(), response.until) &&
+               at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12) == response.task;
+    });
+}
 bool calmOwnedFight(Pool *pool, people::Handle h) {
     for (auto it = responses.begin(); it != responses.end(); ++it)
         if (it->handle == h && it->combat) {
@@ -289,10 +332,23 @@ void gesture(Pool *pool, people::Handle h, unsigned animation) {
     setSecondary(manager, task, 4);
     gestures.push_back({h, task, GetTickCount() + 1300});
 }
-void say(const people::Family &f, const std::string &line) {
+bool audibleNpc(unsigned id, Pool *pool, Byte *player) {
+    people::Handle actor{};
+    if (!player || !validPool(pool) || !bindings.locate(id,actor) || !exists(pool,actor)) return false;
+    auto ped=pedAt(pool,actor.slot);
+    return ped[0x2F] == player[0x2F] && *reinterpret_cast<float *>(ped+0x540)>0 &&
+           distance2(position(player),position(ped))<=900;
+}
+void say(const people::Family &f, const std::string &line, npcvoice::Cue cue = npcvoice::Cue::Auto) {
     speaker = dialogue::displayName(f);
     spoken = line;
     subtitleUntil = GetTickCount() + 5500;
+    if (cue == npcvoice::Cue::Auto) cue = npcvoice::forLine(line);
+    auto pool=at<Pool *>(0xB74490);
+    auto player=reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
+    audio.queueNpc(audibleNpc(f.id,pool,player) ? npcVoices.choose(f, cue, GetTickCount() + f.id) : nullptr, f.id);
+    const DWORD speechEnd=audio.npcCaptionUntil();
+    if (speechEnd-subtitleUntil < 0x80000000u) subtitleUntil=speechEnd;
 }
 void cancelRoadside(bool repaired = false) {
     if (!roadside.person)
@@ -386,7 +442,7 @@ bool offerRoadside(Pool *pool, Byte *player) {
             car[0x42D] |= 2;
             car[0x428] &= static_cast<Byte>(~16u);
             usedParkedCars.insert(stamp);
-            say(f, "Arabanin akusu bitti! Bir el atabilir misin?");
+            say(f, "Arabanin akusu bitti! Bir el atabilir misin?", npcvoice::Cue::Help);
             help("Yakininda arabasina yardim bekleyen biri var. ALT + G ile konus.");
             log("BATTERY offered; identity=" + std::to_string(id));
             return true;
@@ -450,7 +506,7 @@ void updateRoadside(Pool *pool, Byte *player, bool mission) {
         if (first)
             later::helped(registry, f.id);
         justMet(f);
-        say(f, reply.line);
+        say(f, reply.line, npcvoice::Cue::Thank);
         dirty = true;
         panelInvalid = true;
         audio.speak(audioChoices.choose(socialaudio::Context::Repair, GetTickCount()));
@@ -502,6 +558,7 @@ bool departureOwns(unsigned);
 bool recognitionOwns(unsigned);
 #include "SocialNative.inc"
 #include "Ambient.inc"
+#include "CommunityNative.inc"
 void observeCriminalAttack(Pool *pool, Byte *player) {
     const float health = *reinterpret_cast<float *>(player + 0x540);
     const bool hurt = observedPlayerHealth >= 0 && health + 0.5f < observedPlayerHealth;
@@ -604,7 +661,7 @@ void arrestByPolice() {
 }
 void interact(Pool *pool, Byte *player, street::Action action) {
     if (!focused || !exists(pool, focusedHandle) || bindings.find(focusedHandle) != focused ||
-        !due(GetTickCount(), nextSpeech))
+        !due(GetTickCount(), nextSpeech) || audio.talking())
         return;
     auto ped = pedAt(pool, focusedHandle.slot);
     if (nativeConversation(player) || nativeConversation(ped)) {
@@ -642,6 +699,8 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     }
     if (companionAction(f.id, action))
         return;
+    if(communityAction(pool,player,f.id,action)) return;
+    if(action!=street::Action::Greet)releaseTalkingHold(f.id);
     if (nightOffer(f.id) && action == street::Action::Defuse) {
         say(f, "NIGHT_DECLINED");
         cancelLife();
@@ -653,15 +712,14 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     if (action == street::Action::Greet && converseSmallEvent(player))
         return;
     if (roadside.person == focused && action == street::Action::Greet) {
-        say(f, "Kaputun altindaki aku baglantisina bakabilir misin? Burada kaldim.");
+        say(f, "Kaputun altindaki aku baglantisina bakabilir misin? Burada kaldim.", npcvoice::Cue::Help);
         nextSpeech = now + 2800;
         return;
     }
     if (action == street::Action::Greet && !street::mayGreet(live.encounter))
         return;
     if (action == street::Action::Defuse &&
-        (live.encounter.apologyUsed || live.encounter.brokenTruce || f.social.resentment >= 55 ||
-         !f.social.anger))
+        !street::mayDefuse(f, live.encounter, hasOwnedFight(pool, focusedHandle)))
         return;
     if (action == street::Action::Greet && !lifeActive() &&
         offerPartnerHome(pool, player, f, focusedHandle))
@@ -705,7 +763,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         return;
     if (roadside.person == focused && action == street::Action::Greet) {
         audio.speak(audioChoices.choose(socialaudio::Context::Help, now));
-        say(f, "Kaputun altindaki aku baglantisina bakabilir misin? Burada kaldim.");
+        say(f, "Kaputun altindaki aku baglantisina bakabilir misin? Burada kaldim.", npcvoice::Cue::Help);
         nextSpeech = now + 2800;
         return;
     }
@@ -715,7 +773,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         static const char *lines[] = {
             "Simdi gitmem gerekiyor. Sonra konusuruz.", "Kendine iyi bak CJ. Ben gideyim.",
             "Sonra devam ederiz dostum.", "Bugunluk bu kadar. Gorusuruz!"};
-        say(f, lines[people::mix(now + f.id) % 4]);
+        say(f, lines[people::mix(now + f.id) % 4], npcvoice::Cue::Goodbye);
         audio.speak(audioChoices.choose(socialaudio::Context::Goodbye, now));
         live.last = now;
         live.next = now + 300000;
@@ -733,14 +791,14 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     // by eligible(); event responses and native conversations still take precedence.
     const bool interiorPatron = player[0x2F] && ped[0x2F] == player[0x2F] &&
         ped[0x484] == 1 && (pedType == 4 || pedType == 5);
-    if (action == street::Action::Greet && (busy(ped) || (primaryOccupied(ped) && !dealer && !interiorPatron))) {
+    if (action == street::Action::Greet && (busy(ped) || (primaryOccupied(ped) && !talkingHold(f.id) && !socialIdle(ped) && !dealer && !interiorPatron))) {
         street::rejectBusy(live.encounter);
         live.last = now;
         live.next = now + 300000;
         static const char *lines[] = {
             "Su an mesgulum, sonra konusalim.", "Biraz acelem var. Sonra olur mu?",
             "Simdi kafam dolu, musade et.", "Bir isi halletmem gerekiyor. Gorusuruz."};
-        say(f, lines[people::mix(now + f.id) % 4]);
+        say(f, lines[people::mix(now + f.id) % 4], npcvoice::Cue::Busy);
         nextSpeech = now + 3500;
         return;
     }
@@ -754,17 +812,26 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     }
     int trustBefore = f.social.trust;
     bool friendBefore = street::isFriend(f);
+    const bool familiarVoiceBefore = npcvoice::knowsCJ(f);
     const std::string nameBefore = dialogue::displayName(f);
     auto reply = street::exchange(f, live.encounter, action, canFight(ped),
-                                  *reinterpret_cast<int *>(ped + 0x598), registry.honor);
+                                  *reinterpret_cast<int *>(ped + 0x598),
+                                  std::clamp(registry.honor+f.community.opinion,-100,100),
+                                  hasOwnedFight(pool, focusedHandle));
     auto context =
         socialaudio::context(action, live.encounter.turns, friendBefore, reply,
                              *reinterpret_cast<int *>(ped + 0x598), f.female, f.social.trust);
     if (action == street::Action::Defuse) {
         if (armed(ped))
             context = socialaudio::Context::Fear;
-        if (reply.calmed)
+        if (reply.calmed) {
             calmOwnedFight(pool, focusedHandle);
+            if (ambush.kind == 3 && ambush.actor == focusedHandle) {
+                endAmbush();
+                offenderUntil.erase(f.id);
+            }
+            log("SOCIAL defused identity=" + std::to_string(f.id));
+        }
     }
     const wchar_t *clip = audioChoices.choose(context, now + f.id + audioVariation++);
     // Rare easter eggs: a local curse when provoking, the odd rickroll when greeting.
@@ -785,8 +852,6 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     reputation(honorCue);
     if (f.social.known & people::Name)
         discoverNetwork(f.id);
-    if (honorCue)
-        network::news(registry, f.id, honorCue < 0);
     live.last = now;
     live.next = now + (reply.leaves ? 300000 : 3000);
     nextSpeech = now + 2800;
@@ -795,7 +860,11 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         static socialprogress::LineDeck interiorDeck;
         reply.line = neighborhood::interiorLine(interiorDeck.take(4, now + f.id));
     }
-    say(f, reply.line);
+    say(f, reply.line, npcvoice::streetReply(f, action, reply, live.encounter.turns,
+                                          friendBefore || familiarVoiceBefore));
+    if(action==street::Action::Greet && !reply.leaves && !companionOwns(f.id) && !hasAppointment(f.id))
+        holdSocial(pool,f.id,focusedHandle,subtitleUntil+1000);
+    else if(reply.leaves)releaseTalkingHold(f.id);
     dirty = true;
     panelInvalid = true;
     if (reply.forgotten)
@@ -821,11 +890,15 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     }
     save();
     log("WALK SOCIAL identity=" + std::to_string(f.id) +
-        " journal=" + std::to_string(f.social.journal));
+        " journal=" + std::to_string(f.social.journal) +
+        " action=" + std::to_string(static_cast<unsigned>(action)) +
+        " reaction=" + std::to_string(static_cast<unsigned>(reply.reaction)) +
+        " anger=" + std::to_string(f.social.anger));
     if (action == street::Action::Provoke)
         companionWitness(f.id, socialcontext::Witness::Provoke);
 }
 void resetRuntime() {
+    cancelCommunity();
     updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
     resetAmbient();
     honorBatch = {};
@@ -853,7 +926,7 @@ void resetRuntime() {
     pendingReplies.clear();
     nextInvitation.clear();
     gangRefused.clear();
-    nextGangScan = gangCooldown = 0;
+    nextGangScan = gangCooldown = nextPersonalGangScan = 0;
     nightOfferAfter.clear();
     nextNightOffer = nextNightProbe = 0;
     focused = 0;
@@ -916,6 +989,7 @@ void tick() {
         honorCheat = {};
         observedPlayerHealth = -1;
         if (!storySuspended) {
+            cancelCommunity();
             storySuspended = true;
             clearRecognition();
             endStandoff(true);
@@ -960,6 +1034,7 @@ void tick() {
         modTalkOverNative =
             GetPrivateProfileIntW(L"Interface", L"ModTalkOverNative", 1, ini.c_str()) != 0;
         gangTalk = GetPrivateProfileIntW(L"World", L"GangTalk", 1, ini.c_str()) != 0;
+        communityEnabled=GetPrivateProfileIntW(L"World",L"CommunityLife",1,ini.c_str())!=0;
         eventDirector.initial(
             GetPrivateProfileIntW(L"World", L"FirstEventSeconds", 45, ini.c_str()));
         help("ALT: odaklan / G-H-J-R: etkilesim / F6: gunluk");
@@ -1043,6 +1118,7 @@ void tick() {
         cheatHeld[key] = down;
     }
     if (panelOpen) honorCheat = {};
+    if (audio.npcSpeaker() && !audibleNpc(audio.npcSpeaker(),pool,player)) audio.cancelNpc();
     audio.update(at<Byte>(0xBA6748 + 0x4F));
     suppressNativeTalk(pool, player);
     if (nativeConversation(player)) {
@@ -1072,6 +1148,7 @@ void tick() {
     lastDirectorTick = now;
     updateMeetings(pool, player, elapsed, mission);
     updateSocialWorld(pool, player);
+    updateCommunity(pool, player);
     updateAmbient(pool, player);
     if (sideEvents && eventSafe && !eventActive() && !focusHeld && due(now, nextNightProbe) &&
         due(now, nextNightOffer) && life::night(at<Byte>(0xB70153))) {

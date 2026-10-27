@@ -32,6 +32,7 @@ void cancelSmallEvent() {
     smallEvent = {};
 }
 void cancelEvents() {
+    cancelCommunity();
     clearEventBlip();
     endAmbush();
     endStandoff(true);
@@ -144,7 +145,7 @@ bool offerSmallEvent(Pool *pool, Byte *player, encounters::Kind preferred) {
                                  "Bir dakikani alabilir miyim? Yolumu kaybettim galiba.",
                                  "Buralari biliyor musun? Bir yere nasil gidecegimi soracaktim."};
     say(registry.families[best - 1], kind == encounters::Kind::Fare ? fares[people::mix(best) % 3]
-                                                                    : asks[people::mix(best) % 3]);
+                                                                    : asks[people::mix(best) % 3], npcvoice::Cue::Help);
     help("Yakininda yardim isteyen biri var. ALT ile odaklan, G ile konus.");
     log("SIDE offered kind=" + std::to_string(static_cast<unsigned>(kind)) +
         " identity=" + std::to_string(best));
@@ -219,7 +220,7 @@ bool converseSmallEvent(Byte *player) {
 }
 bool safeForEvent(Byte *player, bool mission) {
     auto wanted = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E230)(0);
-    return !nativeConversation(player) && !mission && player[0x2F] == 0 &&
+    return !nativeConversation(player) && !mission && player[0x2F] == 0 && !communityBusy() &&
            (onFoot(player) || drivenCar(player)) && !busy(player) && !panelOpen &&
            (!wanted || !*reinterpret_cast<unsigned *>(wanted + 0x2C));
 }
@@ -281,6 +282,7 @@ void robPerson(Pool *pool, Byte *player) {
         !due(now, nextSpeech))
         return;
     auto ped = pedAt(pool, focusedHandle.slot);
+    releaseTalkingHold(focused);
     auto &f = registry.families[focused - 1];
     if (!eligible(ped, player) || !robbable(ped) || !onFoot(ped) ||
         *reinterpret_cast<float *>(ped + 0x540) <= 0)
@@ -349,7 +351,7 @@ void robPerson(Pool *pool, Byte *player) {
     reputation(-2);
     companionWitness(f.id, socialcontext::Witness::Provoke);
     discoverNetwork(f.id);
-    network::news(registry, f.id, true, true);
+    observeDeed(f.id,community::Deed::Robbery);
     later::robbed(registry, f.id);
     nextSpeech = now + 3000;
     dirty = true;

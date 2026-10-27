@@ -157,7 +157,7 @@ inline Scene conversation(const people::Family &f, const dialogue::Session &sess
 // Walking interaction prompts.
 struct Hints {
     bool canRob = false, robbed = false, angry = false, ready = true, canGreet = true;
-    std::string eventAction, relation, role;
+    std::string eventAction, relation, role, defuseAction;
     bool canDecline = false;
     int trust = 0;
 };
@@ -201,8 +201,9 @@ inline Scene roaming(const people::Family *focus, bool continuing, const std::st
                                            : hints.eventAction,
                controls::keyName(controls::keys[controls::Greet].primary),
                hints.canGreet && hints.ready);
-        option(1, hints.canDecline ? "NIGHT_DECLINE" : "SAKINLESTIR", "J",
-               hints.ready && (hints.canDecline || (hints.angry && hints.canGreet)));
+        option(1, !hints.defuseAction.empty() ? hints.defuseAction : hints.canDecline ? "NIGHT_DECLINE" : "SAKINLESTIR",
+               controls::keyName(controls::keys[controls::Defuse].primary),
+               hints.ready && (!hints.defuseAction.empty() || hints.canDecline || hints.angry));
         option(2, "KISKIRT", controls::keyName(controls::keys[controls::Provoke].primary), hints.ready);
         option(3, hints.robbed ? "PARASINI ZATEN ISTEDIN" : "SOY",
                controls::keyName(controls::keys[controls::Rob].primary),

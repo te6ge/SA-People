@@ -93,6 +93,7 @@ void inviteContact(Byte *player) {
     if (!id || id > registry.families.size())
         return;
     auto &f = registry.families[id - 1];
+    if(auto reason=community::request(registry,id)){phoneState.notice=reason;dirty=true;return;}
     if (f.daily.busyUntil > registry.worldMinutes) {
         phoneState.notice = "PHONE_INVITE_BUSY";
         return;
@@ -338,6 +339,16 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
                                        distance2(position(player), place) <= 225;
             const Vec goal = playerAtVenue ? position(player) : place;
             float distance = distance2(position(ped), goal);
+            if(run.path.stuck(distance,clock)) {
+                releaseMeetingActor(run);
+                run.path.retried(clock);
+                if(run.path.retries>=3) {
+                    help("MEET_ROUTE_BLOCKED");a.state=4;dirty=true;continue;
+                }
+                Vec sidewalk{};
+                if(streetPoint(goal,player,sidewalk)) {a.x=sidewalk.x;a.y=sidewalk.y;a.z=sidewalk.z;}
+                log("MEETING path retry identity="+std::to_string(f.id));
+            }
             if (run.task && run.waiting && distance > 25) {
                 releaseMeetingActor(run);
                 run.waiting = false;
@@ -433,11 +444,16 @@ void captureControl() {
 }
 // Phone → contact → Ask a favor (Favors.h). Effects apply at once; the friend texts back.
 void askFavor(Byte *player, unsigned id) {
+    if(auto reason=community::request(registry,id)){phoneState.notice=reason;dirty=true;return;}
     if (auto reason = favors::refusal(registry, id)) {
         phoneState.notice = reason;
         return;
     }
     auto perk = favors::perk(registry.families[id - 1]);
+    if(perk==favors::Perk::Repair || perk==favors::Perk::Heal || perk==favors::Perk::Wanted ||
+        registry.families[id-1].presence.type==18) {
+        beginFriendService(player,id);return;
+    }
     std::string done = std::string(favors::label(perk)) + "_DONE";
     if (perk == favors::Perk::Repair) {
         auto car = drivenCar(player);

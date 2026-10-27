@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.14.2 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.15.0 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -10,7 +10,15 @@ identities and relationships carry across game sessions.
 
 ## Features
 
+- Connected pedestrians can meet during walks; witnesses remember deeds and pass news
+  through nearby social connections. Friends can visit to repair a car, give first aid or offer a pickup.
+- Repeated requests and unsafe driving affect social boundaries. Accident victims can receive
+  first aid, a requested ambulance or a ride to hospital. These native flows still require wider live testing.
+- Conversation holds, passenger-seat reservations and bounded route retries protect active interactions.
 - Persistent names, personalities, family connections and memories.
+- Partial NPC voice pack: three female and three male voices, assigned consistently by identity.
+  Recorded lines cover greetings, refusals, thanks, ride requests and selected relationship
+  moments. Missing lines keep their subtitles. English recordings retain translated subtitles.
 - Introductions shaped by temperament, trust, honor and previous encounters. People do
   not automatically share their job, private life or number during a first conversation.
 - SA CELL phone with contacts, contextual messages, meetings and rebindable controls.
@@ -24,12 +32,21 @@ identities and relationships carry across game sessions.
 - English, Turkish, Russian and Spanish. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
 
-## What's new since 0.13.3
+## What's new in 0.15.0
 
-NPC activity proposals, multi-day personal follow-ups, street recognition, gradual
-introductions, interior dialogue and more Grove greetings. Rival gang detection,
-negotiation routing and combat after failed negotiations have been revised. The optional
-installer has a new interface and four selectable languages. A ModLoader layout is included.
+- Connected NPCs can acknowledge relatives, friends and rivals during outings.
+- Witnesses react to nearby incidents and share memories through local social connections.
+- Useful friends can visit to repair a car, provide first aid or arrange a pickup.
+- Repeated requests and dangerous driving affect trust and willingness to help.
+- Accident assistance includes first aid, ambulance requests and hospital transport.
+- 65 new NPC voice clips across three female and three male voice profiles; missing
+  recordings remain subtitled. NPC voice volume can be adjusted separately.
+- Conversation holds, reserved passenger seats and bounded navigation retries.
+- Familiar people are excluded from random hostile encounters; calm-down availability revised.
+- Manual installation includes a ready-to-copy game-folder layout.
+
+These are beta features. Automated tests and an isolated startup check passed; complete
+live scenarios and SilentPatch coexistence have not yet been verified.
 
 ## Requirements
 
@@ -56,12 +73,31 @@ is not supported. The example settings in the ModLoader folder do not replace yo
 
 ### Manual installation — no setup EXE required
 
-Run `Manual/Install.cmd` and select the game folder containing `gta_sa.exe`.
+1. Open `Manual/Copy-to-Game-Folder` in the ZIP.
+2. Copy its **contents** into the game folder beside `gta_sa.exe`:
 
-Alternatively, copy `Manual/SA-People.asi` and the contents of `Manual/SA-People` into the
-game folder. **Do not replace an existing `SA-People/settings.ini` when updating.** Never
-delete your `people.dat` files. If the game has no ASI Loader, the supplied
-`Manual/loader/dinput8.dll` is available; do not overwrite an existing loader DLL.
+   ```text
+   GTA San Andreas/
+     gta_sa.exe
+     dinput8.dll
+     SA-People.asi
+     SA-People/
+       languages.tsv
+       settings.example.ini
+       audio/
+       assets/
+       backgrounds/
+       licenses/
+   ```
+
+Do not copy the outer `Copy-to-Game-Folder` folder itself. Merge the `SA-People` folder
+when updating. This layout contains no `settings.ini` or relationship archive, so your
+existing settings and people are kept. On a new installation, settings are created on launch.
+**Keep your existing ASI Loader if you already have one; skip the bundled `dinput8.dll`
+instead of replacing an existing loader DLL.** Disable an old ModLoader copy first.
+
+Alternatively, run `Manual/Install.cmd` and select the folder containing `gta_sa.exe`.
+Never delete your `people.dat` files when updating.
 
 ### Optional Windows installer
 
@@ -86,8 +122,8 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of installation method. Versions 0.14.x use archive format V14 and import earlier archives.
-The first upgrade keeps `people.pre-0.14.dat`. Older plugins cannot read V14: restore the
+of installation method. Version 0.15.0 uses archive format V15 and imports earlier archives.
+The first upgrade keeps `people.pre-0.15.dat`. Older plugins cannot read V15: restore the
 pre-update archive as well as the older plugin if you downgrade.
 
 To uninstall a root installation, run `Manual/Uninstall.cmd` or remove `SA-People.asi` from
@@ -101,8 +137,8 @@ version, executable version, installation method, other mods, steps to reproduce
 `SA-People/SA-People.log`. Do not post your entire game folder or personal save data.
 
 The source build, logic regressions and 61 disposable-folder installer checks passed.
-Native gameplay paths, including the latest gang combat changes, still need wider in-game
-testing. This is a beta, not a compatibility guarantee for every mod combination.
+Native gameplay paths, including friend services, accident assistance and witness reactions,
+still need wider in-game testing. SilentPatch coexistence has not yet been verified. This is a beta, not a compatibility guarantee for every mod combination.
 
 ## Source and building
 
@@ -122,5 +158,5 @@ and test artifacts.
 
 Source code: MIT; see `LICENSE.txt`. Bundled Ultimate ASI Loader: ThirteenAG, MIT; its
 license notices are retained with the loader. Supplied audio and artwork have separate
-rights and are not automatically covered by the source license. No new NPC voice pack is
-included in 0.14.2. Developed with AI assistance. Not affiliated with Rockstar Games.
+rights and are not automatically covered by the source license. NPC recordings were supplied
+by the author. Developed with AI assistance. Not affiliated with Rockstar Games.

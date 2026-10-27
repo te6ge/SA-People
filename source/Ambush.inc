@@ -56,8 +56,9 @@ std::vector<people::Handle> ambushCandidates(Pool *pool, Byte *player, float nea
             (needFight && !canFight(ped)) || *reinterpret_cast<float *>(ped + 0x540) <= 0)
             continue;
         unsigned id = bindings.find(handle(pool, slot));
-        if (id && (registry.families[id - 1].social.journal || registry.families[id - 1].social.feud))
-            continue; // Never turn a contact into a thief.
+        if (id && (!street::strangerIncident(registry.families[id - 1]) || hasAppointment(id) ||
+                   registry.families[id - 1].daily.busyUntil > registry.worldMinutes))
+            continue; // Never recast a familiar face or an outing participant as a random offender.
         float d = distance2(origin, position(ped));
         if (d < nearest * nearest || d > farthest * farthest || !visibleTarget(ped))
             continue;
@@ -148,7 +149,7 @@ bool startAmbush(Pool *pool, Byte *player, unsigned kind) {
                                                : locale::format("AMB_REVENGE_LINE", victim));
         help(victim.empty() ? locale::tr("AMB_HOTHEAD") : locale::format("LATER_REVENGE", victim));
         audio.speak(audioChoices.choose(socialaudio::Context::Fight, now));
-        log("AMBUSH hothead started");
+        log("AMBUSH hothead started identity=" + std::to_string(bindings.find(h)));
         return true;
     }
     return false;
