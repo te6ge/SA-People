@@ -50,6 +50,29 @@ Enabled=1
 HonorPercent=10
 VoicePercent=45
 NpcVoicePercent=30
+
+; Two keys per action, separated by a comma. Use NONE to disable a key.
+; If F6 conflicts with another mod, change Phone=F6,P to Phone=F2,P.
+; Close the game before editing. Restart the game to apply changes.
+[Controls]
+Focus=LALT,NONE
+Greet=G,NONE
+Provoke=H,NONE
+Defuse=J,NONE
+Rob=R,NONE
+Repair=E,NONE
+Phone=F6,P
+PhoneUp=UP,W
+PhoneDown=DOWN,S
+PhoneLeft=LEFT,A
+PhoneRight=RIGHT,D
+PhoneSelect=ENTER,E
+PhoneBack=BACKSPACE,Q
+PhoneClose=ESC,NONE
+Vitals=TAB,NONE
+Contacts=F7,NONE
+Meetings=F8,NONE
+Save=F10,NONE
 "@, $utf8)
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem

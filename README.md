@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.15.0 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.15.1 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -31,6 +31,13 @@ identities and relationships carry across game sessions.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
 - English, Turkish, Russian and Spanish. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.15.1
+
+Control bindings are now listed in the supplied settings files and automatically added
+when missing from an existing installation. Custom bindings and other settings are kept.
+If F6 opens another mod's save menu, use P or change the Phone entry as described below.
+This does not disable or override other mods' hotkeys.
 
 ## What's new in 0.15.0
 
@@ -115,6 +122,23 @@ separate settings. Disable any previous ModLoader copy before using this root in
 - Change language and bindings in phone → Settings.
 - Type **IMARTHURMORGAN** during free roam, with the phone closed, to set honor to 100.
 
+### Change the phone key without opening the phone
+
+Close the game, then open `SA-People/settings.ini` in the game folder with a text editor.
+Under `[Controls]`, change `Phone=F6,P` to:
+
+```ini
+[Controls]
+Phone=F2,P
+```
+
+Restart the game. F2 and P now open the phone; SA People no longer uses F6 for the phone.
+Choose another unused key if F2 is also assigned by another mod. Use `Phone=F2,NONE` if
+you want only F2. Existing settings gain missing control entries after the first launch
+of 0.15.1; you can also add `[Controls]` and `Phone=F2,P` yourself before launching.
+For ModLoader installations, edit the game's persistent `SA-People/settings.ini`, not
+`settings.example.ini` inside the mod folder. Updating does not replace your settings.
+
 To negotiate with a hostile rival, approach a visible member within eight metres, hold
 focus and greet or calm down. Honor, group size and whether you are aiming affect the
 result. Do not expect a rejected gang member to become an ordinary new contact.
@@ -122,7 +146,7 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of installation method. Version 0.15.0 uses archive format V15 and imports earlier archives.
+of installation method. Versions 0.15.x use archive format V15 and imports earlier archives.
 The first upgrade keeps `people.pre-0.15.dat`. Older plugins cannot read V15: restore the
 pre-update archive as well as the older plugin if you downgrade.
 

@@ -9,6 +9,40 @@ void __cdecl foreignCallback(){++chainedCalls;}
 void __cdecl ourCallback(){++chainedCalls;chainedPrevious();}
 }
 int main() {
+    {
+        wchar_t temp[MAX_PATH] = {}, ini[MAX_PATH] = {};
+        assert(GetTempPathW(MAX_PATH, temp));
+        assert(GetTempFileNameW(temp, L"sap", 0, ini));
+        assert(WritePrivateProfileStringW(L"Controls", L"Phone", L"F2,P", ini));
+        assert(WritePrivateProfileStringW(L"Controls", L"Greet", L"K,NONE", ini));
+        assert(WritePrivateProfileStringW(L"Interface", L"Language", L"ru", ini));
+        controls::load(ini);
+        assert(controls::keys[controls::Phone].primary == VK_F2);
+        assert(controls::keys[controls::Phone].secondary == 'P');
+        assert(controls::keys[controls::Greet].primary == 'K');
+        assert(controls::seedMissing(ini));
+        controls::load(ini);
+        assert(controls::keys[controls::Phone].primary == VK_F2);
+        assert(controls::keys[controls::Greet].primary == 'K');
+        wchar_t value[64] = {};
+        GetPrivateProfileStringW(L"Interface", L"Language", L"", value, 64, ini);
+        assert(std::wstring(value) == L"ru");
+        for (unsigned a = 0; a < controls::Count; ++a) {
+            const auto name = controls::iniName(a);
+            const std::wstring wide(name, name + std::strlen(name));
+            assert(GetPrivateProfileStringW(L"Controls", wide.c_str(), L"", value, 64, ini));
+        }
+        assert(WritePrivateProfileStringW(L"Controls", L"Phone", L"F2,NONE", ini));
+        assert(controls::seedMissing(ini));
+        controls::load(ini);
+        assert(controls::keys[controls::Phone].primary == VK_F2 && !controls::keys[controls::Phone].secondary);
+        controls::save(ini); controls::load(ini);
+        assert(controls::keys[controls::Phone].primary == VK_F2 && !controls::keys[controls::Phone].secondary);
+        assert(DeleteFileW(ini));
+        controls::reset();
+        std::cout << "PASS: INI phone rebinding, missing control migration, custom settings preservation and disabled secondary key roundtrip.\n";
+    }
+
     auto page=static_cast<Byte *>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
     assert(page);
     page[0]=0xE8;page[5]=0xC3;

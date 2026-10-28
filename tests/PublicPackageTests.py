@@ -29,6 +29,8 @@ with zipfile.ZipFile(package) as archive:
         assert actual_audio==expected_audio,(method,len(actual_audio),len(expected_audio))
         assert sum(n.startswith(method+'assets/') and n.endswith('.png') for n in files)==3
         assert sum(n.startswith(method+'backgrounds/') and n.endswith(('.jpg','.png')) for n in files)==3
+    settings=files['Manual/SA-People/settings.ini'].decode('utf-8')
+    assert '[Controls]' in settings and 'Phone=F6,P' in settings and 'Phone=F2,P' in settings
     assert files['Manual/SA-People.asi']==files['ModLoader/SA-People/SA-People.asi']==(root/'build/SA-People.asi').read_bytes()
     copy='Manual/Copy-to-Game-Folder/'
     assert files[copy+'SA-People.asi']==files['Manual/SA-People.asi']

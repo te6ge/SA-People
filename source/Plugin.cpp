@@ -351,6 +351,8 @@ void initialize() {
                        : wcscmp(language, L"en") == 0 ? locale::Language::English
                                                       : locale::Language::Turkish;
     controls::load(ini.c_str());
+    if (!controls::seedMissing(ini.c_str()))
+        log("SETTINGS could not write missing control bindings; existing bindings remain active.");
     gallery.initialize(resourceDirectory);
     audio.initialize(directory, log, resourceDirectory);
     auto archive = directory / L"people.dat";
@@ -393,7 +395,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.15.0 initialized; persistent identities=" +
+    log("SA People 0.15.1 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {

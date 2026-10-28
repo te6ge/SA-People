@@ -159,6 +159,21 @@ inline void save(const wchar_t *ini) {
         WritePrivateProfileStringW(L"Controls", name.c_str(), value.c_str(), ini);
     }
 }
+// Expose defaults in older installations without replacing any existing bindings.
+inline bool seedMissing(const wchar_t *ini) {
+    bool ok = true;
+    for (unsigned a = 0; a < Count; ++a) {
+        std::wstring name(iniName(a), iniName(a) + std::strlen(iniName(a)));
+        wchar_t value[64] = {};
+        if (GetPrivateProfileStringW(L"Controls", name.c_str(), L"", value, 64, ini))
+            continue;
+        const std::string text = keyName(defaults[a].primary) + "," + keyName(defaults[a].secondary);
+        const std::wstring wide(text.begin(), text.end());
+        if (!WritePrivateProfileStringW(L"Controls", name.c_str(), wide.c_str(), ini))
+            ok = false;
+    }
+    return ok;
+}
 inline void reset() {
     for (unsigned a = 0; a < Count; ++a)
         keys[a] = defaults[a];
