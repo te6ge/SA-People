@@ -541,6 +541,33 @@ int familyClock = -1;
 #include "LifeEvents.inc"
 #include "Ambush.inc"
 #include "Gangs.inc"
+// Outings temporarily neutralize only actors this mod already retained from ambient life.
+bool protectOutingActor(Pool *pool, people::Handle actor, unsigned id) {
+    if (!validPool(pool) || !exists(pool, actor) || storyActive()) return false;
+    auto found = actorLeases.find(actor.slot);
+    auto ped = pedAt(pool, actor.slot);
+    if (found == actorLeases.end() || !(found->second.handle == actor) ||
+        found->second.person != id || recruited(ped) || ped[0x484] != 2) return false;
+    auto &guard = found->second.outing;
+    if (!guard.active) {
+        guard.apply(ped);
+        log("OUTING protected identity=" + std::to_string(id));
+    }
+    auto manager = taskManager(ped);
+    if (!manager) return true;
+    // Physical responses (slot 0), injury and arrest always retain priority.
+    for (int slot = 1; slot <= 3; ++slot) {
+        auto task = at<void *>(reinterpret_cast<std::uintptr_t>(manager) + slot * 4);
+        const int type = gangTaskId(task);
+        if (outingsafety::offensiveTask(type)) {
+            setTask(manager, nullptr, slot);
+            log("OUTING stopped native attack identity=" + std::to_string(id) +
+                " task=" + std::to_string(type));
+        }
+    }
+    return true;
+}
+
 bool companionOwns(unsigned id);
 void releaseRoutine(unsigned id);
 void clearRoutines();
@@ -553,12 +580,15 @@ void updateSocialWorld(Pool *, Byte *);
 void sendPhoneChoice(unsigned, unsigned, bool);
 void showRoutineRoute(people::Point);
 bool departureOwns(unsigned);
+void acceptRequest(Byte *player);
+void giveBirthdayGift(Byte *player);
 #include "PhoneNative.inc"
 #include "PhoneMessages.inc"
 bool recognitionOwns(unsigned);
 #include "SocialNative.inc"
 #include "Ambient.inc"
 #include "CommunityNative.inc"
+#include "Bonds.inc"
 void observeCriminalAttack(Pool *pool, Byte *player) {
     const float health = *reinterpret_cast<float *>(player + 0x540);
     const bool hurt = observedPlayerHealth >= 0 && health + 0.5f < observedPlayerHealth;
@@ -699,6 +729,10 @@ void interact(Pool *pool, Byte *player, street::Action action) {
     }
     if (companionAction(f.id, action))
         return;
+    if (action == street::Action::Greet && bonds::complete(registry, bonds::TalkTo, f.id)) {
+        help(locale::format("REQ_DONE", dialogue::displayName(f)));
+        dirty = true;
+    }
     if(communityAction(pool,player,f.id,action)) return;
     if(action!=street::Action::Greet)releaseTalkingHold(f.id);
     if (nightOffer(f.id) && action == street::Action::Defuse) {
@@ -883,6 +917,8 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         help("Artik seni arkadasi olarak goruyor. F6 ile gunlugune bak.");
     else if (reply.newJournal)
         help("Gunlugune bir tanidik eklendi. F6 ile oku.");
+    if (reply.newJournal)
+        bonds::count(registry, bonds::Stat::Met);
     if (reply.reaction == dialogue::Reaction::Fight) {
         if (roadside.person == focused)
             cancelRoadside();
@@ -1148,6 +1184,7 @@ void tick() {
     lastDirectorTick = now;
     updateMeetings(pool, player, elapsed, mission);
     updateSocialWorld(pool, player);
+    updateBonds(pool, player, mission);
     updateCommunity(pool, player);
     updateAmbient(pool, player);
     if (sideEvents && eventSafe && !eventActive() && !focusHeld && due(now, nextNightProbe) &&

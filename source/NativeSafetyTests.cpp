@@ -43,6 +43,55 @@ int main() {
         std::cout << "PASS: INI phone rebinding, missing control migration, custom settings preservation and disabled secondary key roundtrip.\n";
     }
 
+    {
+        std::vector<Byte> ped(0x7C4, 0), savedPed;
+        ped[0x473] = 0xA4;
+        const unsigned masks[] = {1u, 1u << 8, 1u << 6, (1u << 6) | (1u << 7)};
+        for (unsigned i = 0; i < 4; ++i)
+            std::memcpy(ped.data() + outingsafety::Disposition::offsets[i], &masks[i], 4);
+        savedPed = ped;
+        outingsafety::Disposition guard;
+        guard.apply(ped.data());
+        assert(ped[0x473] == 0xA5);
+        for (unsigned i = 0; i < 4; ++i) {
+            unsigned value = 99;
+            std::memcpy(&value, ped.data() + outingsafety::Disposition::offsets[i], 4);
+            assert(value == 0);
+        }
+        guard.apply(ped.data()); // Refresh must not replace the original with zeroes.
+        guard.restore(ped.data());
+        assert(ped == savedPed && !guard.active);
+        ped[0x473] |= 1; savedPed = ped;
+        guard.apply(ped.data()); guard.restore(ped.data());
+        assert(ped == savedPed); // A pre-existing don't-fight flag belongs to its owner.
+        guard.apply(ped.data());
+        ped[0x473] |= 0x10;
+        const unsigned external = 1u << 14;
+        std::memcpy(ped.data() + 0x4EC, &external, 4);
+        guard.restore(ped.data());
+        unsigned restoredMask = 0;
+        std::memcpy(&restoredMask, ped.data() + 0x4EC, 4);
+        assert(restoredMask == (masks[2] | external) && (ped[0x473] & 0x10));
+        assert(outingsafety::offensiveTask(1000) && outingsafety::offensiveTask(1005));
+        for (int task : {-1, 203, 1006, 1007, 1008, 1100, 1102, 244})
+            assert(!outingsafety::offensiveTask(task));
+        std::cout << "PASS: outing-only hostility suppression, idempotent leases, complete restoration, unrelated flag preservation and injury/arrest task exclusions.\n";
+    }
+    {
+        const auto probeRoot = std::filesystem::temp_directory_path() /
+            ("sa-people-audio-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount()));
+        assert(std::filesystem::create_directory(probeRoot));
+        const auto wavPath = probeRoot / "line.wav", mp3Path = probeRoot / "line.mp3";
+        { std::ofstream sample(wavPath); sample << "legacy"; }
+        assert(audiofiles::resolve(wavPath) == wavPath);
+        { std::ofstream sample(mp3Path); sample << "compact"; }
+        assert(audiofiles::resolve(wavPath) == mp3Path);
+        assert(audiofiles::resolve(mp3Path) == mp3Path);
+        std::filesystem::remove(wavPath);
+        assert(audiofiles::resolve(wavPath) == mp3Path);
+        std::filesystem::remove(mp3Path); std::filesystem::remove(probeRoot);
+        std::cout << "PASS: compressed speech preference, existing WAV-only installations and direct MP3 paths.\n";
+    }
     auto page=static_cast<Byte *>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
     assert(page);
     page[0]=0xE8;page[5]=0xC3;

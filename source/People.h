@@ -202,6 +202,16 @@ struct Later {
     unsigned person = 0, kind = 0, source = 0; // 1 thanks, 2 gift, 3 revenge, 4 favor cooldown
     std::uint64_t due = 0;                     // World minutes.
 };
+// V16: what CJ's week looked like, the one favor a friend asked of him, and districts' opinion.
+struct WeekStats {
+    std::uint64_t week = 0; // worldMinutes / 10080
+    unsigned met = 0, helped = 0, robbed = 0, outings = 0, gifts = 0;
+};
+struct Request {
+    unsigned person = 0, kind = 0, target = 0, state = 0, amount = 0; // state 1 asked, 2 accepted, 3 repayment pending
+    std::uint64_t due = 0;
+};
+constexpr unsigned DistrictCount = 12;
 struct Registry {
     std::vector<Family> families;
     std::vector<Appointment> appointments;
@@ -213,6 +223,9 @@ struct Registry {
     unsigned nextIncident = 1;
     int honor = 0;
     std::uint64_t savedAt = 0;
+    std::array<int, DistrictCount> districts{};
+    WeekStats week;
+    Request request;
     Registry() {
         families.reserve(MaxFamilies);
     }
@@ -242,6 +255,7 @@ struct Registry {
         if (families.empty())
             return 0;
         std::unordered_set<unsigned> keep;
+        if (request.state) { keep.insert(request.person); keep.insert(request.target); }
         for (const auto &e : connections) {
             keep.insert(e.a);
             keep.insert(e.b);
@@ -285,7 +299,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 15\n"
+        out << "SAPEOPLE 16\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -368,7 +382,7 @@ struct Registry {
         out << "LATER " << later.size() << '\n';
         for (const auto &l : later) {
             if (!l.person || l.person > families.size() || l.source > families.size() ||
-                !l.kind || l.kind > 7 || l.due > 1000000000)
+                !l.kind || l.kind > 9 || l.due > 1000000000)
                 throw std::runtime_error("Invalid consequence");
             out << l.person << ' ' << l.kind << ' ' << l.source << ' ' << l.due << '\n';
         }
@@ -381,15 +395,40 @@ struct Registry {
                 throw std::runtime_error("Invalid community memory");
             out << f.id << ' '; f.community.write(out); out << '\n';
         }
+        if (!validBonds(static_cast<unsigned>(families.size())))
+            throw std::runtime_error("Invalid bonds");
+        out << "BONDS";
+        for (int d : districts)
+            out << ' ' << d;
+        out << ' ' << week.week << ' ' << week.met << ' ' << week.helped << ' ' << week.robbed << ' '
+            << week.outings << ' ' << week.gifts << ' ' << request.person << ' ' << request.kind
+            << ' ' << request.target << ' ' << request.state << ' ' << request.amount << ' '
+            << request.due << '\n';
         if (!out)
             throw std::runtime_error("Write failed");
+    }
+    bool validBonds(unsigned count) const {
+        for (int d : districts)
+            if (d < -100 || d > 100)
+                return false;
+        const auto &w = week;
+        const auto &q = request;
+        if (w.week > 1000000 || w.met > 1000000 || w.helped > 1000000 ||
+            w.robbed > 1000000 || w.outings > 1000000 || w.gifts > 1000000 ||
+            q.person > count || q.target > count || q.kind > 3 || q.state > 3 ||
+            q.due > 1000000000) return false;
+        if (!q.state) return !q.person && !q.target && !q.kind && !q.amount && !q.due;
+        if (!q.person || !q.kind || (q.state == 3 && q.kind != 3) ||
+            (q.state == 2 && q.kind == 3)) return false;
+        if (q.kind == 3) return !q.target && q.amount >= 50 && q.amount <= 200;
+        return !q.amount && (q.kind == 2 ? q.target && q.target != q.person : !q.target);
     }
     static Registry read(std::istream &in) {
         Registry r;
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 15 || count > MaxFamilies)
+            version > 16 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -568,7 +607,7 @@ struct Registry {
             for (unsigned i = 0; i < size; ++i) {
                 Later l;
                 if (!(in >> l.person >> l.kind >> l.source >> l.due) || !l.person ||
-                    l.person > count || l.source > count || !l.kind || l.kind > (version >= 14 ? 7u : version >= 13 ? 5u : 4u) ||
+                    l.person > count || l.source > count || !l.kind || l.kind > (version >= 16 ? 9u : version >= 14 ? 7u : version >= 13 ? 5u : 4u) ||
                     l.due > 1000000000)
                     throw std::runtime_error("Corrupt consequence");
                 r.later.push_back(l);
@@ -587,6 +626,20 @@ struct Registry {
                     throw std::runtime_error("Corrupt community memory");
                 previous=id;
             }
+        }
+        if (version >= 16) {
+            std::string marker;
+            auto &w = r.week;
+            auto &q = r.request;
+            if (!(in >> marker) || marker != "BONDS")
+                throw std::runtime_error("Corrupt bonds");
+            for (auto &d : r.districts)
+                if (!(in >> d))
+                    throw std::runtime_error("Corrupt districts");
+            if (!(in >> w.week >> w.met >> w.helped >> w.robbed >> w.outings >> w.gifts >>
+                  q.person >> q.kind >> q.target >> q.state >> q.amount >> q.due) ||
+                !r.validBonds(count))
+                throw std::runtime_error("Corrupt bonds");
         }
         in >> std::ws;
         if (!in.eof())

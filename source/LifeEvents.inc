@@ -482,7 +482,8 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
             if (!streetPoint(previousPosition, player, landing, 12) || !clearGround(landing, player))
                 landing = previousPosition;
         }
-        if (!lifeEvent.nightRest.pay(*money)) {
+        if (!lifeEvent.nightRest.pay(
+                *money, static_cast<int>(bonds::price(registry, playerDistrict(), 80)))) {
             cancelLife();
             return;
         }
@@ -647,6 +648,7 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
         setTask(taskManager(ped), task, 3);
         lifeEvent.task = task;
         lifeEvent.stage = 3;
+        say(f, "LIFE_DROP_OFF");
     }
     if (paid) {
         auto money = playerMoney(player);
@@ -661,6 +663,8 @@ void updateLife(Pool *pool, Byte *player, unsigned elapsed) {
             later::helped(registry, f.id);
             justMet(f);
             help(locale::format("LIFE_RIDE_PAID", std::to_string(lifeEvent.fare)));
+            if (bonds::complete(registry, bonds::Ride, f.id))
+                help(locale::format("REQ_DONE", dialogue::displayName(f)));
             say(f, alreadyKnown ? locale::tr("LIFE_RIDE_THANK_KNOWN")
                 : locale::format("LIFE_RIDE_THANK", people::generate(f)[0].name));
             dirty = true;

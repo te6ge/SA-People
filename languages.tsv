@@ -749,3 +749,82 @@ RESCUE_TIMEOUT	Yardım olayı sona erdi. Yaralının durumunu yeniden kontrol ed
 RESCUE_NEARBY	Yakında kazada yaralanmış biri var. ALT ile odaklan; G: yardım, J: ambulans.	Рядом пострадавший в ДТП. ALT: выбрать, G: помочь, J: скорая.	Hay alguien herido cerca. ALT: enfocar, G: ayudar, J: ambulancia.	An accident victim is nearby. Focus with ALT; G: help, J: ambulance.
 COMMUNITY_MAIL_GOOD	{0}, burada insanlara yardım ettiğini anlattı. Bunu duymak güzel CJ.	{0} рассказал о твоей помощи людям здесь. Приятно слышать, CJ.	{0} me ha contado que ayudas por aquí. Me alegra oírlo, CJ.	{0} told me you have been helping people around here. Good to hear, CJ.
 COMMUNITY_MAIL_BAD	{0}, burada yaptıklarını anlattı. İnsanlara nasıl davrandığına dikkat et CJ.	{0} рассказал о твоих делах здесь. Следи за тем, как обращаешься с людьми, CJ.	{0} me ha contado lo que haces por aquí. Cuida cómo tratas a la gente, CJ.	{0} told me what happened around here. Watch how you treat people, CJ.
+LIFE_DROP_OFF	Beni burada indirebilirsin.	Можешь высадить меня здесь.	Puedes dejarme aquí.	You can drop me off here.
+DIST_0	Kırsal kesim	Пригород	Las afueras	The countryside
+DIST_1	Ganton (Grove Street)	Гэнтон (Грув-стрит)	Ganton (Grove Street)	Ganton (Grove Street)
+DIST_2	Idlewood	Айдлвуд	Idlewood	Idlewood
+DIST_3	Jefferson	Джефферсон	Jefferson	Jefferson
+DIST_4	Doğu Los Santos	Восточный Лос-Сантос	Este de Los Santos	East Los Santos
+DIST_5	El Corona ve Limanlar	Эль-Корона и доки	El Corona y los muelles	El Corona and the docks
+DIST_6	Downtown	Даунтаун	Centro	Downtown
+DIST_7	Vinewood	Вайнвуд	Vinewood	Vinewood
+DIST_8	Rodeo ve Verona Beach	Родео и Верона-Бич	Rodeo y Verona Beach	Rodeo and Verona Beach
+DIST_9	Los Santos Havalimanı	Аэропорт Лос-Сантоса	Aeropuerto de Los Santos	Los Santos airport
+DIST_10	San Fierro	Сан-Фиерро	San Fierro	San Fierro
+DIST_11	Las Venturas	Лас-Вентурас	Las Venturas	Las Venturas
+DIST_MOOD_HERO	seni kahraman sayıyorlar	тебя считают героем	te consideran un héroe	they call you a hero
+DIST_MOOD_LIKED	seni seviyorlar	тебя здесь любят	aquí te aprecian	they like you here
+DIST_MOOD_NEUTRAL	seni pek tanımıyorlar	тебя тут почти не знают	aquí apenas te conocen	they barely know you
+DIST_MOOD_FEARED	senden çekiniyorlar	тебя здесь побаиваются	aquí te tienen miedo	they are wary of you
+DIST_MOOD_HATED	adın çok kötüye çıktı	у тебя здесь дурная слава	aquí tienes muy mala fama	your name is mud here
+DIST_LOCAL	Mahalleli	Местный	Vecino	Local
+DIST_HELLO_0	Selam CJ! Mahalle sana çok şey borçlu.	Привет, CJ! Район тебе многим обязан.	¡Hola, CJ! El barrio te debe mucho.	Hey CJ! The neighborhood owes you.
+DIST_HELLO_1	CJ, geçen gün yaptığını herkes konuşuyor.	CJ, все говорят о том, что ты сделал.	CJ, todo el mundo habla de lo que hiciste.	CJ, everybody is talking about what you did.
+DIST_HELLO_2	Buralarda sen olunca içim rahat ediyor.	Когда ты рядом, мне спокойнее.	Cuando estás por aquí me siento más tranquilo.	I feel safer when you are around.
+DIST_HELLO_3	Hey! Bir şeye ihtiyacın olursa söyle, tamam mı?	Эй! Если что-то нужно, скажи, ладно?	¡Eh! Si necesitas algo, dímelo, ¿vale?	Hey! If you need anything, just say so, okay?
+DIST_FEAR_0	O geliyor, uzak dur!	Это он, держись подальше!	¡Es él, aléjate!	That is him, stay away!
+DIST_FEAR_1	Yine o adam... Hadi gidelim buradan.	Опять этот тип... Пойдём отсюда.	Otra vez ese tipo... Vámonos.	That guy again... Let us get out of here.
+DIST_FEAR_2	Cüzdanını sıkı tut, CJ geliyor.	Держи кошелёк крепче, это CJ.	Agarra bien la cartera, viene CJ.	Hold on to your wallet, CJ is coming.
+LIFE_TITLE	Hayatım	Моя жизнь	Mi vida	My life
+LIFE_WEEK_HEAD	BU HAFTA	ЭТА НЕДЕЛЯ	ESTA SEMANA	THIS WEEK
+LIFE_HONOR	Onur {0}	Честь {0}	Honor {0}	Honor {0}
+LIFE_MET	Tanışma: {0}	Знакомства: {0}	Conocidos: {0}	Met: {0}
+LIFE_HELPED	İyilik: {0}	Помощь: {0}	Favores: {0}	Good deeds: {0}
+LIFE_OUTINGS	Buluşma: {0}	Встречи: {0}	Quedadas: {0}	Outings: {0}
+LIFE_ROBBED	Soygun: {0}	Ограбления: {0}	Robos: {0}	Robberies: {0}
+LIFE_BEST	En yakın: {0}	Лучший друг: {0}	Mejor amigo: {0}	Closest: {0}
+LIFE_ENEMY	Düşman: {0}	Враг: {0}	Enemigo: {0}	Enemy: {0}
+LIFE_PARTNER	Sevgili: {0}	Партнёр: {0}	Pareja: {0}	Partner: {0}
+LIFE_CONTACTS	Rehberde {0} kişi	Контактов: {0}	{0} contactos	{0} contacts
+LIFE_NOBODY	yok	нет	nadie	nobody
+LIFE_NO_DISTRICT	Henüz hiçbir mahallede adın çıkmadı.	Ни в одном районе о тебе пока не говорят.	Todavía no tienes fama en ningún barrio.	No neighborhood talks about you yet.
+LIFE_BDAY_SOON	Sıradaki doğum günü: {0}	Ближайший день рождения: {0}	Próximo cumpleaños: {0}	Next birthday: {0}
+LIFE_BDAY_TODAY	Bugün {0} doğum günü!	Сегодня день рождения: {0}!	¡Hoy es el cumpleaños de {0}!	Today is {0}'s birthday!
+MAIL_BDAY_0	Bugün benim doğum günüm! Uğrayıp bir selam versen çok sevinirim.	Сегодня мой день рождения! Буду рад(а), если заглянешь.	¡Hoy es mi cumpleaños! Me alegraría que pasaras a saludar.	It is my birthday today! I would love it if you stopped by.
+MAIL_BDAY_1	CJ, bir yaş daha yaşlandım. Akşama kadar buralardayım, gel de kutla!	CJ, я стал(а) на год старше. Я тут до вечера, заходи отметить!	CJ, un año más. Estoy por aquí hasta la noche, ¡ven a celebrarlo!	CJ, another year older. I am around until tonight, come celebrate!
+MAIL_BDAY_2	Doğum günüm bugün ve kimse hatırlamadı. Sen hatırlar mısın acaba?	Сегодня мой день рождения, и никто не вспомнил. А ты вспомнишь?	Hoy es mi cumpleaños y nadie se acordó. ¿Tú te acordarás?	It is my birthday and nobody remembered. Will you?
+MAIL_BDAY_THANKS	Hediye için çok teşekkürler CJ. Bugünü güzelleştirdin.	Спасибо за подарок, CJ. Ты сделал мой день.	Gracias por el regalo, CJ. Me has alegrado el día.	Thanks for the present, CJ. You made my day.
+BDAY_TOAST	Bugün {0} doğum günü. Yanına gidip selamlarsan hediyeni verirsin ($50).	Сегодня день рождения: {0}. Поприветствуй лично, чтобы вручить подарок ($50).	Hoy es el cumpleaños de {0}. Salúdale en persona para darle tu regalo ($50).	It is {0}'s birthday. Greet them in person to give a present ($50).
+BDAY_GIFT_LINE	Bu benim için mi? CJ, gerçekten çok incesin!	Это мне? CJ, как это мило!	¿Esto es para mí? CJ, ¡qué detalle!	This is for me? CJ, that is so sweet!
+BDAY_GIFT_GIVEN	{0} için doğum günü hediyesi verdin. Güven arttı.	Ты подарил подарок: {0}. Доверие выросло.	Le diste un regalo de cumpleaños a {0}. La confianza sube.	You gave {0} a birthday present. Trust rises.
+BDAY_NO_MONEY	Hediye için $50 gerekiyor.	На подарок нужно $50.	Necesitas $50 para el regalo.	You need $50 for a present.
+MAIL_REQ_RIDE	CJ, bana bir iyilik yapar mısın? Evden alıp bir yere bırakman lazım. Kabul edersen evde beklerim.	CJ, выручишь? Забери меня из дома и подбрось кое-куда. Если согласен, жду дома.	CJ, ¿me haces un favor? Recógeme en casa y llévame a un sitio. Si aceptas, te espero allí.	CJ, can you do me a favor? Pick me up at home and drop me somewhere. If you say yes, I will wait at home.
+MAIL_REQ_TALK	{0} ile aram biraz bozuk. Bir uğrayıp selam verir misin? Senin sözünü dinler.	У меня разлад с {0}. Можешь зайти поздороваться? Тебя послушают.	Las cosas con {0} están raras. ¿Puedes pasar a saludar? A ti te escucha.	Things are weird with {0}. Could you drop by and say hi? They listen to you.
+MAIL_REQ_LEND	Utanarak soruyorum ama biraz borç verebilir misin? Kabul edersen hemen gönderirsin, yakında öderim.	Неудобно просить, но не одолжишь немного? Если да, отправь сразу, скоро верну.	Me da vergüenza, pero ¿me prestas algo de dinero? Si aceptas, mándamelo y te lo devuelvo pronto.	I hate to ask, but could you lend me some money? If you agree, send it now and I will pay you back soon.
+MAIL_REQ_LEND_THANKS	Canımı kurtardın CJ. Parayı en kısa sürede geri vereceğim.	Ты меня спас, CJ. Верну как можно скорее.	Me has salvado, CJ. Te lo devuelvo cuanto antes.	You saved me, CJ. I will pay you back as soon as I can.
+MAIL_REQ_ACCEPTED	Sağ ol CJ! Haritada işaretledim.	Спасибо, CJ! Отметил(а) на карте.	¡Gracias, CJ! Te lo marqué en el mapa.	Thanks CJ! I marked it on your map.
+MAIL_REQ_RIDE_THANKS	Tam zamanında yetiştim, sağ ol CJ. Sana borçluyum.	Успел(а) вовремя, спасибо, CJ. Я твой должник.	Llegué a tiempo, gracias, CJ. Te debo una.	Made it just in time, thanks CJ. I owe you.
+MAIL_REQ_TALK_THANKS	{0} ile konuşmuşsun, aramız düzeldi. Sağ ol CJ.	Ты поговорил с {0}, и всё наладилось. Спасибо, CJ.	Hablaste con {0} y ya estamos bien. Gracias, CJ.	You talked to {0} and we are good again. Thanks CJ.
+MAIL_REQ_LET_DOWN	Söz vermiştin CJ. Boşuna bekledim.	Ты обещал, CJ. Я зря ждал(а).	Me lo prometiste, CJ. Esperé para nada.	You promised, CJ. I waited for nothing.
+MAIL_ACCEPT_REQUEST	ENTER: İsteği incele / →: Yaz	ENTER: Посмотреть просьбу / →: Написать	ENTER: Ver petición / →: Escribir	ENTER: Review request / →: Write
+REQ_NO_MONEY	Borç vermek için ${0} gerekiyor.	Чтобы одолжить, нужно ${0}.	Necesitas ${0} para prestarle.	You need ${0} to lend.
+REQ_LENT	${0} gönderdin. Bir süre sonra teşekkürle geri dönecek.	Ты отправил ${0}. Скоро вернут с благодарностью.	Enviaste ${0}. Te lo devolverá con un gracias.	You sent ${0}. It will come back with thanks.
+REQ_RIDE_ACCEPTED	Kabul ettin. Evi haritada sarı; araçla gidip yanında dur.	Ты согласился. Дом отмечен жёлтым: подъезжай на машине и остановись рядом.	Aceptaste. Su casa está en amarillo: ve en coche y para a su lado.	Accepted. Their home is yellow on the map: drive there and stop next to them.
+REQ_TALK_ACCEPTED	Kabul ettin. Konuşacağın kişi haritada sarı; yanına gidip selam ver.	Ты согласился. Нужный человек отмечен жёлтым: подойди и поздоровайся.	Aceptaste. La persona está en amarillo: ve y salúdala.	Accepted. The person is yellow on the map: go and greet them.
+REQ_RIDE_BOARD	Arkadaşın arabaya biniyor.	Друг садится в машину.	Tu amigo se sube al coche.	Your friend is getting in the car.
+REQ_DONE	Rica tamamlandı: {0}. Arkadaşın memnun.	Просьба выполнена: {0}. Друг доволен.	Favor cumplido: {0}. Tu amigo está contento.	Favor done: {0}. Your friend is happy.
+REQ_BROKEN	Söz verdiğin iyiliği yapmadın; arkadaşın kırıldı.	Ты не выполнил обещанное; друг обиделся.	No cumpliste lo prometido; tu amigo está dolido.	You did not keep your promise; your friend is hurt.
+BDAY_GIVE	Doğum günü hediyesi ver	Подарок на день рождения	Dar regalo de cumpleaños	Give birthday gift
+BDAY_CONFIRM	{0} için 50 dolarlık hediye verilsin mi? Yanında olmalısın.	Подарить {0} подарок за $50? Нужно быть рядом.	¿Dar un regalo de $50 a {0}? Debes estar cerca.	Give {0} a $50 birthday gift? You must be nearby.
+BDAY_CONFIRM_GIVE	Hediyeyi ver ($50)	Подарить ($50)	Dar regalo ($50)	Give gift ($50)
+CONFIRM_CANCEL	Vazgeç	Отмена	Cancelar	Cancel
+BDAY_NEARBY	Hediye vermek için arkadaşının yanında, yaya olmalısın.	Для подарка подойди к другу пешком.	Acércate a tu amigo a pie para dar el regalo.	Stand near your friend on foot to give the gift.
+BDAY_UNAVAILABLE	Hediye şu an verilemiyor. Daha sonra tekrar dene.	Сейчас подарок недоступен. Попробуй позже.	No puedes dar el regalo ahora. Inténtalo después.	The gift is unavailable right now. Try again later.
+PHONE_REQUEST	Arkadaşın isteği	Просьба друга	Petición de un amigo	Friend's request
+REQ_UNAVAILABLE	Bu istek artık geçerli değil.	Эта просьба больше недоступна.	Esta petición ya no está disponible.	This request is no longer available.
+REQ_ACCEPT	Kabul et	Принять	Aceptar	Accept
+REQ_DECLINE	Reddet	Отказать	Rechazar	Decline
+REQ_DECLINED	İsteği reddettin. Arkadaşlığınız etkilenmedi.	Ты отказал. Дружба не пострадала.	Rechazaste la petición. La amistad no ha cambiado.	Request declined. Your friendship is unchanged.
+MAIL_REQ_DECLINED	Sorun yok CJ, başka bir zaman.	Без проблем, CJ. Как-нибудь в другой раз.	No pasa nada, CJ. Otra vez será.	No problem, CJ. Another time.
+MAIL_REQ_REPAID	Ödünç verdiğin parayı geri gönderdim CJ. Sağ ol.	Вернул весь долг, CJ. Спасибо.	Te he devuelto todo el préstamo, CJ. Gracias.	I sent back the full amount you lent me, CJ. Thanks.
+REQ_REPAID	Verdiğin borç geri ödendi: ${0}.	Долг возвращён: ${0}.	Préstamo devuelto: ${0}.	Loan repaid: ${0}.

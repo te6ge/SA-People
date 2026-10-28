@@ -1,5 +1,6 @@
 #pragma once
 #include "Street.h"
+#include "AudioFiles.h"
 #include <map>
 namespace socialaudio {
 enum class Context {

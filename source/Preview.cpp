@@ -100,7 +100,7 @@ int main() {
         std::wstring code(locale::code(locale::language), locale::code(locale::language) + 2);
         for (const auto &size : dimensions) {
             float width = static_cast<float>(size[0]), height = static_cast<float>(size[1]);
-            for (unsigned page = 0; page < 16; ++page) {
+            for (unsigned page = 0; page < 19; ++page) {
                 phone::State state;
                 state.page = page == 0   ? phone::Page::Contacts
                              : page == 1 ? phone::Page::Contact
@@ -136,7 +136,17 @@ int main() {
                 }
                 if (page == 4)
                     state.notice = "PHONE_INVITE_ACCEPT";
-                auto scene = phone::compose(registry, state, "14:35");
+                auto viewRegistry = registry;
+                if (page == 16) {
+                    state.page = phone::Page::Gift;
+                    viewRegistry.worldMinutes = bonds::birthday(viewRegistry.families[0]) * 1440ull;
+                }
+                if (page == 17) {
+                    state.page = phone::Page::Request;
+                    viewRegistry.request = {1,bonds::Lend,0,1,200,viewRegistry.worldMinutes+180};
+                }
+                if (page == 18) state.page = phone::Page::Life;
+                auto scene = phone::compose(viewRegistry, state, "14:35");
                 auto path = std::filesystem::path("preview") /
                             (L"phone-" + code + L"-" + std::to_wstring(size[0]) + L"-" +
                              std::to_wstring(page) + L".png");

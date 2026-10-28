@@ -98,11 +98,11 @@ int main() {
                 for (bool leaving : {false, true}) {
                     soundReply.leaves = leaving;
                     assert(!audioAvailable || std::filesystem::exists(
-                        std::filesystem::path("audio") /
-                        socialaudio::line(action, turn, v % 2 != 0, soundReply, v)));
+                        audiofiles::resolve(std::filesystem::path("audio") /
+                        socialaudio::line(action, turn, v % 2 != 0, soundReply, v))));
                 }
     assert(!audioAvailable || std::filesystem::exists("audio/high.mp3") && std::filesystem::exists("audio/low.mp3") &&
-           std::filesystem::exists("audio/cjWeClean.wav"));
+           std::filesystem::exists(audiofiles::resolve("audio/cjWeClean.wav")));
     std::cout << "PASS: contextual audio files; no honor farming from greetings; positive "
                  "milestones and negative provocation cues.\n";
     people::Registry r;
@@ -408,7 +408,7 @@ int main() {
         std::wstring previous;
         for (unsigned i = 0; i < list.size() * 3; ++i) {
             std::wstring clip = chooser.choose(type, 719 + i);
-            assert(!audioAvailable || std::filesystem::exists(std::filesystem::path("audio") / clip));
+            assert(!audioAvailable || std::filesystem::exists(audiofiles::resolve(std::filesystem::path("audio") / clip)));
             if (list.size() > 1)
                 assert(clip != previous);
             if (i < list.size())
@@ -419,8 +419,8 @@ int main() {
     }
     assert(allClips.size() == 73);
     for (unsigned lang = 0; lang < 3; ++lang)
-        assert(!audioAvailable || std::filesystem::exists(std::filesystem::path("audio") / socialaudio::localizedInsult(lang)));
-    assert(!audioAvailable || std::filesystem::exists(std::filesystem::path("audio") / socialaudio::rickroll()));
+        assert(!audioAvailable || std::filesystem::exists(audiofiles::resolve(std::filesystem::path("audio") / socialaudio::localizedInsult(lang))));
+    assert(!audioAvailable || std::filesystem::exists(audiofiles::resolve(std::filesystem::path("audio") / socialaudio::rickroll())));
     unsigned fistPaid = 0, gunPaid = 0, armedFights = 0, unarmedFights = 0;
     for (unsigned id = 1; id <= 1000; ++id) {
         people::Family weak{id, false, 0, {}, {}}, strong = weak, armedNpc = weak;
@@ -1081,7 +1081,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 15", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 16", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1132,6 +1132,7 @@ int main() {
 #include "ConflictTests.inc"
 #include "NpcVoiceTests.inc"
 #include "CommunityTests.inc"
+#include "BondsTests.inc"
     {
         assert(gangcombat::eligible(7,1,false,false,true,true,25));
         assert(gangcombat::eligible(9,1,false,false,true,true,625));

@@ -264,11 +264,12 @@ void finishCompanion(Byte *player) {
             bool good = companion.mood >= 0;
             if (good && companion.activity == 0) {
                 auto money = playerMoney(player);
-                if (!money || *money < 20) {
+                const int meal = static_cast<int>(bonds::price(registry, playerDistrict(), 20));
+                if (!money || *money < meal) {
                     help("ACT_NO_MONEY");
                     return;
                 }
-                *money -= 20;
+                *money -= meal;
                 auto &health = *reinterpret_cast<float *>(player + 0x540);
                 health = std::min(*reinterpret_cast<float *>(player + 0x544), health + 10);
                 auto pool = at<Pool *>(0xB74490);
@@ -276,6 +277,8 @@ void finishCompanion(Byte *player) {
                     mealGesture(pool, actor);
             }
             socialworld::complete(registry, a, f, good, romance::eligible(registry, f));
+            if (good)
+                bonds::count(registry, bonds::Stat::Outing);
             log("ACT completed identity=" + std::to_string(f.id) +
                 " activity=" + std::to_string(companion.activity));
             say(f, good ? "ACT_GOOD_END" : "ACT_BAD_END");
@@ -303,7 +306,8 @@ void runMealScene(Pool *pool, Byte *player) {
     for (auto &a : registry.appointments)
         if (a.person == f.id && a.state == 2) {
             if (auto money = playerMoney(player))
-                *money -= std::min(*money, 20);
+                *money -= std::min(*money, static_cast<int>(bonds::price(registry, playerDistrict(), 20)));
+            bonds::count(registry, bonds::Stat::Outing);
             auto &health = *reinterpret_cast<float *>(player + 0x540);
             health = std::min(*reinterpret_cast<float *>(player + 0x544), health + 25);
             socialworld::complete(registry, a, f, true, romance::eligible(registry, f));
@@ -433,14 +437,27 @@ void updateCompanion(Pool *pool, Byte *player) {
     auto ped = pedAt(pool, companion.actor.slot);
     retainActor(companion.actor, f.id);
     if (!eligible(ped, player) || recruited(ped)) { cancelCompanion(true); return; }
+    protectOutingActor(pool, companion.actor, f.id);
     auto manager = taskManager(ped);
     if (!manager) return;
+    // Ambient idle tasks can outlive the meeting wait or replace a finished route.
+    // Let those yield so they cannot permanently block passenger boarding.
+    auto primary = at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12);
+    if (primary && primary != companion.task && gangcombat::ambientTask(gangTaskId(primary)))
+        setTask(manager, nullptr, 3);
     const bool own = companion.task && at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12) == companion.task;
     if (!own) companion.task = nullptr;
     float apart = distance2(position(player), position(ped));
     if (apart > 22500) { cancelCompanion(true); help("ACT_LEFT_BEHIND"); return; }
     if (busy(ped) || (onFoot(ped) && primaryOccupied(ped) && !own)) {
-        if (!companion.interruptedAt) companion.interruptedAt = now;
+        if (!companion.interruptedAt) {
+            companion.interruptedAt = now;
+            log("ACT interrupted identity=" + std::to_string(f.id) +
+                " physical=" + std::to_string(gangTaskId(at<void *>(reinterpret_cast<std::uintptr_t>(manager)))) +
+                " temporary=" + std::to_string(gangTaskId(at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 4))) +
+                " response=" + std::to_string(gangTaskId(at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 8))) +
+                " primary=" + std::to_string(gangTaskId(at<void *>(reinterpret_cast<std::uintptr_t>(manager) + 12))));
+        }
         if (now - companion.interruptedAt > 20000) {
             help("ACT_CANCELLED"); cancelCompanion(true);
         }
@@ -478,7 +495,7 @@ void updateCompanion(Pool *pool, Byte *player) {
             if (car == carAt(cars, companion.car.slot)) companion.aboardElapsed += frameElapsed;
             companion.travel.sample({pos.x, pos.y, pos.z}, car == carAt(cars, companion.car.slot), 20);
             if (companion.travel.distance >= 500 && companion.aboardElapsed >= 45000) {
-                if (!companion.stopNotified) { help("ACT_DRIVE_STOP"); companion.stopNotified = true; }
+                if (!companion.stopNotified) { help("ACT_DRIVE_STOP"); say(f, "LIFE_DROP_OFF"); companion.stopNotified = true; }
                 if (stoppedCar(carAt(cars, companion.car.slot))) { finishCompanion(player); return; }
             }
             if (car) autoCompanionChat(f, now);

@@ -9,6 +9,7 @@
 #include <set>
 #include "SocialProgress.h"
 #include "NpcVoices.h"
+#include "AudioFiles.h"
 
 // Private DirectShow graphs; never change the game's mixer or device volume.
 namespace socialaudio {
@@ -60,7 +61,7 @@ class Player {
             if (!comReady)
                 return false;
         }
-        auto file = root / name;
+        auto file = audiofiles::resolve(root / name);
         if (!std::filesystem::exists(file)) {
             if (logger && missing.insert(file.filename().wstring()).second) // Report each file once.
                 logger("AUDIO missing: " + file.filename().string());

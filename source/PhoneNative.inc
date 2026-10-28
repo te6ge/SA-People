@@ -297,6 +297,7 @@ void updateMeetings(Pool *pool, Byte *player, unsigned elapsed, bool mission) {
             if (!manager)
                 continue;
             retainActor(actor, a.person);
+            protectOutingActor(pool, actor, a.person);
             if (!(run.actor == actor)) {
                 releaseMeetingActor(run);
                 run.actor = actor;
@@ -547,7 +548,7 @@ void processPhone(Byte *player) {
         else if (page == phone::Page::Compose)
             openThread(phoneState.person);
         else if (page == phone::Page::Messages || page == phone::Page::Activities ||
-                 page == phone::Page::Outing)
+                 page == phone::Page::Outing || page == phone::Page::Gift || page == phone::Page::Request)
             phoneState.page = phone::Page::Actions;
         else if (page == phone::Page::Actions)
             phoneState.page = phone::Page::Contact;
@@ -577,7 +578,7 @@ void processPhone(Byte *player) {
     }
     if (page == phone::Page::Actions || page == phone::Page::Activities ||
         page == phone::Page::Outing) {
-        unsigned count = page == phone::Page::Actions ? (companionOwns(phoneState.person) ? 5u : 4u)
+        unsigned count = page == phone::Page::Actions ? static_cast<unsigned>(phone::actionKeys(registry, phoneState).size())
                          : page == phone::Page::Activities ? 4u
                                                            : 3u;
         phoneState.cursor %= count;
@@ -597,6 +598,12 @@ void processPhone(Byte *player) {
                 return;
             }
             unsigned action = phoneState.cursor;
+            const std::string actionKey = phone::actionKeys(registry, phoneState)[action];
+            if (actionKey == "BDAY_GIVE" || actionKey == "PHONE_REQUEST") {
+                phoneState.page = actionKey == "BDAY_GIVE" ? phone::Page::Gift : phone::Page::Request;
+                phoneState.cursor = 0;
+                return;
+            }
             if (action == 0) {
                 openCompose(false);
                 return;
@@ -627,6 +634,23 @@ void processPhone(Byte *player) {
         }
         return;
     }
+    if (page == phone::Page::Gift || page == phone::Page::Request) {
+        if (up || down) phoneState.cursor = (phoneState.cursor + 1) % 2;
+        if (enter) {
+            if (page == phone::Page::Gift) {
+                if (!phoneState.cursor) giveBirthdayGift(player);
+                else { phoneState.page = phone::Page::Actions; phoneState.cursor = 0; }
+            } else {
+                if (!phoneState.cursor) acceptRequest(player);
+                else if (bonds::decline(registry, phoneState.person)) {
+                    dirty = true; save(); phoneState.notice = "REQ_DECLINED";
+                } else phoneState.notice = "REQ_UNAVAILABLE";
+                phoneState.page = phone::Page::Messages;
+                phoneState.cursor = 0;
+            }
+        }
+        return;
+    }
     if (page == phone::Page::Messages) {
         auto messages = phone::thread(registry, phoneState.person);
         auto lines = phone::chatLines(registry, phoneState.person, phoneState.typing);
@@ -636,6 +660,12 @@ void processPhone(Byte *player) {
         if (down && phoneState.textOffset)
             --phoneState.textOffset;
         bool invite = !messages.empty() && !messages.back()->outgoing && messages.back()->kind == 2;
+        bool request = bonds::open(registry, phoneState.person);
+        if (enter && request && !phoneState.textOffset) {
+            phoneState.page = phone::Page::Request;
+            phoneState.cursor = 0;
+            return;
+        }
         if (enter && invite && !phoneState.textOffset) {
             const int proposed = neighborhood::plannedActivity(messages.back()->body);
             if (proposed >= 0) {
@@ -702,6 +732,8 @@ void processPhone(Byte *player) {
             }
         }
         return;
+    } else if (page == phone::Page::Life) {
+        // Read-only summary; left/right switch pages below.
     } else if (page == phone::Page::Settings) {
         if (up)
             phoneState.cursor = (phoneState.cursor + 3) % 4;
@@ -811,12 +843,14 @@ void processPhone(Byte *player) {
     if (left || right) {
         unsigned tab = phoneState.page == phone::Page::Inbox      ? 1u
                        : phoneState.page == phone::Page::Meetings ? 2u
-                       : phoneState.page == phone::Page::Settings ? 3u
+                       : phoneState.page == phone::Page::Life     ? 3u
+                       : phoneState.page == phone::Page::Settings ? 4u
                                                                   : 0u;
-        tab = (tab + (left ? 3u : 1u)) % 4;
+        tab = (tab + (left ? 4u : 1u)) % 5;
         phoneState.page = tab == 0   ? phone::Page::Contacts
                           : tab == 1 ? phone::Page::Inbox
                           : tab == 2 ? phone::Page::Meetings
+                          : tab == 3 ? phone::Page::Life
                                      : phone::Page::Settings;
         phoneState.cursor = 0;
     }

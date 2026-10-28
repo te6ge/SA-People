@@ -93,7 +93,7 @@ try:
                   else (game/'dinput8.dll').read_bytes() == before_loader['dinput8.dll'])
             if loader == 'none':
                 # Verify every bundled data file, not just the entry-point ASI.
-                check(kind + ' all installed data hashes match', all(digest(game/p.relative_to(stage)) == digest(p)
+                check(kind + ' all installed data hashes match', all(digest(game / ('SA-People/settings.ini' if p.name=='settings.example.ini' else p.relative_to(stage))) == digest(p)
                       for p in (stage/'SA-People').rglob('*') if p.is_file()))
         game = fake(kind + ' update')
         old_state(game)

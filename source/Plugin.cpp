@@ -26,6 +26,7 @@
 #include "SocialWorld.h"
 #include "Romance.h"
 #include "Vitals.h"
+#include "Bonds.h"
 #include "Later.h"
 #include "Favors.h"
 #include "MeetingRuntime.h"
@@ -36,6 +37,7 @@
 #include "Neighborhood.h"
 #include "GangCombat.h"
 #include "Community.h"
+#include "OutingSafety.h"
 namespace {
 using Byte = unsigned char;
 template <class T> T &at(std::uintptr_t a) {
@@ -113,6 +115,7 @@ void help(const std::string &text) {
     toastUntil =
         toastStart + std::clamp<DWORD>(2600 + static_cast<DWORD>(message.size()) * 40, 3000, 7500);
 }
+unsigned playerDistrict();
 void reputation(int cue) {
     if (!cue)
         return;
@@ -154,6 +157,14 @@ bool press(int key, bool &held) {
     held = down;
     return result;
 }
+Vec position(Byte *e);
+unsigned playerDistrict() {
+    auto player = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
+    if (!player)
+        return 0;
+    Vec p = position(player);
+    return bonds::district(p.x, p.y);
+}
 Vec position(Byte *e) {
     auto matrix = *reinterpret_cast<Byte **>(e + 0x14);
     return *reinterpret_cast<Vec *>(matrix ? matrix + 0x30 : e + 4);
@@ -171,7 +182,7 @@ bool exists(Pool *p, people::Handle h) {
     return h.slot < static_cast<unsigned>(p->size) && !(p->flags[h.slot] & 0x80) &&
            handle(p, h.slot) == h;
 }
-struct ActorLease { people::Handle handle; unsigned person; Byte createdBy; };
+struct ActorLease { people::Handle handle; unsigned person; Byte createdBy; outingsafety::Disposition outing; };
 std::unordered_map<unsigned, ActorLease> actorLeases;
 bool leasedActor(Byte *ped) {
     auto pool = at<Pool *>(0xB74490);
@@ -187,7 +198,7 @@ void retainActor(people::Handle h, unsigned id) {
     if (!exists(pool, h)) return;
     auto ped = pedAt(pool, h.slot);
     if (leasedActor(ped) || ped[0x484] != 1) return;
-    actorLeases[h.slot] = {h, id, ped[0x484]};
+    actorLeases[h.slot] = {h, id, ped[0x484], {}};
     // Native setter maintains population accounting and installs the mission decision maker.
     reinterpret_cast<void(__thiscall *)(Byte *, int)>(0x5E47E0)(ped, 2);
 }
@@ -197,6 +208,7 @@ void releaseActor(unsigned id) {
         if (it->second.person != id) { ++it; continue; }
         if (pool && exists(pool, it->second.handle)) {
             auto ped = pedAt(pool, it->first);
+            it->second.outing.restore(ped);
             if (ped[0x484] == 2)
                 reinterpret_cast<void(__thiscall *)(Byte *, int)>(0x5E47E0)(ped, it->second.createdBy);
         }
@@ -361,6 +373,10 @@ void initialize() {
         if (!std::filesystem::exists(beforeNeighborhood) &&
             !CopyFileW(archive.c_str(), beforeNeighborhood.c_str(), TRUE))
             throw std::runtime_error("Neighborhood upgrade backup failed");
+        const auto beforeBonds = directory / L"people.pre-0.16.dat"; // 0.15 cannot read V16.
+        if (!std::filesystem::exists(beforeBonds) &&
+            !CopyFileW(archive.c_str(), beforeBonds.c_str(), TRUE))
+            throw std::runtime_error("Bonds upgrade backup failed");
         try {
             std::ifstream in(archive);
             registry = people::Registry::read(in);
@@ -395,7 +411,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.15.1 initialized; persistent identities=" +
+    log("SA People 0.16.0 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {

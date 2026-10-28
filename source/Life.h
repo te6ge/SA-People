@@ -18,10 +18,10 @@ inline bool nightCandidate(const people::Family &f, int type, unsigned hour, boo
 }
 struct NightRest {
     bool paid = false;
-    bool pay(int &cash) {
-        if (paid || cash < 80)
+    bool pay(int &cash, int price = 80) {
+        if (paid || cash < price)
             return false;
-        cash -= 80;
+        cash -= price;
         paid = true;
         return true;
     }

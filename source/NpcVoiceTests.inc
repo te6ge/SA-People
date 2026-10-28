@@ -6,7 +6,7 @@
                 people::Family voicePerson{voiceId,woman,0};
                 const auto profile=npcvoice::bank(voicePerson);
                 const auto number=static_cast<unsigned>(profile);
-                assert(woman ? number<3 : number>=3 && number<6);
+                assert(npcvoice::femaleBank(profile) == woman);
                 profiles.insert(number);
                 voicePerson.presence.model=woman?41:50;
                 voicePerson.social.trust=70;
@@ -21,14 +21,14 @@
                 assert(!voices.choose(voicePerson,npcvoice::Cue::Auto,voiceId));
             }
         }
-        assert(profiles.size()==6);
+        assert(profiles.size()==8);
         std::set<std::wstring> recordings;
         unsigned voicedCount=0;
         for (const auto &recording : npcvoice::catalog) {
             assert(recordings.insert(recording.file).second);
             assert(recording.durationMs>100 && recording.durationMs<15000);
-            if (audioAvailable) assert(std::filesystem::is_regular_file(std::filesystem::path("audio")/recording.file));
-            people::Family recordingPerson{1,static_cast<unsigned>(recording.bank)<3,0};
+            if (audioAvailable) assert(std::filesystem::is_regular_file(audiofiles::resolve(std::filesystem::path("audio")/recording.file)));
+            people::Family recordingPerson{1,npcvoice::femaleBank(recording.bank),0};
             while(npcvoice::bank(recordingPerson)!=recording.bank) ++recordingPerson.id;
             recordingPerson.social.known=people::Name;
             recordingPerson.social.romance=3;
@@ -41,12 +41,12 @@
             }
             assert(reached); ++voicedCount;
         }
-        assert(voicedCount==65);
+        assert(voicedCount==118);
         people::Family unknownVoice{900,true,0};
         assert(!npcvoice::allowed(unknownVoice,npcvoice::Cue::FriendHello));
         assert(!npcvoice::allowed(unknownVoice,npcvoice::Cue::PartnerHello));
         assert(!npcvoice::allowed(unknownVoice,npcvoice::Cue::RomanceHurt));
-        assert(!voices.choose(unknownVoice,npcvoice::Cue::Calm,1));
+        assert(!voices.choose(unknownVoice,npcvoice::Cue::RobPaid,1));
         assert(npcvoice::forLine("MAIL_GOOD_OUTING")==npcvoice::Cue::None);
         assert(npcvoice::forLine("AMBIENT_RAIN_0")==npcvoice::Cue::None);
         assert(npcvoice::forLine("By the way, my name is Ana.")==npcvoice::Cue::None);
@@ -60,6 +60,10 @@
         disclosure.newJournal=true;
         assert(npcvoice::streetReply(unknownVoice,street::Action::Greet,disclosure,3,false)==npcvoice::Cue::Contact);
 
+        assert(npcvoice::forLine("BOUND_DRIVE_WARN")==npcvoice::Cue::DriveWarn);
+        assert(npcvoice::forLine("BOUND_DRIVE_END")==npcvoice::Cue::DriveEnd);
+        assert(npcvoice::forLine("LIFE_DROP_OFF")==npcvoice::Cue::DropOff);
+        assert(npcvoice::forLine("COMMUNITY_WARM")==npcvoice::Cue::HonorHigh);
         npcvoice::PendingReply pendingVoice;
         pendingVoice.queue(L"first.wav",1,100);
         assert(pendingVoice.take(200,false).empty());
@@ -77,6 +81,6 @@
         pendingVoice.queue(L"wrap.wav",1,0xffffff00u);
         assert(pendingVoice.take(0xfffffff0u,false).empty());
         assert(pendingVoice.take(50,false)==L"wrap.wav");
-        std::cout << "PASS: 65 NPC recordings, six stable gendered voices, no invented disclosures, "
+        std::cout << "PASS: 118 NPC recordings, eight stable gendered voices, no invented disclosures, "
                      "partial-bank subtitle fallback, non-overlapping reply scheduling and expiry.\n";
     }

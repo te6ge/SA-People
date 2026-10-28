@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.15.1 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.16.0 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -16,7 +16,7 @@ identities and relationships carry across game sessions.
   first aid, a requested ambulance or a ride to hospital. These native flows still require wider live testing.
 - Conversation holds, passenger-seat reservations and bounded route retries protect active interactions.
 - Persistent names, personalities, family connections and memories.
-- Partial NPC voice pack: three female and three male voices, assigned consistently by identity.
+- Partial NPC voice pack: four female and four male voices, assigned consistently by identity.
   Recorded lines cover greetings, refusals, thanks, ride requests and selected relationship
   moments. Missing lines keep their subtitles. English recordings retain translated subtitles.
 - Introductions shaped by temperament, trust, honor and previous encounters. People do
@@ -31,6 +31,44 @@ identities and relationships carry across game sessions.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
 - English, Turkish, Russian and Spanish. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.16.0
+
+- **Neighborhood reputation**: witnessed deeds contribute to a district summary (Grove,
+  Idlewood, Downtown, Vinewood, San Fierro, Las Venturas and more). Street reactions require
+  the NPC to have witnessed an incident or heard about it through a social connection.
+  Personal friendship still matters. Meals and night visits can get cheaper where CJ is liked;
+  district opinion softens over time.
+- **Friends' requests**: a close friend sometimes texts you for a favor: a ride from their home,
+  a word with someone they fell out with, or a small loan. Press Enter in the chat to review it.
+  Review and accept or decline requests even after newer messages arrive. Ignoring or declining
+  costs no trust; breaking an accepted ride/talk promise hurts the friendship. A loan keeps its
+  principal in persistent data and returns the exact amount after 8–20 game hours. One friend
+  request or pending repayment is tracked at a time; a full event queue cannot lose that debt.
+- **My life**: a new phone page with this week's new acquaintances, good deeds, outings and
+  robberies, your closest friend, your enemy, your partner, how a district sees you and the next
+  birthday coming up.
+- **Birthdays**: friends text you on their birthday. Stand near them on foot, open their
+  phone contact's actions, choose **Give birthday gift** and confirm the $50 cost. A normal
+  greeting never spends money. Only one gift can be given per birthday.
+- The download has a single manual folder (no duplicate copy-ready tree) and ships
+  `settings.example.ini` so copying it never overwrites your settings.
+
+## What's new in 0.15.2
+
+- Two additional NPC voice profiles with 53 newly connected recordings (118 NPC clips total).
+- Compact 64 kbps mono MP3 speech assets; original recordings are preserved outside the
+  download. Existing WAV-only installations remain supported. Volume settings are unchanged.
+
+
+- Retained meeting contacts temporarily stop ambient hostility and friend-defense reactions,
+  including spontaneous attacks on police. Their previous disposition is restored on release.
+- Existing offensive attack responses yield to the outing; injuries, falls, arrests and
+  unknown scripted tasks retain priority.
+- Known ambient idle tasks no longer block passenger boarding after a meeting starts.
+- Interrupted outings log the task types involved for diagnosis.
+
+The reported police/boarding scenario still requires a live reproduction test.
 
 ## What's new in 0.15.1
 
@@ -80,8 +118,9 @@ is not supported. The example settings in the ModLoader folder do not replace yo
 
 ### Manual installation — no setup EXE required
 
-1. Open `Manual/Copy-to-Game-Folder` in the ZIP.
-2. Copy its **contents** into the game folder beside `gta_sa.exe`:
+1. Open the `Manual` folder in the ZIP.
+2. Copy `SA-People.asi` and the `SA-People` folder into the game folder beside `gta_sa.exe`.
+   If you have no ASI Loader yet, also copy `loader/dinput8.dll` there:
 
    ```text
    GTA San Andreas/
@@ -97,7 +136,7 @@ is not supported. The example settings in the ModLoader folder do not replace yo
        licenses/
    ```
 
-Do not copy the outer `Copy-to-Game-Folder` folder itself. Merge the `SA-People` folder
+Do not copy the outer `Manual` folder itself. Merge the `SA-People` folder
 when updating. This layout contains no `settings.ini` or relationship archive, so your
 existing settings and people are kept. On a new installation, settings are created on launch.
 **Keep your existing ASI Loader if you already have one; skip the bundled `dinput8.dll`
@@ -146,8 +185,8 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of installation method. Versions 0.15.x use archive format V15 and imports earlier archives.
-The first upgrade keeps `people.pre-0.15.dat`. Older plugins cannot read V15: restore the
+of installation method. Version 0.16 uses archive format V16 and imports earlier archives.
+The first upgrade keeps `people.pre-0.16.dat` (and `people.pre-0.15.dat` from earlier upgrades). Older plugins cannot read V16: restore the
 pre-update archive as well as the older plugin if you downgrade.
 
 To uninstall a root installation, run `Manual/Uninstall.cmd` or remove `SA-People.asi` from
@@ -160,7 +199,8 @@ Report bugs at [GitHub Issues](https://github.com/te6ge/SA-People/issues). Inclu
 version, executable version, installation method, other mods, steps to reproduce and
 `SA-People/SA-People.log`. Do not post your entire game folder or personal save data.
 
-The source build, logic regressions and 61 disposable-folder installer checks passed.
+The source build, logic regressions, exact-principal loan persistence/full-queue regressions,
+explicit gift confirmation, pending-request UI checks and disposable-folder installer checks passed.
 Native gameplay paths, including friend services, accident assistance and witness reactions,
 still need wider in-game testing. SilentPatch coexistence has not yet been verified. This is a beta, not a compatibility guarantee for every mod combination.
 

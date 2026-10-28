@@ -3,11 +3,11 @@
 #include <map>
 #include <utility>
 namespace npcvoice {
-enum class Bank : unsigned { F1, F2, F3, M1, M2, M3, Count };
+enum class Bank : unsigned { F1, F2, F3, M1, M2, M3, F4, M4, Count };
 enum class Cue : unsigned {
     Auto, None, Hello, FriendHello, Flirt, PartnerHello, Busy, Reject, Angry, Fight,
     Thank, Help, RideRequest, Contact, HonorHigh, HonorLow, Gossip, MeetingStart,
-    RomanceHurt, Goodbye, Calm, Count
+    RomanceHurt, Goodbye, Calm, DriveWarn, DriveEnd, DropOff, RobPaid, RobFear, RobRefuse, Count
 };
 struct Clip { Bank bank; Cue cue; const wchar_t *file; unsigned durationMs; };
 #include "NpcVoiceCatalog.inc"
@@ -16,8 +16,14 @@ inline unsigned duration(const wchar_t *file) {
         if (std::wcscmp(file,clip.file)==0) return clip.durationMs;
     return 0;
 }
+inline bool femaleBank(Bank profile) {
+    return profile == Bank::F1 || profile == Bank::F2 || profile == Bank::F3 || profile == Bank::F4;
+}
 inline Bank bank(const people::Family &person) {
     // Identity-based, not skin or nationality-based. No save-format change is needed.
+    // Allocate a quarter to the new profiles; retain the legacy profile for the rest.
+    if (people::mix(person.id ^ 0x4E455756u) % 4 == 0)
+        return person.female ? Bank::F4 : Bank::M4;
     return static_cast<Bank>((person.female ? 0u : 3u) + people::mix(person.id ^ 0x564F4943u) % 3);
 }
 inline bool knowsCJ(const people::Family &person) {
@@ -35,7 +41,7 @@ inline Cue forLine(const std::string &line) {
     if (line.rfind("AMBIENT_HELLO",0)==0 || line.rfind("INSIDE_HELLO_",0)==0) return Cue::Hello;
     if (line.rfind("AMBIENT_KNOWN",0)==0 || line.rfind("RECOG_APPROACH_",0)==0 ||
         line.rfind("AMBIENT_GROVE_",0)==0) return line == "AMBIENT_GROVE_WARY" ? Cue::HonorLow : Cue::FriendHello;
-    if (line == "AMBIENT_HONOR_HIGH" || line == "ACT_HONOR_WARM") return Cue::HonorHigh;
+    if (line == "AMBIENT_HONOR_HIGH" || line == "ACT_HONOR_WARM" || line == "COMMUNITY_WARM") return Cue::HonorHigh;
     if (line == "AMBIENT_HONOR_LOW" || line == "ACT_HONOR_WARY") return Cue::HonorLow;
     if (line == "RECOG_AVOID") return Cue::Reject;
     if (line == "LIFE_ASK_RIDE") return Cue::RideRequest;
@@ -46,6 +52,11 @@ inline Cue forLine(const std::string &line) {
     if (line == "ACT_ABORT_ARGUMENT" || line == "ACT_REPLY_BAD_JOKE") return Cue::Angry;
     if (line == "ACT_GOOD_END") return Cue::Goodbye;
     if (line == "ACT_BAD_END") return Cue::RomanceHurt;
+    if (line == "BOUND_DRIVE_WARN") return Cue::DriveWarn;
+    if (line == "BOUND_DRIVE_END") return Cue::DriveEnd;
+    if (line == "LIFE_DROP_OFF") return Cue::DropOff;
+    if (line == "ACT_WITNESS_HURT" || line == "ACT_WITNESS_KILL") return Cue::Angry;
+    if (line == "ACT_WITNESS_HELP") return Cue::Thank;
     if (line == "ACT_CHAT_8") return Cue::Gossip;
     if (line == "FEUD_LINE") return Cue::Fight;
     // Do not put generic greetings over disclosures, weather, named relatives or phone texts.

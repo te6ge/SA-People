@@ -114,6 +114,8 @@ function New-Setup($stageDir, $setupPath) {
 }
 $setup = "$out\$name-Setup.exe"
 New-Setup $stage $setup
+# Copy-ready layouts never carry a live settings.ini that would overwrite the player's own.
+Move-Item -LiteralPath "$stage\SA-People\settings.ini" -Destination "$stage\SA-People\settings.example.ini"
 # The standalone setup is distributed separately; keep the manual ZIP free of EXEs.
 $binaryZip = "$out\$name.zip"
 New-Zip $stage $binaryZip
@@ -123,7 +125,6 @@ $modStage = "$out\SA-People"
 New-Item -ItemType Directory -Path $modStage | Out-Null
 Copy-Item "$stage\SA-People.asi" $modStage
 Copy-Item "$stage\SA-People\*" $modStage -Recurse
-Move-Item -LiteralPath "$modStage\settings.ini" -Destination "$modStage\settings.example.ini"
 $modZip = "$out\$name-modloader.zip"
 New-Zip $modStage $modZip
 
@@ -146,13 +147,7 @@ Copy-Item "$root\LICENSE.txt" $publicStage
 Copy-Item $setup "$publicStage\SA-People-Setup.exe"
 Get-ChildItem $stage | Where-Object { $_.Name -ne 'README.md' } | Copy-Item -Destination "$publicStage\Manual" -Recurse
 Copy-Item $modStage "$publicStage\ModLoader\SA-People" -Recurse
-# Ready-to-copy layout: no scripts and no live settings.ini to overwrite on updates.
-$copyStage = "$publicStage\Manual\Copy-to-Game-Folder"
-New-Item -ItemType Directory -Path $copyStage | Out-Null
-Copy-Item "$stage\SA-People.asi" $copyStage
-Copy-Item "$stage\loader\dinput8.dll" $copyStage
-Copy-Item "$stage\SA-People" "$copyStage\SA-People" -Recurse
-Move-Item -LiteralPath "$copyStage\SA-People\settings.ini" -Destination "$copyStage\SA-People\settings.example.ini"
+# Manual is copy-ready as it is (SA-People.asi + SA-People\ + loader\); no duplicate tree.
 $publicZip = "$out\$name-complete.zip"
 New-Zip $publicStage $publicZip
 

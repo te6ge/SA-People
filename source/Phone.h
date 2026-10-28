@@ -6,6 +6,7 @@
 #include "Romance.h"
 #include "SocialWorld.h"
 #include "PhoneDialogue.h"
+#include "Bonds.h"
 namespace phone {
 enum class Page {
     Contacts,
@@ -19,7 +20,10 @@ enum class Page {
     Actions,
     Activities,
     Outing,
-    Controls
+    Controls,
+    Life,
+    Gift,
+    Request
 };
 struct State {
     Page page = Page::Contacts;
@@ -35,6 +39,13 @@ struct State {
     unsigned scale = 100;
     bool capturing = false; // Waiting for a key on the controls page.
 };
+inline std::vector<const char *> actionKeys(const people::Registry &r, const State &state) {
+    std::vector<const char *> keys = {"PHONE_MESSAGE", "PHONE_ACTIVITIES", "PHONE_INVITE", "PHONE_FAVOR"};
+    if (state.person && state.outing == state.person) keys.push_back("ACT_STOP");
+    if (bonds::canGift(r, state.person)) keys.push_back("BDAY_GIVE");
+    if (bonds::open(r, state.person)) keys.push_back("PHONE_REQUEST");
+    return keys;
+}
 inline std::vector<const people::Letter *> thread(const people::Registry &r, unsigned id) {
     std::vector<const people::Letter *> result;
     for (const auto &m : r.letters)
@@ -143,12 +154,17 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         title = "PHONE_ACTIONS";
     if (state.page == Page::Controls)
         title = "PHONE_SET_CONTROLS";
+    if (state.page == Page::Life)
+        title = "LIFE_TITLE";
+    if (state.page == Page::Gift) title = "BDAY_GIVE";
+    if (state.page == Page::Request) title = "PHONE_REQUEST";
     if (state.page == Page::Activities || state.page == Page::Outing)
         title = "PHONE_ACTIVITIES";
     if (state.page == Page::Inbox && socialworld::unread(registry))
         title = locale::tr(title) + " (" + std::to_string(socialworld::unread(registry)) + ")";
     const bool topLevel = state.page == Page::Contacts || state.page == Page::Inbox ||
-                          state.page == Page::Meetings || state.page == Page::Settings;
+                          state.page == Page::Meetings || state.page == Page::Settings ||
+                          state.page == Page::Life;
     if (topLevel) // Arrows show that left/right switch between the main pages.
         title = u8"‹ " + locale::tr(title) + u8" ›";
     text(38, 157, 256, 18, title, Align::Center);
@@ -197,7 +213,12 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
             }
         }
         bool invite = !messages.empty() && !messages.back()->outgoing && messages.back()->kind == 2;
-        text(41, 331, 248, 11, invite ? "MAIL_ACCEPT_INVITE" : "MAIL_REPLY_HINT", Align::Center);
+        bool request = bonds::open(registry, state.person);
+        text(41, 331, 248, 11,
+             request  ? "MAIL_ACCEPT_REQUEST"
+             : invite ? "MAIL_ACCEPT_INVITE"
+                      : "MAIL_REPLY_HINT",
+             Align::Center);
     } else if (state.page == Page::Compose) {
         text(41, 197, 248, 13,
              state.person && state.person <= registry.families.size()
@@ -216,24 +237,46 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         text(41, 331, 248, 11, "MAIL_SEND_HINT", Align::Center);
     } else if (state.page == Page::Actions || state.page == Page::Activities ||
                state.page == Page::Outing) {
-        const char *actions[] = {"PHONE_MESSAGE", "PHONE_ACTIVITIES", "PHONE_INVITE",
-                                 "PHONE_FAVOR", "ACT_STOP"};
+        const auto actions = actionKeys(registry, state);
         const char *activities[] = {"ACT_MEAL", "ACT_POOL", "ACT_DRIVE", "ACT_WALK"};
         const char *choices[] = {"ACT_ASK", "ACT_JOKE", "ACT_LISTEN"};
-        unsigned count = state.page == Page::Actions      ? (state.outing == state.person ? 5u : 4u)
+        unsigned count = state.page == Page::Actions      ? static_cast<unsigned>(actions.size())
                          : state.page == Page::Activities ? 4u
                                                           : 3u;
         if (state.person && state.person <= registry.families.size())
             text(41, 195, 248, 12, dialogue::displayName(registry.families[state.person - 1]));
-        for (unsigned row = 0; row < count; ++row) {
+        const unsigned start = state.cursor >= 5 ? state.cursor - 4 : 0;
+        for (unsigned row = 0; row < 5 && start + row < count; ++row) {
+            const unsigned index = start + row;
             float y = 219 + row * 24.0f;
-            if (row == state.cursor)
+            if (index == state.cursor)
                 box(36, y - 1, 260, 25, dark);
             text(44, y, 244, 14,
-                 state.page == Page::Actions      ? actions[row]
-                 : state.page == Page::Activities ? activities[row]
-                                                  : choices[row],
-                 Align::Left, row == state.cursor ? screen : ink);
+                 state.page == Page::Actions      ? actions[index]
+                 : state.page == Page::Activities ? activities[index]
+                                                  : choices[index],
+                 Align::Left, index == state.cursor ? screen : ink);
+        }
+    } else if (state.page == Page::Gift || state.page == Page::Request) {
+        const bool giftPage = state.page == Page::Gift;
+        const auto &q = registry.request;
+        const std::string summary = giftPage
+            ? locale::format("BDAY_CONFIRM", state.person && state.person <= registry.families.size()
+                ? dialogue::displayName(registry.families[state.person-1]) : locale::tr("PHONE_UNKNOWN"))
+            : bonds::open(registry, state.person)
+                ? locale::format(bonds::letter(static_cast<bonds::Kind>(q.kind)),
+                    q.target ? dialogue::displayName(registry.families[q.target-1]) : std::to_string(q.amount)) +
+                  (q.kind == bonds::Lend ? " ($" + std::to_string(q.amount) + ")" : "")
+                : locale::tr("REQ_UNAVAILABLE");
+        const auto wrapped = locale::wrap(summary, 30);
+        for (unsigned i=0; i<wrapped.size() && i<5; ++i)
+            text(41, 197 + i*16.0f, 248, 12, wrapped[i]);
+        for (unsigned row=0; row<2; ++row) {
+            const float y=289 + row*24.0f;
+            if (row == state.cursor) box(36, y-1, 260, 25, dark);
+            text(44, y, 244, 14, row ? (giftPage ? "CONFIRM_CANCEL" : "REQ_DECLINE")
+                 : (giftPage ? "BDAY_CONFIRM_GIVE" : "REQ_ACCEPT"), Align::Left,
+                 row == state.cursor ? screen : ink);
         }
     } else if (state.page == Page::Contacts) {
         if (ids.empty())
@@ -311,6 +354,46 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                  Align::Right, chosen ? screen : ink);
         }
         text(41, 331, 248, 11, state.capturing ? "CTRL_PRESS_HINT" : "CTRL_HINT", Align::Center);
+    } else if (state.page == Page::Life) {
+        // "My life": this week's tally, the people who matter and how town sees CJ.
+        const auto week = bonds::current(registry);
+        auto name = [&](unsigned id) {
+            return id ? dialogue::displayName(registry.families[id - 1]) : locale::tr("LIFE_NOBODY");
+        };
+        auto row = [&](unsigned r) { return 194 + r * 17.0f; };
+        text(41, row(0), 150, 12, "LIFE_WEEK_HEAD");
+        text(170, row(0), 120, 12, locale::format("LIFE_HONOR", std::to_string(registry.honor)),
+             Align::Right);
+        text(41, row(1), 125, 11, locale::format("LIFE_MET", std::to_string(week.met)));
+        text(170, row(1), 120, 11, locale::format("LIFE_HELPED", std::to_string(week.helped)));
+        text(41, row(2), 125, 11, locale::format("LIFE_OUTINGS", std::to_string(week.outings)));
+        text(170, row(2), 120, 11, locale::format("LIFE_ROBBED", std::to_string(week.robbed)));
+        box(37, row(3) - 3, 258, 1, dark);
+        text(41, row(3), 248, 11, locale::format("LIFE_BEST", name(bonds::bestFriend(registry))));
+        text(41, row(4), 248, 11, locale::format("LIFE_ENEMY", name(bonds::enemy(registry))));
+        const unsigned partner = bonds::partner(registry);
+        text(41, row(5), 248, 11,
+             partner ? locale::format("LIFE_PARTNER", name(partner))
+                     : locale::format("LIFE_CONTACTS", std::to_string(bonds::contacts(registry))));
+        unsigned top = 0;
+        for (unsigned d = 1; d < people::DistrictCount; ++d)
+            if (std::abs(registry.districts[d]) > std::abs(registry.districts[top]))
+                top = d;
+        text(41, row(6), 248, 11,
+             registry.districts[top]
+                 ? locale::tr(bonds::districtName(top)) + ": " +
+                       locale::tr(bonds::mood(registry.districts[top]))
+                 : locale::tr("LIFE_NO_DISTRICT"));
+        unsigned soonest = 0, days = bonds::Year;
+        for (const auto &f : registry.families)
+            if (bonds::friendly(f, 20) && bonds::daysUntil(registry, f) < days) {
+                days = bonds::daysUntil(registry, f);
+                soonest = f.id;
+            }
+        if (soonest)
+            text(41, row(7), 248, 11,
+                 locale::format(days ? "LIFE_BDAY_SOON" : "LIFE_BDAY_TODAY", name(soonest)) +
+                     (days ? " (" + std::to_string(days) + ")" : std::string()));
     } else if (state.page == Page::Settings) {
         const std::string values[] = {locale::nativeName(locale::language),
                                       locale::tr(state.events ? "PHONE_ON" : "PHONE_OFF"),

@@ -316,27 +316,28 @@ void robPerson(Pool *pool, Byte *player) {
         unsigned amount = money ? encounters::transfer(*money, wallet, result.amount) : 0;
         if (amount) {
             *reinterpret_cast<short *>(ped + 0x756) = static_cast<short>(wallet);
-            say(f, "Tamam! Al " + std::to_string(amount) + " dolar. Yeter ki zarar verme!");
+            say(f, "Tamam! Al " + std::to_string(amount) + " dolar. Yeter ki zarar verme!", npcvoice::Cue::RobPaid);
             help(std::to_string(amount) + " dolar aldin.");
         } else
-            say(f, "Ustume gelme! Benden bir sey alamazsin.");
+            say(f, "Ustume gelme! Benden bir sey alamazsin.", npcvoice::Cue::RobRefuse);
         audio.speak(audioChoices.choose(socialaudio::Context::RobberyPaid, now));
         handsUp(ped);
         delayedFlees.push_back({focusedHandle, now + 4200});
     } else if (result.outcome == encounters::Outcome::Empty) {
-        say(f, "Bak, ceplerim bos! Param yok, ne olur birak beni.");
+        say(f, "Bak, ceplerim bos! Param yok, ne olur birak beni.", npcvoice::Cue::RobFear);
         audio.speak(audioChoices.choose(socialaudio::Context::RobberyRefused, now));
         handsUp(ped);
         delayedFlees.push_back({focusedHandle, now + 4200});
     } else if (result.outcome == encounters::Outcome::Fight) {
         bool fighting = startFight(ped, player, true);
         say(f, fighting ? "Yanlis kisiye bulastin! Simdi goreceksin!"
-                        : "Beni rahat birak! Burada durmayacagim!");
+                        : "Beni rahat birak! Burada durmayacagim!", npcvoice::Cue::Fight);
         audio.speak(audioChoices.choose(
             fighting ? socialaudio::Context::Fight : socialaudio::Context::RobberyRefused, now));
     } else {
         say(f, result.outcome == encounters::Outcome::Flee ? "Imdat! Uzak dur benden!"
-                                                           : "Sana tek kurus yok! Git isine!");
+                                                           : "Sana tek kurus yok! Git isine!",
+            result.outcome == encounters::Outcome::Flee ? npcvoice::Cue::RobFear : npcvoice::Cue::RobRefuse);
         audio.speak(audioChoices.choose(socialaudio::Context::Provoke, now));
         if (result.outcome == encounters::Outcome::Flee)
             startFlee(ped, player);
@@ -353,6 +354,7 @@ void robPerson(Pool *pool, Byte *player) {
     discoverNetwork(f.id);
     observeDeed(f.id,community::Deed::Robbery);
     later::robbed(registry, f.id);
+    bonds::count(registry, bonds::Stat::Robbed);
     nextSpeech = now + 3000;
     dirty = true;
     panelInvalid = true;

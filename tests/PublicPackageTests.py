@@ -23,28 +23,21 @@ with zipfile.ZipFile(package) as archive:
     assert not any(PurePosixPath(n).suffix.lower() in forbidden or
         PurePosixPath(n).name.startswith(('people.','backup-','rollback')) for n in files)
     assert not any('VALIDATION' in n or 'CHECKLIST' in n or 'CHANGELOG' in n for n in files)
-    for method in ['Manual/SA-People/','ModLoader/SA-People/','Manual/Copy-to-Game-Folder/SA-People/']:
+    for method in ['Manual/SA-People/','ModLoader/SA-People/']:
         expected_audio={p.name for p in (root/'audio').iterdir() if p.suffix.lower() in ('.wav','.mp3')}
         actual_audio={n.removeprefix(method+'audio/') for n in files if n.startswith(method+'audio/') and n.endswith(('.wav','.mp3'))}
         assert actual_audio==expected_audio,(method,len(actual_audio),len(expected_audio))
         assert sum(n.startswith(method+'assets/') and n.endswith('.png') for n in files)==3
         assert sum(n.startswith(method+'backgrounds/') and n.endswith(('.jpg','.png')) for n in files)==3
-    settings=files['Manual/SA-People/settings.ini'].decode('utf-8')
+    settings=files['Manual/SA-People/settings.example.ini'].decode('utf-8')
     assert '[Controls]' in settings and 'Phone=F6,P' in settings and 'Phone=F2,P' in settings
     assert files['Manual/SA-People.asi']==files['ModLoader/SA-People/SA-People.asi']==(root/'build/SA-People.asi').read_bytes()
-    copy='Manual/Copy-to-Game-Folder/'
-    assert files[copy+'SA-People.asi']==files['Manual/SA-People.asi']
-    assert files[copy+'dinput8.dll']==files['Manual/loader/dinput8.dll']
-    assert {name[len(copy):].split('/')[0] for name in files if name.startswith(copy)}=={'SA-People.asi','dinput8.dll','SA-People'}
-    assert copy+'SA-People/settings.ini' not in files
-    assert files[copy+'SA-People/settings.example.ini']==files['Manual/SA-People/settings.ini']
-    assert not any(name.startswith(copy) and name.endswith(('.cmd','.exe')) for name in files)
+    assert not any(name.startswith('Manual/Copy-to-Game-Folder/') for name in files)
+    assert not any(name.endswith('/settings.ini') for name in files)
     for name,data in files.items():
         if name.startswith('Manual/SA-People/'):
             other='ModLoader/SA-People/'+name.removeprefix('Manual/SA-People/')
-            if other.endswith('/settings.ini'):other=other.removesuffix('settings.ini')+'settings.example.ini'
             assert files[other]==data,other
-            assert files[copy+'SA-People/'+other.removeprefix('ModLoader/SA-People/')]==data
     # The bundled EXE must contain exactly the verified manual payload bytes.
     setup=files['SA-People-Setup.exe']
     assert setup==(root/f'release/SA-People-{version}-beta-Setup.exe').read_bytes()
@@ -55,7 +48,8 @@ with zipfile.ZipFile(package) as archive:
         length=struct.unpack_from('<H',setup,cursor)[0];cursor+=2
         name=setup[cursor:cursor+length].decode('utf-8');cursor+=length
         mode,offset,size=struct.unpack_from('<BQQ',setup,cursor);cursor+=17
-        target='Manual/'+('loader/dinput8.dll' if name=='dinput8.dll' else name)
+        target='Manual/'+('loader/dinput8.dll' if name=='dinput8.dll' else
+                          'SA-People/settings.example.ini' if name=='SA-People/settings.ini' else name)
         assert setup[offset:offset+size]==files[target],name
         assert mode in (0,1,2) and offset+size<=index
     assert cursor==len(setup)-16

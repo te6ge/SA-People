@@ -123,6 +123,7 @@ void observeDeed(unsigned victim,community::Deed deed) {
             witnessRuns.push_back({id,actor,response,now+1200,now+12000});
         }
     }
+    if (count) bonds::deed(registry, playerDistrict(), deed == community::Deed::Help ? 1 : -2);
     dirty=true;
     log("COMMUNITY observed kind="+std::to_string(static_cast<unsigned>(deed))+" victim="+
         std::to_string(victim)+" witnesses="+std::to_string(count));

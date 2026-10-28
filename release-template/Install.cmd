@@ -15,7 +15,7 @@ if not "%SIZE%"=="14383616" (
   if errorlevel 2 exit /b 2
 )
 rem Validate the payload and folder conflicts before replacing any game file.
-for %%F in ("SA-People.asi" "SA-People\languages.tsv" "SA-People\settings.ini" "loader\dinput8.dll" "loader\Ultimate-ASI-Loader-LICENSE.txt") do (
+for %%F in ("SA-People.asi" "SA-People\languages.tsv" "SA-People\settings.example.ini" "loader\dinput8.dll" "loader\Ultimate-ASI-Loader-LICENSE.txt") do (
   if not exist "%%~F" (
     echo Missing package file: "%%~F". Extract the complete archive first.
     exit /b 3
@@ -58,7 +58,7 @@ if not exist "%GAME%\SA-People\" mkdir "%GAME%\SA-People" || goto failed
 copy /y "SA-People.asi" "%GAME%\" >nul || goto failed
 copy /y "SA-People\languages.tsv" "%GAME%\SA-People\" >nul || goto failed
 if not exist "%GAME%\SA-People\settings.ini" (
-  copy "SA-People\settings.ini" "%GAME%\SA-People\" >nul || goto failed
+  copy "SA-People\settings.example.ini" "%GAME%\SA-People\settings.ini" >nul || goto failed
 )
 rem robocopy keeps non-ASCII file names (xcopy stops at them); exit codes 8+ are failures.
 for %%D in (assets audio backgrounds) do (

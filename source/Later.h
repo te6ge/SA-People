@@ -14,7 +14,7 @@ constexpr std::uint64_t RevengeExpiry = 1440; // A revenge that never found CJ f
 inline std::size_t pending(const people::Registry &r) {
     std::size_t n = 0;
     for (const auto &l : r.later)
-        n += l.kind != Cooldown;
+        n += l.kind != Cooldown && l.kind < 8; // 8/9: birthday day markers (Bonds.h).
     return n;
 }
 // A contact who did CJ a favor (Favors.h) cannot be asked again for a game day.
@@ -51,6 +51,9 @@ inline bool schedule(people::Registry &r, unsigned person, unsigned kind, unsign
 inline unsigned helped(people::Registry &r, unsigned person) {
     if (!person || person > r.families.size())
         return 0;
+    if (r.week.week != r.worldMinutes / 10080) // Weekly tally for the phone's My life page.
+        r.week = {r.worldMinutes / 10080};
+    r.week.helped = std::min(1000000u, r.week.helped + 1);
     const auto &s = r.families[person - 1].social;
     unsigned kind = s.trust >= 30 && people::mix(person * 977 + s.encounters) % 3 == 0 ? Gift : Thanks;
     const unsigned result = schedule(r, person, kind) ? kind : 0;
@@ -74,7 +77,8 @@ inline bool next(people::Registry &r, bool revengeReady, people::Later &out) {
             ++i;
             continue;
         }
-        if (l.kind == Cooldown || (l.kind == Revenge && r.worldMinutes > l.due + RevengeExpiry)) {
+        if (l.kind == Cooldown || l.kind >= 8 ||
+            (l.kind == Revenge && r.worldMinutes > l.due + RevengeExpiry)) {
             r.later.erase(r.later.begin() + static_cast<std::ptrdiff_t>(i));
             continue;
         }
