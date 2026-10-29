@@ -24,7 +24,7 @@
 #include <set>
 #include <cassert>
 int main() {
-    for (unsigned language = 0; language < 4; ++language) {
+    for (unsigned language = 0; language < 5; ++language) {
         assert(setuptext::names[language][0]);
         for (unsigned key = 0; key < setuptext::Count; ++key)
             assert(setuptext::get(static_cast<setuptext::Language>(language),
@@ -561,7 +561,7 @@ int main() {
     people::Appointment missed{1, 2, 0, 250, 1, 2, 3};
     assert(meetings::step(missed, 250, true) && missed.state == 4);
     assert(locale::catalog.size() > 180);
-    for (unsigned lang = 0; lang < 4; ++lang) {
+    for (unsigned lang = 0; lang < locale::LanguageCount; ++lang) {
         locale::language = static_cast<locale::Language>(lang);
         auto translated = locale::tr("Bu arada, ben Miguel Garcia. Memnun oldum CJ.");
         assert(translated.find("Miguel Garcia") != std::string::npos &&
@@ -579,6 +579,11 @@ int main() {
         for (const auto &t : scene.texts)
             assert(t.value.find("PHONE_") == std::string::npos);
     }
+    locale::language = locale::Language::Chinese;
+    assert(locale::tr("PHONE_CONTACTS") == u8"联系人");
+    locale::cycle(1); assert(locale::language == locale::Language::Turkish);
+    locale::cycle(-1); assert(locale::language == locale::Language::Chinese);
+    assert(std::string(locale::code(locale::language)) == "zh");
     locale::language = locale::Language::English;
     assert(locale::tr("Tamirci olarak calisiyorum. Gecinip gidiyoruz.").find("Mechanic") !=
            std::string::npos);
@@ -850,7 +855,7 @@ int main() {
                    afterMigration[0].children == beforeMigration[0].children);
             for (unsigned member = 0; member < 6; ++member)
                 assert(afterMigration[member].name == beforeMigration[member].name);
-            for (unsigned lang = 0; lang < 4; ++lang) {
+            for (unsigned lang = 0; lang < locale::LanguageCount; ++lang) {
                 locale::language = static_cast<locale::Language>(lang);
                 phone::State familyView;
                 familyView.page = phone::Page::Contact;

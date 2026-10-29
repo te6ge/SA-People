@@ -6,25 +6,26 @@
 #include <vector>
 #include <stdexcept>
 namespace locale {
-enum class Language : unsigned { Turkish, Russian, Spanish, English };
+enum class Language : unsigned { Turkish, Russian, Spanish, English, Chinese };
+inline constexpr unsigned LanguageCount = 5;
 inline Language language = Language::Turkish;
 inline const char *code(Language value) {
-    static const char *names[] = {"tr", "ru", "es", "en"};
-    return names[static_cast<unsigned>(value) % 4];
+    static const char *names[] = {"tr", "ru", "es", "en", "zh"};
+    return names[static_cast<unsigned>(value) % LanguageCount];
 }
 inline std::string nativeName(Language value) {
-    static const char *names[] = {u8"Türkçe", u8"Русский", u8"Español", "English"};
-    return names[static_cast<unsigned>(value) % 4];
+    static const char *names[] = {u8"Türkçe", u8"Русский", u8"Español", "English", u8"简体中文"};
+    return names[static_cast<unsigned>(value) % LanguageCount];
 }
 inline void cycle(int direction) {
     language =
-        static_cast<Language>((static_cast<unsigned>(language) + (direction < 0 ? 3 : 1)) % 4);
+        static_cast<Language>((static_cast<unsigned>(language) + (direction < 0 ? LanguageCount - 1 : 1)) % LanguageCount);
 }
 class Catalog {
-    std::map<std::string, std::array<std::string, 4>> entries;
+    std::map<std::string, std::array<std::string, LanguageCount>> entries;
     struct Pattern {
         std::string key;
-        std::array<std::string, 4> values;
+        std::array<std::string, LanguageCount> values;
     };
     std::vector<Pattern> patterns;
     static bool capture(const std::string &pattern, const std::string &value,
@@ -64,19 +65,19 @@ class Catalog {
                 line.erase(0, 3);
             if (line.empty() || line[0] == '#')
                 continue;
-            std::array<std::string, 5> fields;
+            std::vector<std::string> fields;
             std::size_t start = 0;
-            for (unsigned i = 0; i < 5; ++i) {
+            for (;;) {
                 auto end = line.find('\t', start);
-                if (i < 4 && end == std::string::npos)
-                    throw std::runtime_error("Invalid language row");
-                fields[i] =
-                    line.substr(start, end == std::string::npos ? std::string::npos : end - start);
+                fields.push_back(line.substr(start, end == std::string::npos ? end : end - start));
+                if (end == std::string::npos) break;
                 start = end + 1;
             }
-            if (fields[0].empty())
-                throw std::runtime_error("Empty language key");
-            std::array<std::string, 4> values = {fields[1], fields[2], fields[3], fields[4]};
+            if (fields.size() != 5 && fields.size() != 6)
+                throw std::runtime_error("Invalid language row");
+            if (fields[0].empty()) throw std::runtime_error("Empty language key");
+            std::array<std::string, LanguageCount> values = {
+                fields[1], fields[2], fields[3], fields[4], fields.size() == 6 ? fields[5] : fields[4]};
             for (const auto &value : values)
                 if (value.empty())
                     throw std::runtime_error("Empty translation");
@@ -91,14 +92,14 @@ class Catalog {
     std::string translate(const std::string &source, Language lang, unsigned depth = 0) const {
         auto exact = entries.find(source);
         if (exact != entries.end())
-            return exact->second[static_cast<unsigned>(lang) % 4];
+            return exact->second[static_cast<unsigned>(lang) % LanguageCount];
         if (depth >= 3)
             return source;
         for (const auto &pattern : patterns) {
             std::vector<std::string> fields;
             if (!capture(pattern.key, source, fields))
                 continue;
-            std::string result = pattern.values[static_cast<unsigned>(lang) % 4];
+            std::string result = pattern.values[static_cast<unsigned>(lang) % LanguageCount];
             for (unsigned i = 0; i < fields.size(); ++i) {
                 std::string token = "{" + std::to_string(i) + "}",
                             value = translate(fields[i], lang, depth + 1);

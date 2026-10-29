@@ -37,7 +37,7 @@ bool render(const panel::Scene &scene, panel::Layout layout, int width, int heig
         for (const auto &t : scene.texts) {
             SolidBrush brush(color(t.color));
             auto value = wide(t.value);
-            Font font(L"Tahoma", std::max(8.0f, t.size * layout.scale), FontStyleBold, UnitPixel);
+            Font font(locale::language == locale::Language::Chinese ? L"Microsoft YaHei" : L"Tahoma", std::max(8.0f, t.size * layout.scale), FontStyleBold, UnitPixel);
             RectF rect(layout.x + t.x * layout.scale, layout.y + t.y * layout.scale,
                        t.width * layout.scale, std::max(12.0f, 40 * layout.scale));
             format.SetAlignment(t.align == panel::Align::Right    ? StringAlignmentFar
@@ -95,7 +95,7 @@ int main() {
         if (!render(scene, {0, 0, 1}, size[0], size[1], path, png))
             return 4;
     }
-    for (unsigned lang = 0; lang < 4; ++lang) {
+    for (unsigned lang = 0; lang < locale::LanguageCount; ++lang) {
         locale::language = static_cast<locale::Language>(lang);
         std::wstring code(locale::code(locale::language), locale::code(locale::language) + 2);
         for (const auto &size : dimensions) {
@@ -190,5 +190,5 @@ int main() {
         }
     }
     GdiplusShutdown(token);
-    std::cout << "Phone and street previews: 4 languages, 3 resolutions.\n";
+    std::cout << "Phone and street previews: 5 languages, 3 resolutions.\n";
 }

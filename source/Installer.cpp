@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include "SetupText.h"
+#include "GameExecutable.h"
 namespace setupui { inline const wchar_t *tr(setuptext::Key key); }
 namespace fs = std::filesystem;
 struct Entry {
@@ -115,6 +116,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     }
     if (argv)
         LocalFree(argv);
+    wchar_t tempPath[MAX_PATH] = {};
+    GetTempPathW(MAX_PATH, tempPath);
+    std::ofstream diagnostics(fs::path(tempPath) / L"SA-People-Setup.log", std::ios::trunc);
+    diagnostics << "SA People 0.16.2 installer started\n";
     try {
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         wchar_t self[MAX_PATH * 4] = {};
@@ -128,16 +133,20 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         fs::path game;
         if (silent) {
             game = given;
-            if (!fs::exists(game / L"gta_sa.exe")) return 3;
+            if (gameexe::find(game).empty()) return 3;
         } else {
             game = setupui::choose();
             if (game.empty()) return 0;
             menuChoice=setupui::useNewMenu ? setupoptions::Menu::New : setupoptions::Menu::Original;
         }
+        diagnostics << "Game folder: " << game.u8string() << "\n";
+        diagnostics.flush();
         std::error_code error;
-        if (silent && fs::file_size(game / L"gta_sa.exe") != 14383616)
-            return 4;
-        if (fs::file_size(game / L"gta_sa.exe", error) != 14383616 &&
+        const auto executable = gameexe::find(game);
+        diagnostics << "Executable: " << executable.u8string() << "\nSupported startup fingerprint: " << gameexe::supported(executable) << "\n";
+        diagnostics.flush();
+        if (silent && !gameexe::supported(executable)) return 4;
+        if (!gameexe::supported(executable) &&
             ask(setupui::tr(setuptext::Unsupported), MB_ICONWARNING | MB_YESNO) != IDYES) {
             setupui::close();
             return 0;
@@ -212,9 +221,11 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         if (!setupoptions::apply((data / L"settings.ini").c_str(), menuChoice))
             throw std::runtime_error("Could not save menu preference");
         setupui::addedLoader = loaderInstalled;
+        diagnostics << "Installation completed. Menu preference and existing settings preserved.\n";
         setupui::finish();
         return 0;
-    } catch (const std::exception &) {
+    } catch (const std::exception &e) {
+        diagnostics << "ERROR: " << e.what() << "\n";
         ask(std::wstring(setupui::tr(setuptext::Failed)) + L"\n\n" + setupui::tr(setuptext::Failure), MB_ICONERROR);
         setupui::close();
         return 2;

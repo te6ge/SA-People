@@ -127,7 +127,7 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
         if(LOWORD(wp)==IDCANCEL) {if(!busy) DestroyWindow(hwnd); return 0;}
         if(LOWORD(wp)==103 && HIWORD(wp)==CBN_SELCHANGE) {
             auto index=SendMessageW(languageBox,CB_GETCURSEL,0,0);
-            if(index>=0 && index<4) language=static_cast<setuptext::Language>(index);
+            if(index>=0 && index<5) language=static_cast<setuptext::Language>(index);
             refresh(); return 0;
         }
         if(LOWORD(wp)==101 && !busy && !finished) {
@@ -139,7 +139,7 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
             std::wstring path(static_cast<std::size_t>(count)+1,L'\0');
             GetWindowTextW(folderEdit,path.data(),count+1); path.resize(static_cast<std::size_t>(count));
             if(path.empty()) {path=pickFolder(); if(path.empty()) return 0; SetWindowTextW(folderEdit,path.c_str());}
-            if(!fs::exists(fs::path(path)/L"gta_sa.exe")) {
+            if(gameexe::find(fs::path(path)).empty()) {
                 MessageBoxW(hwnd,tr(setuptext::Missing),Title,MB_ICONWARNING); return 0;
             }
             useNewMenu=SendMessageW(menuCheck,BM_GETCHECK,0,0)==BST_CHECKED;
@@ -162,7 +162,8 @@ inline bool create() {
     auto primary=PRIMARYLANGID(GetUserDefaultUILanguage());
     language=primary==LANG_TURKISH?setuptext::Language::Turkish:
         primary==LANG_RUSSIAN?setuptext::Language::Russian:
-        primary==LANG_SPANISH?setuptext::Language::Spanish:setuptext::Language::English;
+        primary==LANG_SPANISH?setuptext::Language::Spanish:
+        primary==LANG_CHINESE?setuptext::Language::Chinese:setuptext::Language::English;
     auto dc=GetDC(nullptr); scale=GetDeviceCaps(dc,LOGPIXELSX)/96.0f; ReleaseDC(nullptr,dc);
     RECT work{}; SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
     scale=std::min(scale,std::min((work.right-work.left-40)/820.0f,(work.bottom-work.top-90)/560.0f));
@@ -200,7 +201,7 @@ inline bool create() {
     wchar_t module[32768]={};
     if(GetModuleFileNameW(nullptr,module,32768)) {
         auto beside=fs::path(module).parent_path();
-        if(fs::exists(beside/L"gta_sa.exe")) SetWindowTextW(folderEdit,beside.c_str());
+        if(!gameexe::find(beside).empty()) SetWindowTextW(folderEdit,beside.c_str());
     }
     refresh(); ShowWindow(window,SW_SHOWNORMAL); UpdateWindow(window); SetFocus(folderEdit); return true;
 }

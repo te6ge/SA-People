@@ -4,11 +4,13 @@ cd /d "%~dp0" || exit /b 3
 set "GAME=%~1"
 if "%GAME%"=="" set /p "GAME=GTA San Andreas folder (the one with gta_sa.exe): "
 set "GAME=%GAME:"=%"
-if not exist "%GAME%\gta_sa.exe" (
+set "EXE="
+for %%N in (gta_sa.exe gta-sa.exe "gta san andreas.exe") do if not defined EXE if exist "%GAME%\%%~N" set "EXE=%GAME%\%%~N"
+if not defined EXE (
   echo gta_sa.exe was not found in "%GAME%".
   exit /b 1
 )
-for %%F in ("%GAME%\gta_sa.exe") do set "SIZE=%%~zF"
+for %%F in ("%EXE%") do set "SIZE=%%~zF"
 if not "%SIZE%"=="14383616" (
   echo WARNING: gta_sa.exe is %SIZE% bytes. Only 1.0 US ^(14383616 bytes^) is supported.
   choice /m "Install anyway"

@@ -35,6 +35,13 @@
         fs::current_path(originalWorkingDir);
         assert(changedCwd.game == game && changedCwd.resources == package);
         assert(!fs::exists(package / L"people.dat") && !fs::exists(package / L"settings.ini"));
+        assert(installpaths::settings(modPaths) == modPaths.state / L"settings.ini");
+        std::ofstream(package / L"settings.ini") << "[Interface]\nLanguage=ru\n[Controls]\nPhone=F2,P\n";
+        assert(installpaths::settings(modPaths) == package / L"settings.ini");
+        assert(installpaths::settings(rootPaths) == rootPaths.state / L"settings.ini");
+        std::ifstream unchanged(modPaths.state / L"settings.ini");
+        std::string unchangedText((std::istreambuf_iterator<char>(unchanged)), {});
+        assert(unchangedText.find("Language=tr") != std::string::npos);
         std::cout << "PASS: root/flat/nested ModLoader paths, executable-based game data, Unicode, "
                      "shared identities, preserved settings and changed working directory.\n";
     }

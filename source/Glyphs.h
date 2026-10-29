@@ -39,7 +39,8 @@ class Renderer {
             return result;
         HFONT font = CreateFontW(size, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                                  OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-                                 DEFAULT_PITCH, size >= 28 ? L"Georgia" : L"Tahoma");
+                                 DEFAULT_PITCH, std::any_of(value.begin(), value.end(), [](wchar_t c) { return c >= 0x3000 && c <= 0x9fff; })
+                                     ? L"Microsoft YaHei" : size >= 28 ? L"Georgia" : L"Tahoma");
         auto oldFont = SelectObject(dc, font);
         SIZE extent{};
         GetTextExtentPoint32W(dc, value.c_str(), static_cast<int>(value.size()), &extent);

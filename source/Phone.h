@@ -409,6 +409,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
             text(44, y + 13, 244, 12, values[row], Align::Right, chosen ? screen : ink);
         }
         text(41, 331, 248, 11, "PHONE_SET_HINT", Align::Center);
+        text(41, 350, 248, 10, "PHONE_CONFIG_HINT", Align::Center);
     } else if (state.person && state.person <= registry.families.size()) {
         const auto &f = registry.families[state.person - 1];
         auto family = people::generate(f);

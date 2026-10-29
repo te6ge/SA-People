@@ -28,6 +28,12 @@ inline bool modLoaderModule(const std::filesystem::path &executable, const std::
         if(sameDirectory(parent,loader)) return true;
     return false;
 }
+// Explicit settings.ini beside a ModLoader module is an opt-in local configuration.
+// Example files remain seeds only, and relationship saves always stay in the game root.
+inline std::filesystem::path settings(const Layout &paths) {
+    auto local = paths.resources / L"settings.ini";
+    return std::filesystem::is_regular_file(local) ? local : paths.state / L"settings.ini";
+}
 inline bool seedSettings(const Layout &paths) {
     auto target = paths.state / L"settings.ini";
     if (std::filesystem::exists(target)) return false;

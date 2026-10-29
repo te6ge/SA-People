@@ -1064,7 +1064,7 @@ void tick() {
     if (!gameplaySeen) {
         gameplaySeen = true;
         lastDirectorTick = now;
-        auto ini = directory / L"settings.ini";
+        auto ini = settingsFile;
         batteryEvents = GetPrivateProfileIntW(L"World", L"BatteryEvents", 1, ini.c_str()) != 0;
         sideEvents = GetPrivateProfileIntW(L"World", L"SideEvents", 1, ini.c_str()) != 0;
         modTalkOverNative =

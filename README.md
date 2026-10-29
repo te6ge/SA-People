@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.16.1 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.16.2 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -29,8 +29,23 @@ identities and relationships carry across game sessions.
 - Close-range rival gang negotiations. A truce does not make you friends; a failed
   negotiation can lead to an attack using the gang members' existing weapons.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
-- English, Turkish, Russian and Spanish. Story missions and cutscenes suspend social
+- English, Turkish, Russian, Spanish and Simplified Chinese. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.16.2
+
+- Simplified Chinese (`zh`) in the phone, subtitles and setup. The initial translation is
+  machine-assisted and still needs native-speaker review; spoken recordings stay in English.
+- ModLoader users can create/edit `settings.ini` beside `SA-People.asi`. When present,
+  this explicit local configuration is used for language, keys, audio and interface options,
+  and phone changes are saved there. Otherwise the game's `SA-People/settings.ini` is used.
+  Example files remain defaults only. Relationship data always stays in the game root.
+- Setup accepts `gta_sa.exe`, `gta-sa.exe` and `gta san andreas.exe`. The EXE setup checks
+  the x86 PE header, image base and supported startup fingerprint instead of file size alone.
+  This does not add support for other game versions or guarantee compatibility with repacks.
+- Startup diagnostics: `%TEMP%/SA-People-Startup.log` records loader entry/initialization;
+  `%TEMP%/SA-People-Setup.log` records setup checks and caught installation errors. Include
+  these when the normal mod log is missing. Chinese font rendering requires Windows CJK fonts.
 
 ## What's new in 0.16.1
 
@@ -206,8 +221,9 @@ Restart the game. F2 and P now open the phone; SA People no longer uses F6 for t
 Choose another unused key if F2 is also assigned by another mod. Use `Phone=F2,NONE` if
 you want only F2. Existing settings gain missing control entries after the first launch
 of 0.15.1; you can also add `[Controls]` and `Phone=F2,P` yourself before launching.
-For ModLoader installations, edit the game's persistent `SA-People/settings.ini`, not
-`settings.example.ini` inside the mod folder. Updating does not replace your settings.
+For ModLoader installs, an explicit `settings.ini` beside the mod's ASI takes precedence.
+Without it, edit the game's `SA-People/settings.ini`. Never edit the example after the first launch.
+The active file path is recorded as `SETTINGS active=` in the mod log. Updates preserve settings.
 
 To negotiate with a hostile rival, approach a visible member within eight metres, hold
 focus and greet or calm down. Honor, group size and whether you are aiming affect the

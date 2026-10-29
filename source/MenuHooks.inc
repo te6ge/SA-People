@@ -154,7 +154,7 @@ void __cdecl modernMenuText(float x, float y, const char *text) {
 }
 bool installModernMenu() {
     if (!GetPrivateProfileIntW(L"Interface", L"ModernMenu", 0,
-                               (directory / L"settings.ini").c_str()))
+                               settingsFile.c_str()))
         return false;
     struct Patch {
         std::uintptr_t call, target, original;
@@ -306,7 +306,7 @@ bool installLanguageMenu() {
     // The game's own language row stays by default so the game text can still be switched;
     // the mod language lives in the phone settings. MenuLanguageRow=1 restores the old row.
     if (!GetPrivateProfileIntW(L"Interface", L"MenuLanguageRow", 0,
-                               (directory / L"settings.ini").c_str()))
+                               settingsFile.c_str()))
         return false;
     auto entries = reinterpret_cast<FrontendEntry *>(0x8CE008 + 33 * 0xE2 + 10);
     if (entries[4].action != 2)

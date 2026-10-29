@@ -36,6 +36,14 @@ def fake(name, size=14383616):
     game.mkdir()
     with (game / 'gta_sa.exe').open('wb') as f:
         f.truncate(size)
+        if size >= 4096:
+            f.seek(0); f.write(b'MZ'); f.seek(0x3c); f.write(struct.pack('<I',0x80))
+            f.seek(0x80); f.write(b'PE\0\0'+struct.pack('<HH',0x14c,1))
+            f.seek(0x94); f.write(struct.pack('<H',224))
+            f.seek(0x98); f.write(struct.pack('<H',0x10b))
+            f.seek(0xb4); f.write(struct.pack('<I',0x400000))
+            f.seek(0x178); f.write(b'.text\0\0\0'+struct.pack('<IIII',0x1000,0x1000,0x1000,0x400))
+            f.seek(0x400); f.write(struct.pack('<I',0x53ec8b55))
     return game
 
 def run(kind, game, exe=setup, options=()):
@@ -167,6 +175,16 @@ try:
     game=fake('menu invalid option');r=run('exe',game,options=('--wrong-menu',))
     check('unknown setup option rejected without writes',r.returncode!=0 and list(game.iterdir())==[game/'gta_sa.exe'])
     # Corrupt/tampered self-extracting overlays must fail silently before any writes.
+    for name in ('gta-sa.exe','gta san andreas.exe'):
+        game=fake('renamed-'+name)
+        (game/'gta_sa.exe').rename(game/name)
+        check('EXE accepts supported renamed '+name,run('exe',game).returncode==0 and (game/'SA-People.asi').exists())
+    game=fake('same-size-unsupported')
+    with (game/'gta_sa.exe').open('r+b') as f: f.seek(0x400); f.write(b'BAD!')
+    check('EXE rejects unsupported fingerprint even at expected file size',run('exe',game).returncode==4 and not (game/'SA-People.asi').exists())
+    game=fake('other-size-supported',14384000)
+    check('EXE accepts supported fingerprint independent of file size',run('exe',game).returncode==0)
+
     for name, entrypath, offset, size, mode in [
         ('traversal','../escape.dll',len(stub),1,0),
         ('absolute','C:/outside.dll',len(stub),1,0),

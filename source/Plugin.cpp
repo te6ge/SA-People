@@ -55,7 +55,7 @@ bool validPool(Pool *);
 using Process = void(__cdecl *)();
 Process original = nullptr, originalRestart = nullptr, originalDraw = nullptr;
 HMODULE moduleHandle = nullptr;
-std::filesystem::path directory, resourceDirectory;
+std::filesystem::path directory, resourceDirectory, settingsFile;
 HANDLE instanceGuard = nullptr;
 socialaudio::Player audio;
 unsigned audioVariation = 0;
@@ -339,7 +339,9 @@ void initialize() {
         std::ifstream peds(paths.game / L"data" / L"peds.ide");
         modelTraits.read(peds);
     }
-    auto ini = directory / L"settings.ini";
+    settingsFile = installpaths::settings(paths);
+    auto ini = settingsFile;
+    log("SETTINGS active=" + settingsFile.u8string());
     if (!std::filesystem::exists(ini)) {
         std::ofstream out(ini);
         out << "[World]\nAutoRestore=1\n; Set 0 to disable natural returns. F9 still allows a "
@@ -358,7 +360,8 @@ void initialize() {
     }
     wchar_t language[16] = {};
     GetPrivateProfileStringW(L"Interface", L"Language", L"tr", language, 16, ini.c_str());
-    locale::language = wcscmp(language, L"ru") == 0   ? locale::Language::Russian
+    locale::language = (wcscmp(language, L"zh") == 0 || wcscmp(language, L"zh-CN") == 0) ? locale::Language::Chinese
+                       : wcscmp(language, L"ru") == 0   ? locale::Language::Russian
                        : wcscmp(language, L"es") == 0 ? locale::Language::Spanish
                        : wcscmp(language, L"en") == 0 ? locale::Language::English
                                                       : locale::Language::Turkish;
@@ -366,7 +369,7 @@ void initialize() {
     if (!controls::seedMissing(ini.c_str()))
         log("SETTINGS could not write missing control bindings; existing bindings remain active.");
     gallery.initialize(resourceDirectory);
-    audio.initialize(directory, log, resourceDirectory);
+    audio.initialize(directory, log, resourceDirectory, settingsFile);
     auto archive = directory / L"people.dat";
     if (std::filesystem::exists(archive)) {
         const auto beforeNeighborhood = directory / L"people.pre-0.15.dat";
@@ -411,7 +414,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.16.1 initialized; persistent identities=" +
+    log("SA People 0.16.2 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -966,10 +969,23 @@ bool install() {
     return true;
 }
 } // namespace
+// Available even when normal initialization is refused; never changes the game folder.
+void startupDiagnostic(const wchar_t *diagnosticText) {
+    wchar_t temp[MAX_PATH] = {};
+    if (!GetTempPathW(MAX_PATH, temp)) return;
+    const std::wstring path = std::wstring(temp) + L"SA-People-Startup.log";
+    HANDLE file = CreateFileW(path.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                             nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) return;
+    DWORD written = 0;
+    WriteFile(file, diagnosticText, static_cast<DWORD>(wcslen(diagnosticText) * sizeof(wchar_t)), &written, nullptr);
+    CloseHandle(file);
+}
 extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
     static volatile LONG initialized = 0;
     if (InterlockedCompareExchange(&initialized, 1, 0) != 0) return;
     if (!supportedExecutable()) {
+        startupDiagnostic(L"Unsupported executable or multiplayer detected.\r\n");
         OutputDebugStringW(L"SA People: unsupported executable; initialization skipped.");
         return;
     }
@@ -981,6 +997,7 @@ extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
         OutputDebugStringW(L"SA People: another copy is already running; initialization skipped.");
         return;
     }
+    startupDiagnostic(L"InitializeASI called; starting SA People 0.16.2.\r\n");
     try {
         initialize();
         if (install())
@@ -999,6 +1016,7 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         moduleHandle = module;
         DisableThreadLibraryCalls(module);
+        startupDiagnostic(L"SA-People library loaded; waiting for InitializeASI or ModLoader startup.\r\n");
         // ModLoader's std.asi calls LoadLibrary, but not the Ultimate ASI Loader export.
         // Initialization here does no COM/media playback and creates no worker threads.
         if (GetModuleHandleW(L"modloader.asi")) {

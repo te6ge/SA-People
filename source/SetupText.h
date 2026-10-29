@@ -1,12 +1,12 @@
 #pragma once
 #include <cstddef>
 namespace setuptext {
-enum class Language { English, Turkish, Russian, Spanish };
+enum class Language { English, Turkish, Russian, Spanish, Chinese };
 enum Key { Subtitle, Headline, Intro, People, PeopleBody, Phone, PhoneBody, Memory, MemoryBody,
     Folder, Browse, Hint, Preserve, Install, Close, Installing, Complete, Failed, Pick,
     Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, WithNewMenu, Count };
-inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español"};
-inline constexpr const wchar_t *copy[4][Count] = {
+inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español", L"简体中文"};
+inline constexpr const wchar_t *copy[5][Count] = {
     {L"NPC INTERACTIONS  /  PC 1.0 US", L"A city full of people.",
      L"Make friends. Make enemies. Give the streets a memory.",
      L"Meet the city", L"Names, families and relationships.", L"Stay connected",
@@ -58,7 +58,16 @@ inline constexpr const wchar_t *copy[4][Count] = {
      L"Este gta_sa.exe no parece ser la versión 1.0 US. El mod podría no funcionar. ¿Instalar de todos modos?",
      L"No se pudo escribir un archivo. Cierra el juego y comprueba los permisos:",
      L"Revisa los permisos, los archivos de solo lectura y los conflictos de rutas.",
-     L"También se instaló Ultimate ASI Loader (dinput8.dll).", L"Idioma", L"Con el nuevo menú"}
+     L"También se instaló Ultimate ASI Loader (dinput8.dll).", L"Idioma", L"Con el nuevo menú"},
+    {L"NPC 互动 / PC 1.0 US", L"每个人都有自己的故事。", L"结交朋友，也可能树敌。让街头记住你的故事。",
+     L"认识这座城市", L"姓名、家庭和人际关系。", L"保持联系", L"使用 SA CELL 收发短信、联系朋友和安排见面。",
+     L"留下足迹", L"人们会记得你如何对待他们。", L"游戏文件夹", L"浏览…", L"选择 GTA San Andreas 游戏文件夹。请先关闭游戏。",
+     L"保留已有设置和人际关系。", L"安装 SA People", L"关闭", L"正在安装 SA People…", L"欢迎来到这个街区。",
+     L"安装未能完成。", L"选择 GTA San Andreas 文件夹", L"安装包已损坏。",
+     L"未找到游戏程序。支持 gta_sa.exe 和 gta-sa.exe。请选择正确的文件夹。",
+     L"游戏程序与支持的 1.0 US 特征不符，模组可能无法运行。仍然安装吗？",
+     L"无法写入文件。请关闭游戏并检查文件夹权限：", L"检查写入权限、只读文件和路径冲突。",
+     L"同时安装了 Ultimate ASI Loader (dinput8.dll)。", L"语言", L"使用新菜单"}
 };
 inline const wchar_t *get(Language language, Key key) {
     return copy[static_cast<std::size_t>(language)][key];

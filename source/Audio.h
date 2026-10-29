@@ -112,10 +112,11 @@ class Player {
   public:
     void initialize(const std::filesystem::path &directory,
                     std::function<void(const std::string &)> log,
-                    const std::filesystem::path &resources = {}) {
+                    const std::filesystem::path &resources = {},
+                    const std::filesystem::path &config = {}) {
         root = (resources.empty() ? directory : resources) / L"audio";
         logger = std::move(log);
-        auto ini = directory / L"settings.ini";
+        auto ini = config.empty() ? directory / L"settings.ini" : config;
         enabled = GetPrivateProfileIntW(L"Audio", L"Enabled", 1, ini.c_str()) != 0;
         voiceLevel =
             std::min(100u, GetPrivateProfileIntW(L"Audio", L"VoicePercent", 45, ini.c_str()));

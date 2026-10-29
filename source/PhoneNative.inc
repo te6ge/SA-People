@@ -20,7 +20,7 @@ void changeLanguage(int direction) {
     std::string code = locale::code(locale::language);
     std::wstring value(code.begin(), code.end());
     if (!WritePrivateProfileStringW(L"Interface", L"Language", value.c_str(),
-                                    (directory / L"settings.ini").c_str()))
+                                    settingsFile.c_str()))
         log("Could not save language setting");
     panelInvalid = true;
 }
@@ -438,7 +438,7 @@ void captureControl() {
     unsigned action = phoneState.cursor % (controls::Count + 1);
     if (action < controls::Count) {
         controls::keys[action].primary = vk;
-        controls::save((directory / L"settings.ini").c_str());
+        controls::save(settingsFile.c_str());
     }
     // Swallow the press so the new key does not also trigger its old meaning this frame.
     phoneUp = phoneDown = phoneLeft = phoneRight = phoneEnter = phoneBack = true;
@@ -724,7 +724,7 @@ void processPhone(Byte *player) {
         if (enter) {
             if (phoneState.cursor % rows == controls::Count) {
                 controls::reset();
-                controls::save((directory / L"settings.ini").c_str());
+                controls::save(settingsFile.c_str());
                 phoneState.notice = "CTRL_RESET_DONE";
             } else {
                 phoneState.capturing = true;
@@ -745,7 +745,7 @@ void processPhone(Byte *player) {
             return;
         }
         if (enter) {
-            auto ini = (directory / L"settings.ini").wstring();
+            auto ini = settingsFile.wstring();
             if (phoneState.cursor % 4 == 0)
                 changeLanguage(1);
             else if (phoneState.cursor % 4 == 1) {
