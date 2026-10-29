@@ -153,7 +153,7 @@ void __cdecl modernMenuText(float x, float y, const char *text) {
     native(x, y, text);
 }
 bool installModernMenu() {
-    if (!GetPrivateProfileIntW(L"Interface", L"ModernMenu", 1,
+    if (!GetPrivateProfileIntW(L"Interface", L"ModernMenu", 0,
                                (directory / L"settings.ini").c_str()))
         return false;
     struct Patch {

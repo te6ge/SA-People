@@ -4,7 +4,7 @@ namespace setuptext {
 enum class Language { English, Turkish, Russian, Spanish };
 enum Key { Subtitle, Headline, Intro, People, PeopleBody, Phone, PhoneBody, Memory, MemoryBody,
     Folder, Browse, Hint, Preserve, Install, Close, Installing, Complete, Failed, Pick,
-    Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, Count };
+    Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, WithNewMenu, Count };
 inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español"};
 inline constexpr const wchar_t *copy[4][Count] = {
     {L"NPC INTERACTIONS  /  PC 1.0 US", L"A city full of people.",
@@ -19,7 +19,7 @@ inline constexpr const wchar_t *copy[4][Count] = {
      L"This gta_sa.exe does not look like version 1.0 US. The mod may not run. Install anyway?",
      L"A file could not be written. Close the game and check write permissions:",
      L"Check folder permissions, read-only files and conflicting file paths.",
-     L"Ultimate ASI Loader was installed too (dinput8.dll).", L"Language"},
+     L"Ultimate ASI Loader was installed too (dinput8.dll).", L"Language", L"With new menu"},
     {L"NPC ETKİLEŞİMLERİ  /  PC 1.0 US", L"Her köşede bir hikâye.",
      L"Arkadaş edin. Düşman kazan. Sokaklarda iz bırak.",
      L"Şehri tanı", L"İsimler, aileler ve ilişkiler.", L"Bağlantıda kal",
@@ -32,7 +32,7 @@ inline constexpr const wchar_t *copy[4][Count] = {
      L"Bu gta_sa.exe, 1.0 US sürümü gibi görünmüyor. Mod çalışmayabilir. Yine de kurulsun mu?",
      L"Bir dosya yazılamadı. Oyunu kapat ve yazma izinlerini kontrol et:",
      L"Klasör izinlerini, salt okunur dosyaları ve çakışan dosya yollarını kontrol et.",
-     L"Ultimate ASI Loader da kuruldu (dinput8.dll).", L"Dil"},
+     L"Ultimate ASI Loader da kuruldu (dinput8.dll).", L"Dil", L"Yeni menü ile"},
     {L"ВЗАИМОДЕЙСТВИЯ С NPC  /  PC 1.0 US", L"У каждого своя история.",
      L"Находи друзей. Наживай врагов. Оставь свой след в городе.",
      L"Знакомься с городом", L"Имена, семьи и отношения.", L"Будь на связи",
@@ -45,7 +45,7 @@ inline constexpr const wchar_t *copy[4][Count] = {
      L"Этот gta_sa.exe не похож на версию 1.0 US. Мод может не работать. Всё равно установить?",
      L"Не удалось записать файл. Закрой игру и проверь права доступа:",
      L"Проверь права доступа, файлы только для чтения и конфликты путей.",
-     L"Также установлен Ultimate ASI Loader (dinput8.dll).", L"Язык"},
+     L"Также установлен Ultimate ASI Loader (dinput8.dll).", L"Язык", L"С новым меню"},
     {L"INTERACCIONES CON NPC  /  PC 1.0 US", L"Cada persona, una historia.",
      L"Haz amigos. Gánate enemigos. Deja tu huella en la ciudad.",
      L"Conoce la ciudad", L"Nombres, familias y relaciones.", L"Sigue en contacto",
@@ -58,7 +58,7 @@ inline constexpr const wchar_t *copy[4][Count] = {
      L"Este gta_sa.exe no parece ser la versión 1.0 US. El mod podría no funcionar. ¿Instalar de todos modos?",
      L"No se pudo escribir un archivo. Cierra el juego y comprueba los permisos:",
      L"Revisa los permisos, los archivos de solo lectura y los conflictos de rutas.",
-     L"También se instaló Ultimate ASI Loader (dinput8.dll).", L"Idioma"}
+     L"También se instaló Ultimate ASI Loader (dinput8.dll).", L"Idioma", L"Con el nuevo menú"}
 };
 inline const wchar_t *get(Language language, Key key) {
     return copy[static_cast<std::size_t>(language)][key];

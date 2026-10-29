@@ -102,9 +102,16 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     int argc = 0;
     wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     fs::path given;
+    auto menuChoice = setupoptions::Menu::Keep;
     if (argv && argc >= 3 && std::wstring(argv[1]) == L"--silent") {
         silent = true;
         given = argv[2];
+        for (int i=3;i<argc;++i) {
+            const std::wstring option=argv[i];
+            if (option==L"--new-menu") menuChoice=setupoptions::Menu::New;
+            else if (option==L"--original-menu") menuChoice=setupoptions::Menu::Original;
+            else { LocalFree(argv); return 5; }
+        }
     }
     if (argv)
         LocalFree(argv);
@@ -125,6 +132,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         } else {
             game = setupui::choose();
             if (game.empty()) return 0;
+            menuChoice=setupui::useNewMenu ? setupoptions::Menu::New : setupoptions::Menu::Original;
         }
         std::error_code error;
         if (silent && fs::file_size(game / L"gta_sa.exe") != 14383616)
@@ -138,6 +146,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                       fs::file_size(game / L"vorbisFile.dll", error) > 100000;
         loader = loader || fs::exists(game / L"dinput8.dll");
         fs::path data = game / L"SA-People";
+        if (menuChoice != setupoptions::Menu::Keep && fs::exists(data / L"settings.ini") &&
+            (!fs::is_regular_file(data / L"settings.ini") ||
+             (GetFileAttributesW((data / L"settings.ini").c_str()) & FILE_ATTRIBUTE_READONLY)))
+            throw std::runtime_error("Menu preference cannot be written to read-only settings");
         // Reject blocked directories/read-only destinations before replacing the old ASI.
         for (const auto &e : entries) {
             fs::path target = game / fs::u8path(e.path);
@@ -197,6 +209,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                 return 2;
             }
         }
+        if (!setupoptions::apply((data / L"settings.ini").c_str(), menuChoice))
+            throw std::runtime_error("Could not save menu preference");
         setupui::addedLoader = loaderInstalled;
         setupui::finish();
         return 0;

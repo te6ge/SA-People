@@ -1,5 +1,6 @@
 // Windows/x86 adapter checks against synthetic pools; never open or modify a game.
 #include "Plugin.cpp"
+#include "SetupOptions.h"
 #include <cassert>
 #include <iostream>
 namespace {
@@ -91,6 +92,25 @@ int main() {
         assert(audiofiles::resolve(wavPath) == mp3Path);
         std::filesystem::remove(mp3Path); std::filesystem::remove(probeRoot);
         std::cout << "PASS: compressed speech preference, existing WAV-only installations and direct MP3 paths.\n";
+    }
+    {
+        wchar_t menuTemp[MAX_PATH] = {}, menuIni[MAX_PATH] = {}, value[32] = {};
+        assert(GetTempPathW(MAX_PATH,menuTemp));
+        assert(GetTempFileNameW(menuTemp,L"sap",0,menuIni));
+        assert(!setupoptions::newMenu(menuIni));
+        assert(WritePrivateProfileStringW(L"Interface",L"Language",L"es",menuIni));
+        assert(WritePrivateProfileStringW(L"Controls",L"Phone",L"F2,P",menuIni));
+        assert(setupoptions::apply(menuIni,setupoptions::Menu::New));
+        assert(setupoptions::newMenu(menuIni));
+        assert(setupoptions::apply(menuIni,setupoptions::Menu::Keep) && setupoptions::newMenu(menuIni));
+        assert(setupoptions::apply(menuIni,setupoptions::Menu::Original));
+        assert(!setupoptions::newMenu(menuIni));
+        GetPrivateProfileStringW(L"Interface",L"Language",L"",value,32,menuIni);
+        assert(std::wstring(value)==L"es");
+        GetPrivateProfileStringW(L"Controls",L"Phone",L"",value,32,menuIni);
+        assert(std::wstring(value)==L"F2,P");
+        assert(DeleteFileW(menuIni));
+        std::cout << "PASS: menu opt-in defaults off, explicit enable/disable and preserving language/key bindings.\n";
     }
     auto page=static_cast<Byte *>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
     assert(page);

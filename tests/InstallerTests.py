@@ -1,6 +1,7 @@
 """Exercise release EXE/CMD installers against disposable fake game folders only."""
 from pathlib import Path
 import ctypes
+import configparser
 import hashlib
 import json
 import stat
@@ -37,11 +38,11 @@ def fake(name, size=14383616):
         f.truncate(size)
     return game
 
-def run(kind, game, exe=setup):
+def run(kind, game, exe=setup, options=()):
     if kind == 'cmd':
         command = 'cmd.exe /d /s /c ""' + str(stage / 'Install.cmd') + '" "' + str(game) + '""'
     else:
-        command = [str(exe), '--silent', str(game)]
+        command = [str(exe), '--silent', str(game), *options]
     r = subprocess.run(command, input=b'N\r\n', capture_output=True, timeout=45)
     (base / (game.name + '-' + kind + '.stdout.txt')).write_bytes(r.stdout)
     (base / (game.name + '-' + kind + '.stderr.txt')).write_bytes(r.stderr)
@@ -136,6 +137,35 @@ try:
         check(kind + ' rejects folder without gta_sa.exe', run(kind,game).returncode != 0 and not (game/'SA-People.asi').exists())
         game = fake(kind + ' unsupported exe', 10)
         check(kind + ' rejects unsupported exe without confirmation', run(kind,game).returncode != 0 and not (game/'SA-People.asi').exists())
+    # The visible checkbox uses the same menu preference code as these explicit options.
+    def ini(game):
+        config=configparser.ConfigParser()
+        config.read(game/'SA-People/settings.ini',encoding='utf-8-sig')
+        return config
+    for option,expected in [('--new-menu','1'),('--original-menu','0')]:
+        game=fake('menu fresh '+expected)
+        r=run('exe',game,options=(option,))
+        check('explicit menu '+expected+' on fresh install',r.returncode==0 and ini(game)['Interface']['ModernMenu']==expected)
+        game=fake('menu update '+expected);old_state(game)
+        (game/'SA-People/settings.ini').write_text('[Interface]\nLanguage=ru\nModernMenu='+('0' if expected=='1' else '1')+'\n[Controls]\nPhone=F2,P\n',encoding='utf-8')
+        r=run('exe',game,options=(option,));settings=ini(game)
+        check('explicit menu '+expected+' preserves other update settings',r.returncode==0 and
+              settings['Interface']['ModernMenu']==expected and settings['Interface']['Language']=='ru' and
+              settings['Controls']['Phone']=='F2,P' and (game/'SA-People/people.dat').read_bytes()==b'user identities')
+    game=fake('menu default');r=run('exe',game)
+    check('fresh install defaults to original menu',r.returncode==0 and ini(game)['Interface']['ModernMenu']=='0')
+    game=fake('menu unchanged');old_state(game)
+    (game/'SA-People/settings.ini').write_text('[Interface]\nLanguage=tr\nModernMenu=1\n',encoding='utf-8')
+    previous=(game/'SA-People/settings.ini').read_bytes();r=run('exe',game)
+    check('silent update without option preserves menu choice byte for byte',r.returncode==0 and (game/'SA-People/settings.ini').read_bytes()==previous)
+    game=fake('menu read only');old_state(game)
+    readonly=game/'SA-People/settings.ini';readonly.chmod(stat.S_IREAD)
+    try:
+        r=run('exe',game,options=('--new-menu',))
+        check('read-only menu settings fail before replacing ASI',r.returncode!=0 and (game/'SA-People.asi').read_bytes()==b'previous ASI')
+    finally: readonly.chmod(stat.S_IREAD|stat.S_IWRITE)
+    game=fake('menu invalid option');r=run('exe',game,options=('--wrong-menu',))
+    check('unknown setup option rejected without writes',r.returncode!=0 and list(game.iterdir())==[game/'gta_sa.exe'])
     # Corrupt/tampered self-extracting overlays must fail silently before any writes.
     for name, entrypath, offset, size, mode in [
         ('traversal','../escape.dll',len(stub),1,0),

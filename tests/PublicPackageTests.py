@@ -30,6 +30,7 @@ with zipfile.ZipFile(package) as archive:
         assert sum(n.startswith(method+'assets/') and n.endswith('.png') for n in files)==3
         assert sum(n.startswith(method+'backgrounds/') and n.endswith(('.jpg','.png')) for n in files)==3
     settings=files['Manual/SA-People/settings.example.ini'].decode('utf-8')
+    assert 'ModernMenu=0' in settings
     assert '[Controls]' in settings and 'Phone=F6,P' in settings and 'Phone=F2,P' in settings
     assert files['Manual/SA-People.asi']==files['ModLoader/SA-People/SA-People.asi']==(root/'build/SA-People.asi').read_bytes()
     assert not any(name.startswith('Manual/Copy-to-Game-Folder/') for name in files)

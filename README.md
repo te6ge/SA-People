@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.16.0 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.16.1 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -31,6 +31,13 @@ identities and relationships carry across game sessions.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
 - English, Turkish, Russian and Spanish. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.16.1
+
+The main/pause menu redesign is now opt-in. The setup has a **With new menu** checkbox;
+fresh installs leave it unchecked. Selecting an existing game folder loads its current
+menu setting. Manual and ModLoader installs default to the original GTA menu.
+The phone, interaction prompts and honor panel remain available with either menu style.
 
 ## What's new in 0.16.0
 
@@ -151,6 +158,30 @@ Run `SA-People-Setup.exe`, choose the game folder and click Install. Its languag
 is in the bottom-right corner. The installer is unsigned; the manual and ModLoader methods
 are available if you prefer not to run it. Installer language and in-game mod language are
 separate settings. Disable any previous ModLoader copy before using this root installer.
+
+## Optional main/pause menu redesign
+
+In the setup, tick **With new menu** to use SA People's menu theme. Leave it unticked to
+keep the original GTA menu. When selecting an existing installation, the setup displays
+its saved preference. Your explicit checkbox choice updates only this menu setting;
+other settings and relationships are kept.
+
+For manual or ModLoader installation, close the game and edit **SA-People/settings.ini**
+in the game folder. Under `[Interface]`, choose:
+
+```ini
+[Interface]
+ModernMenu=1
+```
+
+Use `ModernMenu=0` for the original menu. Edit the existing section instead of adding a
+duplicate. Restart the game after changing it. On a fresh copy installation, you can edit
+`SA-People/settings.example.ini` before the first launch instead. Existing settings take
+priority over example files during updates; Install.cmd also keeps existing preferences.
+
+For automated setup, `--silent "<game folder>" --new-menu` enables it and
+`--silent "<game folder>" --original-menu` disables it. Omitting either option preserves
+an existing menu setting; a fresh silent installation defaults to the original menu.
 
 ## Controls
 

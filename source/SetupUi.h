@@ -1,18 +1,28 @@
 #pragma once
 #include "SetupText.h"
+#include "SetupOptions.h"
 #include <algorithm>
 
 namespace setupui {
 inline HWND window = nullptr, folderEdit = nullptr, browseButton = nullptr,
-            installButton = nullptr, languageBox = nullptr;
+            installButton = nullptr, languageBox = nullptr, menuCheck = nullptr;
 inline setuptext::Language language = setuptext::Language::English;
 inline HFONT regular = nullptr, smallFont = nullptr, heading = nullptr, brand = nullptr, bold = nullptr;
-inline HBRUSH editBrush = nullptr;
+inline HBRUSH editBrush = nullptr, checkBrush = nullptr;
 inline float scale = 1.0f;
 inline bool chosen = false, busy = false, finished = false;
 inline unsigned completed = 0, total = 1;
 inline std::wstring file, selected;
-inline bool addedLoader = false;
+inline bool addedLoader = false, useNewMenu = false, menuTouched = false;
+inline void loadMenuPreference() {
+    if (!folderEdit || !menuCheck || menuTouched) return;
+    const int count = GetWindowTextLengthW(folderEdit);
+    std::wstring path(static_cast<std::size_t>(count)+1,L'\0');
+    GetWindowTextW(folderEdit,path.data(),count+1);path.resize(static_cast<std::size_t>(count));
+    const auto ini = fs::path(path) / L"SA-People" / L"settings.ini";
+    useNewMenu = fs::exists(ini) && setupoptions::newMenu(ini.c_str());
+    SendMessageW(menuCheck,BM_SETCHECK,useNewMenu ? BST_CHECKED : BST_UNCHECKED,0);
+}
 inline const wchar_t *tr(setuptext::Key key) { return setuptext::get(language, key); }
 inline int px(int value) { return static_cast<int>(value * scale); }
 inline RECT rect(int x, int y, int w, int h) { return {px(x), px(y), px(x+w), px(y+h)}; }
@@ -27,6 +37,7 @@ inline void text(HDC dc, const wchar_t *value, int x, int y, int w, int h, HFONT
 }
 inline void refresh() {
     SetWindowTextW(browseButton,tr(setuptext::Browse));
+    SetWindowTextW(menuCheck,tr(setuptext::WithNewMenu));
     SetWindowTextW(installButton,tr(finished ? setuptext::Close : setuptext::Install));
     InvalidateRect(window,nullptr,FALSE);
 }
@@ -63,7 +74,8 @@ inline void paint(HDC dc) {
              DT_LEFT|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
         fill(dc,32,431,756,4,RGB(52,55,59));
         fill(dc,32,431,static_cast<int>(756ULL*completed/std::max(1u,total)),4,red);
-    } else text(dc,tr(setuptext::Hint),34,433,752,30,smallFont,muted);
+    } else text(dc,tr(setuptext::Hint),34,430,752,18,smallFont,muted,
+              DT_LEFT|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);
     text(dc,tr(setuptext::Preserve),34,474,752,23,smallFont,RGB(167,180,154));
     fill(dc,32,500,756,1,RGB(52,55,59));
     text(dc,tr(setuptext::LanguageLabel),530,520,99,24,smallFont,muted,DT_RIGHT|DT_SINGLELINE);
@@ -80,6 +92,13 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
         SelectObject(memory,old); DeleteObject(bitmap); DeleteDC(memory); EndPaint(hwnd,&ps); return 0;
     }
     case WM_ERASEBKGND: return 1;
+    case WM_CTLCOLORSTATIC:
+        if (reinterpret_cast<HWND>(lp)==menuCheck) {
+            SetTextColor(reinterpret_cast<HDC>(wp),RGB(243,239,227));
+            SetBkColor(reinterpret_cast<HDC>(wp),RGB(18,20,23));
+            return reinterpret_cast<LRESULT>(checkBrush);
+        }
+        break;
     case WM_CTLCOLOREDIT: case WM_CTLCOLORLISTBOX:
         SetTextColor(reinterpret_cast<HDC>(wp),RGB(243,239,227));
         SetBkColor(reinterpret_cast<HDC>(wp),RGB(35,38,43));
@@ -98,6 +117,13 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
         SelectObject(item->hDC,previous); return TRUE;
     }
     case WM_COMMAND:
+        if(LOWORD(wp)==100 && HIWORD(wp)==EN_CHANGE && !busy && !finished) {
+            loadMenuPreference(); return 0;
+        }
+        if(LOWORD(wp)==104 && HIWORD(wp)==BN_CLICKED) {
+            menuTouched=true;
+            useNewMenu=SendMessageW(menuCheck,BM_GETCHECK,0,0)==BST_CHECKED; return 0;
+        }
         if(LOWORD(wp)==IDCANCEL) {if(!busy) DestroyWindow(hwnd); return 0;}
         if(LOWORD(wp)==103 && HIWORD(wp)==CBN_SELCHANGE) {
             auto index=SendMessageW(languageBox,CB_GETCURSEL,0,0);
@@ -116,6 +142,7 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
             if(!fs::exists(fs::path(path)/L"gta_sa.exe")) {
                 MessageBoxW(hwnd,tr(setuptext::Missing),Title,MB_ICONWARNING); return 0;
             }
+            useNewMenu=SendMessageW(menuCheck,BM_GETCHECK,0,0)==BST_CHECKED;
             selected=path; chosen=true; return 0;
         }
         break;
@@ -128,6 +155,7 @@ inline void cleanup() {
     for(auto font:{regular,smallFont,heading,brand,bold}) if(font) DeleteObject(font);
     regular=smallFont=heading=brand=bold=nullptr;
     if(editBrush) DeleteObject(editBrush); editBrush=nullptr;
+    if(checkBrush) DeleteObject(checkBrush); checkBrush=nullptr;
 }
 inline bool create() {
     SetProcessDPIAware();
@@ -142,6 +170,7 @@ inline bool create() {
         DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");};
     regular=font(16,FW_NORMAL); smallFont=font(13,FW_NORMAL); heading=font(32,FW_SEMIBOLD);
     brand=font(39,FW_BLACK); bold=font(16,FW_SEMIBOLD); editBrush=CreateSolidBrush(RGB(35,38,43));
+    checkBrush=CreateSolidBrush(RGB(18,20,23));
     WNDCLASSW wc{}; wc.lpfnWndProc=procedure; wc.hInstance=GetModuleHandleW(nullptr);
     wc.hCursor=LoadCursorW(nullptr,MAKEINTRESOURCEW(32512)); wc.hIcon=LoadIconW(nullptr,MAKEINTRESOURCEW(32512));
     wc.lpszClassName=L"SAPeopleSetup";
@@ -162,6 +191,9 @@ inline bool create() {
     browseButton=control(L"BUTTON",BS_OWNERDRAW,670,386,118,34,101);
     installButton=control(L"BUTTON",BS_OWNERDRAW,32,510,270,38,102);
     languageBox=control(L"COMBOBOX",CBS_DROPDOWNLIST|WS_VSCROLL,644,514,144,160,103);
+    menuCheck=control(L"BUTTON",BS_AUTOCHECKBOX,34,451,752,23,104);
+    SendMessageW(menuCheck,WM_SETFONT,reinterpret_cast<WPARAM>(smallFont),TRUE);
+    SendMessageW(menuCheck,BM_SETCHECK,BST_UNCHECKED,0);
     for(auto name:setuptext::names) SendMessageW(languageBox,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(name));
     SendMessageW(languageBox,CB_SETCURSEL,static_cast<WPARAM>(language),0);
     // Suggest the setup's own directory only when it already contains the game.
@@ -179,7 +211,7 @@ inline std::wstring choose() {
         if(!IsDialogMessageW(window,&message)) {TranslateMessage(&message); DispatchMessageW(&message);}
     if(!chosen) {cleanup(); return {};}
     busy=true; ShowWindow(folderEdit,SW_HIDE); ShowWindow(browseButton,SW_HIDE);
-    EnableWindow(installButton,FALSE); EnableWindow(languageBox,FALSE); refresh(); UpdateWindow(window);
+    EnableWindow(installButton,FALSE); EnableWindow(languageBox,FALSE); EnableWindow(menuCheck,FALSE); refresh(); UpdateWindow(window);
     return selected;
 }
 inline void progress(unsigned value,unsigned count,const std::wstring &path) {

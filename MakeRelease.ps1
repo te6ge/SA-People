@@ -43,7 +43,8 @@ FirstEventSeconds=45
 ScalePercent=100
 AutoCloseSeconds=0
 Language=en
-ModernMenu=1
+; 0 = original GTA menu, 1 = SA People menu. Restart the game after changing.
+ModernMenu=0
 
 [Audio]
 Enabled=1
