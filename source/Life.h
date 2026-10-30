@@ -10,7 +10,7 @@ inline unsigned untilMorning(unsigned hour, unsigned minute) {
 inline bool nightCandidate(const people::Family &f, int type, unsigned hour, bool walking,
                            float distanceSquared) {
     return walking && night(hour) && distanceSquared >= 0 && distanceSquared <= 625 && f.female &&
-           !f.origin && f.presence.alive && f.social.romance < 3 && !f.social.robbed &&
+           !f.origin && f.presence.alive && f.social.romance < 3 && !f.commitment.stage && !f.social.robbed &&
            !f.social.cutOff && f.social.anger < 30 &&
            !(f.social.events & encounters::bit(encounters::Kind::Visit)) &&
            type == 22 && // Only street workers; ordinary women do not proposition CJ.

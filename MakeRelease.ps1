@@ -34,6 +34,7 @@ Copy-Item "$root\README.md" $stage
 
 [IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
 [World]
+CombatAI=1
 CommunityLife=1
 AutoRestore=1
 SideEvents=1

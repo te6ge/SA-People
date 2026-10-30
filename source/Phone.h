@@ -4,6 +4,7 @@
 #include "Meetings.h"
 #include "Network.h"
 #include "Romance.h"
+#include "Commitment.h"
 #include "SocialWorld.h"
 #include "PhoneDialogue.h"
 #include "Bonds.h"
@@ -23,14 +24,16 @@ enum class Page {
     Controls,
     Life,
     Gift,
-    Request
+    Request,
+    Relationship,
+    RelationshipConfirm
 };
 struct State {
     Page page = Page::Contacts;
     unsigned cursor = 0, person = 0, detail = 0;
     unsigned distance = 0;
     unsigned networkOffset = 0;
-    unsigned arrival = 0;
+    unsigned arrival = 0, relationshipStage = 0;
     std::string notice;
     bool call = false;
     unsigned activity = 0, outing = 0;
@@ -44,6 +47,8 @@ inline std::vector<const char *> actionKeys(const people::Registry &r, const Sta
     if (state.person && state.outing == state.person) keys.push_back("ACT_STOP");
     if (bonds::canGift(r, state.person)) keys.push_back("BDAY_GIVE");
     if (bonds::open(r, state.person)) keys.push_back("PHONE_REQUEST");
+    if(state.person && state.person<=r.families.size() && (r.families[state.person-1].social.romance ||
+       !r.families[state.person-1].commitment.empty())) keys.push_back("REL_ACTION");
     return keys;
 }
 inline std::vector<const people::Letter *> thread(const people::Registry &r, unsigned id) {
@@ -158,6 +163,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         title = "LIFE_TITLE";
     if (state.page == Page::Gift) title = "BDAY_GIVE";
     if (state.page == Page::Request) title = "PHONE_REQUEST";
+    if (state.page == Page::Relationship || state.page == Page::RelationshipConfirm) title = "REL_ACTION";
     if (state.page == Page::Activities || state.page == Page::Outing)
         title = "PHONE_ACTIVITIES";
     if (state.page == Page::Inbox && socialworld::unread(registry))
@@ -277,6 +283,31 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
             text(44, y, 244, 14, row ? (giftPage ? "CONFIRM_CANCEL" : "REQ_DECLINE")
                  : (giftPage ? "BDAY_CONFIRM_GIVE" : "REQ_ACCEPT"), Align::Left,
                  row == state.cursor ? screen : ink);
+        }
+    } else if ((state.page == Page::Relationship || state.page == Page::RelationshipConfirm) &&
+               state.person && state.person<=registry.families.size()) {
+        const auto &f=registry.families[state.person-1];
+        const auto stage=f.commitment.stage;
+        if(state.page==Page::RelationshipConfirm) {
+            const char *summary=stage==0?"REL_CONFIRM_PROPOSE":stage==1?"REL_CONFIRM_BOOK":
+                                stage==2?"REL_CONFIRM_CANCEL":"REL_CONFIRM_SEPARATE";
+            const auto lines=locale::wrap(locale::tr(summary),30);
+            for(unsigned i=0;i<lines.size() && i<5;++i)text(41,197+i*17.0f,248,12,lines[i]);
+            for(unsigned row=0;row<2;++row) {
+                const float y=301+row*24.0f;if(row==state.cursor)box(36,y-1,260,24,dark);
+                text(44,y,244,13,row?"CONFIRM_CANCEL":"REL_CONFIRM_YES",Align::Left,row==state.cursor?screen:ink);
+            }
+        } else {
+            text(41,197,248,15,dialogue::displayName(f));
+            text(41,225,248,14,commitment::status(f));
+            const auto reason=stage==0?commitment::proposalBlock(registry,f):nullptr;
+            const auto lines=locale::wrap(locale::tr(reason?reason:stage==3?"REL_SHARED_LIFE":"REL_TAKE_CARE"),32);
+            for(unsigned i=0;i<lines.size() && i<2;++i)text(41,249+i*14.0f,248,10,lines[i]);
+            const char *options[]={"REL_TALK",stage==0?"REL_PROPOSE":stage==1?"REL_BOOK":stage==2?"REL_CANCEL":"REL_SEPARATE","CONFIRM_CANCEL"};
+            for(unsigned row=0;row<3;++row) {
+                const float y=293+row*23.0f;if(row==state.cursor)box(36,y-1,260,24,dark);
+                text(44,y,244,12,options[row],Align::Left,row==state.cursor?screen:ink);
+            }
         }
     } else if (state.page == Page::Contacts) {
         if (ids.empty())
@@ -438,6 +469,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                               ? locale::tr("PHONE_NO_CHILD")
                           : dialogue::knows(f, fields[i]) ? family[members[i]].name
                                                           : locale::tr("PHONE_UNKNOWN")));
+            if(f.commitment.stage==3)text(41,309,248,11,"REL_SPOUSE_CJ");
         } else if (state.detail == 2) {
             text(41, 242, 248, 14,
                  locale::format("PHONE_ENCOUNTERS", std::to_string(f.social.encounters)));
@@ -447,13 +479,14 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                  : f.social.lastNote == 10 ? "PHONE_MEETING_MEMORY"
                                            : "PHONE_TALK_MEMORY");
         } else if (state.detail == 4) {
-            text(41, 239, 248, 13,
+            if(f.commitment.stage==3)text(41,233,248,11,"REL_SPOUSE_CJ");
+            text(41, f.commitment.stage==3?251.0f:239.0f, 248, 13,
                  f.social.childStage == 2   ? romance::childName(f)
                  : f.social.childStage == 1 ? locale::tr("ROMANCE_EXPECTING")
                                             : locale::tr("ROMANCE_NO_CHILD"));
-            text(41, 268, 248, 12,
+            text(41, f.commitment.stage==3?276.0f:268.0f, 248, 12,
                  locale::format("ROMANCE_HOME_COUNT", std::to_string(f.social.homeVisits)));
-            text(41, 293, 248, 12,
+            text(41, f.commitment.stage==3?300.0f:293.0f, 248, 12,
                  f.social.childStage ? "ROMANCE_FAMILY_SAVED" : "ROMANCE_PLAN_HINT");
         } else if (state.detail == 5) {
             text(41, 245, 248, 14, "PHONE_ACTIONS_HINT", Align::Center);
@@ -498,7 +531,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         box(37, 323, 258, 1, dark);
         text(41, 331, 248, 14,
              state.detail == 3   ? "NET_SCROLL"
-             : state.detail == 4 ? "ROMANCE_PLAN"
+             : state.detail == 4 ? (f.social.childStage ? "ROMANCE_FAMILY_SAVED" : "ROMANCE_PLAN")
              : state.detail == 5 ? "PHONE_OPEN_ACTIONS"
              : state.detail == 6 ? "PHONE_MESSAGES"
              : state.detail == 7 ? "PHONE_ROUTINE_ROUTE"

@@ -219,7 +219,7 @@ bool offerLife(Pool *pool, Byte *player, encounters::Kind kind, unsigned preferr
             continue;
         auto &f = registry.families[id - 1];
         if (!socialprogress::availableForEvent(f.daily.busyUntil, registry.worldMinutes,
-                hasAppointment(id), companionOwns(id), f.social.romance) ||
+                hasAppointment(id), companionOwns(id), f.commitment.stage?3u:f.social.romance) ||
             f.social.events & encounters::bit(kind) || f.social.robbed || f.social.anger >= 30 ||
             f.social.cutOff)
             continue;

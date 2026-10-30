@@ -116,7 +116,7 @@ inline unsigned enemy(const people::Registry &r) {
 }
 inline unsigned partner(const people::Registry &r) {
     for (const auto &f : r.families)
-        if (f.social.romance >= 3 && f.presence.alive)
+        if ((f.social.romance >= 3 || f.commitment.stage==3) && f.presence.alive)
             return f.id;
     return 0;
 }

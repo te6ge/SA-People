@@ -76,7 +76,10 @@ inline bool journaled(const people::Family &f) {
     return f.social.journal;
 }
 inline const char *relationship(const people::Family &f) {
-    return f.social.romance >= 3   ? "Sevgili"
+    return f.commitment.stage==3 ? (f.social.romance<3 || f.social.cutOff || f.social.trust<20 ? "REL_ESTRANGED" : "REL_MARRIED")
+           : f.commitment.stage==2 ? "REL_BOOKED"
+           : f.commitment.stage==1 ? "REL_ENGAGED"
+           : f.social.romance >= 3   ? "Sevgili"
            : f.social.romance == 2 ? "Ilgi duyuyor"
            : isFriend(f)           ? "Arkadas"
            : f.social.trust < -20  ? "Araniz gergin"

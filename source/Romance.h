@@ -9,7 +9,7 @@ inline bool eligible(const people::Registry &r, const people::Family &f) {
     if (!available(f))
         return false;
     for (const auto &other : r.families)
-        if (other.id != f.id && other.social.romance >= 3 && other.presence.alive)
+        if (other.id != f.id && (other.social.romance >= 3 || other.commitment.stage) && other.presence.alive)
             return false;
     return true;
 }

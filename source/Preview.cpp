@@ -100,7 +100,7 @@ int main() {
         std::wstring code(locale::code(locale::language), locale::code(locale::language) + 2);
         for (const auto &size : dimensions) {
             float width = static_cast<float>(size[0]), height = static_cast<float>(size[1]);
-            for (unsigned page = 0; page < 19; ++page) {
+            for (unsigned page = 0; page < 24; ++page) {
                 phone::State state;
                 state.page = page == 0   ? phone::Page::Contacts
                              : page == 1 ? phone::Page::Contact
@@ -146,6 +146,17 @@ int main() {
                     viewRegistry.request = {1,bonds::Lend,0,1,200,viewRegistry.worldMinutes+180};
                 }
                 if (page == 18) state.page = phone::Page::Life;
+                if (page >= 19) {
+                    state.page=(page==20 || page==21)?phone::Page::RelationshipConfirm:
+                        page==23?phone::Page::Contact:phone::Page::Relationship;
+                    auto &partnerView=viewRegistry.families[0];
+                    partnerView.female=true;partnerView.household=1;partnerView.social.romance=3;
+                    partnerView.social.trust=90;partnerView.social.dates=6;partnerView.commitment.since=1;
+                    viewRegistry.worldMinutes=1440;
+                    if(page>=21){partnerView.commitment.stage=page==21?1u:3u;partnerView.commitment.proposedAt=1441;}
+                    if(page>=22)partnerView.commitment.marriedAt=1441;
+                    if(page==23){state.detail=4;partnerView.social.childStage=2;partnerView.social.childMinutes=10080;}
+                }
                 auto scene = phone::compose(viewRegistry, state, "14:35");
                 auto path = std::filesystem::path("preview") /
                             (L"phone-" + code + L"-" + std::to_wstring(size[0]) + L"-" +

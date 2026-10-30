@@ -119,7 +119,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     wchar_t tempPath[MAX_PATH] = {};
     GetTempPathW(MAX_PATH, tempPath);
     std::ofstream diagnostics(fs::path(tempPath) / L"SA-People-Setup.log", std::ios::trunc);
-    diagnostics << "SA People 0.16.2 installer started\n";
+    diagnostics << "SA People 0.17.0 installer started\n";
     try {
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         wchar_t self[MAX_PATH * 4] = {};

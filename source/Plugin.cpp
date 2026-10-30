@@ -25,6 +25,7 @@
 #include "Life.h"
 #include "SocialWorld.h"
 #include "Romance.h"
+#include "Commitment.h"
 #include "Vitals.h"
 #include "Bonds.h"
 #include "Later.h"
@@ -36,6 +37,7 @@
 #include "InstallPaths.h"
 #include "Neighborhood.h"
 #include "GangCombat.h"
+#include "NpcBrain.h"
 #include "Community.h"
 #include "OutingSafety.h"
 namespace {
@@ -75,6 +77,7 @@ DWORD nextScan = 0, nextSave = 0, nextRestore = 0, nextHeartbeat = 0;
 bool disabled = false, dirty = false, gameplaySeen = false, saveErrorReported = false,
      autoRestore = true;
 bool storySuspended = false;
+bool combatAI = true;
 bool vitalsInstalled = false;
 unsigned expiredMeetings = 0;
 bool recovered = false;
@@ -347,6 +350,7 @@ void initialize() {
         out << "[World]\nAutoRestore=1\n; Set 0 to disable natural returns. F9 still allows a "
                "manual reunion.\n\n[Interface]\nScalePercent=100\nAutoCloseSeconds=0\n";
     }
+    combatAI = GetPrivateProfileIntW(L"World", L"CombatAI", 1, ini.c_str()) != 0;
     autoRestore = GetPrivateProfileIntW(L"World", L"AutoRestore", 1, ini.c_str()) != 0;
     panelScale = std::clamp(GetPrivateProfileIntW(L"Interface", L"ScalePercent", 100, ini.c_str()),
                             75u, 125u) /
@@ -376,6 +380,10 @@ void initialize() {
         if (!std::filesystem::exists(beforeNeighborhood) &&
             !CopyFileW(archive.c_str(), beforeNeighborhood.c_str(), TRUE))
             throw std::runtime_error("Neighborhood upgrade backup failed");
+        const auto beforeCommitment = directory / L"people.pre-0.17.dat";
+        if (!std::filesystem::exists(beforeCommitment) &&
+            !CopyFileW(archive.c_str(), beforeCommitment.c_str(), TRUE))
+            throw std::runtime_error("Relationship upgrade backup failed");
         const auto beforeBonds = directory / L"people.pre-0.16.dat"; // 0.15 cannot read V16.
         if (!std::filesystem::exists(beforeBonds) &&
             !CopyFileW(archive.c_str(), beforeBonds.c_str(), TRUE))
@@ -414,7 +422,7 @@ void initialize() {
     for (unsigned i = 0; i < existingCount; ++i)
         if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
             discoverNetwork(i + 1);
-    log("SA People 0.16.2 initialized; persistent identities=" +
+    log("SA People 0.17.0 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -884,6 +892,7 @@ void __cdecl drawHook() {
     try {
         renderInterface();
     } catch (const std::exception &e) {
+        restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         toastUntil = 0;
         log(std::string("UI: ") + e.what());
@@ -894,6 +903,7 @@ void __cdecl processHook() {
     try {
         tick();
     } catch (const std::exception &e) {
+        restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         audio.stop();
         cancelEvents();
@@ -906,6 +916,7 @@ void __cdecl processHook() {
         disabled = true;
         log(e.what());
     } catch (...) {
+        restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         audio.stop();
         cancelEvents();
@@ -997,7 +1008,7 @@ extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
         OutputDebugStringW(L"SA People: another copy is already running; initialization skipped.");
         return;
     }
-    startupDiagnostic(L"InitializeASI called; starting SA People 0.16.2.\r\n");
+    startupDiagnostic(L"InitializeASI called; starting SA People 0.17.0.\r\n");
     try {
         initialize();
         if (install())

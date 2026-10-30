@@ -184,6 +184,10 @@ bool beginCompanion(people::Appointment &a, people::Family &f, people::Handle ac
     phoneState.person = f.id;
     f.daily.lastInvitation = static_cast<unsigned>(registry.worldMinutes / 1440 + 1);
     companion.mood = socialcontext::honorTone(registry.honor);
+    if (commitment::booked(registry,f)) {
+        if(beginCeremony(f,actor)) return true;
+        cancelCompanion(false); return false;
+    }
     say(f, registry.honor <= -40 ? "ACT_HONOR_WARY" : a.activity == 0 ? "ACT_MEAL_START"
            : a.activity == 1 ? "ACT_POOL_START"
            : a.activity == 2 ? "ACT_DRIVE_START"
@@ -353,11 +357,17 @@ void autoCompanionChat(people::Family &f, DWORD now) {
     companion.nextChat = now + 6500 + people::mix(f.id + companion.autoChats) % 4000;
     static const char *topics[] = {"ACT_CHAT_0", "ACT_CHAT_1", "ACT_CHAT_2", "ACT_CHAT_3",
                                   "ACT_CHAT_4", "ACT_CHAT_5", "ACT_CHAT_6", "ACT_CHAT_7",
-                                  "ACT_CHAT_8", "ACT_CHAT_9", "ACT_CHAT_10", "ACT_CHAT_11"};
-    auto topic = companion.topics.take(12, people::mix(f.id + f.daily.outings * 7));
-    if (topic >= 12) return;
+                                  "ACT_CHAT_8", "ACT_CHAT_9", "ACT_CHAT_10", "ACT_CHAT_11",
+        "ACT_CHAT_12","ACT_CHAT_13","ACT_CHAT_14","ACT_CHAT_15","ACT_CHAT_16","ACT_CHAT_17",
+        "ACT_CHAT_18","ACT_CHAT_19","ACT_CHAT_20","ACT_CHAT_21","ACT_CHAT_22","ACT_CHAT_23"};
+    auto topic = companion.topics.take(24, people::mix(f.id + f.daily.outings * 7));
+    if (topic >= 24) return;
     if (companion.autoChats == 0 && registry.honor >= 40) say(f, "ACT_HONOR_WARM");
     else if (companion.autoChats == 0 && registry.honor <= -40) say(f, "ACT_HONOR_WARY");
+    else if(f.commitment.stage==3 && companion.autoChats%4==0) {
+        static const char *couple[]={"REL_CHAT_0","REL_CHAT_1","REL_CHAT_2","REL_CHAT_3"};
+        say(f,couple[(companion.autoChats/4)%4]);
+    }
     else say(f, topics[topic]);
     ++companion.autoChats;
     if (companion.autoChats <= 2) ++companion.mood;
@@ -399,6 +409,7 @@ void companionWitness(unsigned person, socialcontext::Witness event) {
 }
 void updateCompanion(Pool *pool, Byte *player) {
     if (!companion.person) return;
+    if (companion.stage >= 20) { runWeddingScene(pool, player); return; }
     if (companion.stage >= 10) { runMealScene(pool, player); return; }
     const DWORD now = GetTickCount();
     const DWORD frameElapsed = std::min<DWORD>(250, now - companion.lastTick);

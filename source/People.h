@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <functional>
 #include "SocialData.h"
+#include "CommitmentData.h"
 
 namespace people {
 constexpr unsigned MaxFamilies = 32768;
@@ -75,6 +76,7 @@ struct Family {
     unsigned household =
         0; // 0 legacy married parent; 1 single; 2 married parent; 3 separated parent.
     CommunityMemory community{};
+    Commitment commitment{};
 };
 struct Person {
     unsigned id;
@@ -287,7 +289,7 @@ struct Registry {
                 s.trust || s.anger || s.attempts || s.lastReaction || s.meaningful ||
                 s.encounters || s.helped || s.lastNote || s.journal || s.robbed || s.events ||
                 s.resentment || s.newsFrom || s.newsKind || s.provokes || s.cutOff || s.feud ||
-                s.romance || s.dates || s.homeVisits || s.childStage || !f.community.empty())
+                s.romance || s.dates || s.homeVisits || s.childStage || !f.community.empty() || !f.commitment.empty())
                 continue;
             recycleCursor = i + 1;
             return f.id;
@@ -299,14 +301,14 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 16\n"
+        out << "SAPEOPLE 17\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
             const auto &p = f.presence;
             if (!valid(p))
                 throw std::runtime_error("Invalid presence state");
-            if (!valid(f.social) || f.household > 3 || f.social.newsFrom > families.size() ||
+            if (!valid(f.social) || !f.commitment.valid() || f.household > 3 || f.social.newsFrom > families.size() ||
                 (f.origin &&
                  (f.origin >= f.id || f.role < 1 || f.role > 5 || families[f.origin - 1].origin)) ||
                 (!f.origin && f.role))
@@ -404,6 +406,18 @@ struct Registry {
             << week.outings << ' ' << week.gifts << ' ' << request.person << ' ' << request.kind
             << ' ' << request.target << ' ' << request.state << ' ' << request.amount << ' '
             << request.due << '\n';
+        unsigned committed = 0, married = 0;
+        for(const auto &f : families) {
+            if(!f.commitment.empty()) ++committed;
+            if(f.commitment.stage==3 && f.presence.alive) ++married;
+        }
+        if(married>1) throw std::runtime_error("Multiple living spouses");
+        out << "RELATIONSHIPS " << committed << '\n';
+        for(const auto &f : families) if(!f.commitment.empty()) {
+            const auto &c=f.commitment;
+            out << f.id << ' ' << c.stage << ' ' << c.venue << ' ' << c.since << ' '
+                << c.lastTalk << ' ' << c.proposedAt << ' ' << c.marriedAt << '\n';
+        }
         if (!out)
             throw std::runtime_error("Write failed");
     }
@@ -428,7 +442,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 16 || count > MaxFamilies)
+            version > 17 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -641,6 +655,20 @@ struct Registry {
                 !r.validBonds(count))
                 throw std::runtime_error("Corrupt bonds");
         }
+        if(version>=17) {
+            std::string marker; unsigned size=0, previous=0, married=0;
+            if(!(in>>marker>>size) || marker!="RELATIONSHIPS" || size>count)
+                throw std::runtime_error("Corrupt relationship header");
+            for(unsigned n=0;n<size;++n) {
+                unsigned id=0; Commitment c;
+                if(!(in>>id>>c.stage>>c.venue>>c.since>>c.lastTalk>>c.proposedAt>>c.marriedAt) ||
+                    !id || id<=previous || id>count || !c.valid() || c.empty())
+                    throw std::runtime_error("Corrupt commitment");
+                r.families[id-1].commitment=c; previous=id;
+                if(c.stage==3 && r.families[id-1].presence.alive) ++married;
+            }
+            if(married>1) throw std::runtime_error("Multiple living spouses");
+        }
         in >> std::ws;
         if (!in.eof())
             throw std::runtime_error("Unexpected archive data");
@@ -660,7 +688,7 @@ inline std::string page(const Family &f, unsigned pageNumber) {
         s << "~g~AILE: " << p[0].name << "~w~~n~Anne: " << p[1].name << " (" << p[1].age
           << ")~n~Baba: " << p[2].name << " (" << p[2].age << ")~n~Kardes: " << p[4].name;
     } else {
-        s << "~g~YAKINLARI~w~~n~Es: " << (p[0].spouse ? p[3].name : "Yok")
+        s << "~g~YAKINLARI~w~~n~Es: " << (f.commitment.stage==3 ? "CJ Johnson" : p[0].spouse ? p[3].name : "Yok")
           << "~n~Cocuk: " << (p[0].children.empty() ? "Yok" : p[5].name)
           << "~n~Aile kayitlari karsilikli baglidir.";
     }

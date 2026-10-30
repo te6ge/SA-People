@@ -398,7 +398,7 @@ bool offerRoadside(Pool *pool, Byte *player) {
             armed(ped) || !visibleTarget(ped))
             continue;
         auto &f = registry.families[id - 1];
-        if (f.daily.busyUntil > registry.worldMinutes || hasAppointment(id) || f.social.romance >= 3 ||
+        if (f.daily.busyUntil > registry.worldMinutes || hasAppointment(id) || f.social.romance >= 3 || f.commitment.stage ||
             f.social.helped || f.social.robbed || f.social.anger >= 40 || !canFight(ped))
             continue;
         float pd = distance2(origin, position(ped));
@@ -541,6 +541,7 @@ int familyClock = -1;
 #include "LifeEvents.inc"
 #include "Ambush.inc"
 #include "Gangs.inc"
+#include "GangTactics.inc"
 // Outings temporarily neutralize only actors this mod already retained from ambient life.
 bool protectOutingActor(Pool *pool, people::Handle actor, unsigned id) {
     if (!validPool(pool) || !exists(pool, actor) || storyActive()) return false;
@@ -582,10 +583,15 @@ void showRoutineRoute(people::Point);
 bool departureOwns(unsigned);
 void acceptRequest(Byte *player);
 void giveBirthdayGift(Byte *player);
+void relationshipChoice(Byte *);
+bool beginCeremony(people::Family &, people::Handle);
+void runWeddingScene(Pool *, Byte *);
+void updateCommitments();
 #include "PhoneNative.inc"
 #include "PhoneMessages.inc"
 bool recognitionOwns(unsigned);
 #include "SocialNative.inc"
+#include "MarriageNative.inc"
 #include "Ambient.inc"
 #include "CommunityNative.inc"
 #include "Bonds.inc"
@@ -934,6 +940,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         companionWitness(f.id, socialcontext::Witness::Provoke);
 }
 void resetRuntime() {
+    restoreTacticalCombat(at<Pool *>(0xB74490));
     cancelCommunity();
     updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
     resetAmbient();
@@ -990,10 +997,10 @@ void tick() {
     }
     auto player = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
     auto pool = at<Pool *>(0xB74490);
-    if (!player || !validPool(pool))
-        return;
+    if (!player || !validPool(pool)) {restoreTacticalCombat(pool);return;}
     releaseLeasedExits(player);
     if (*reinterpret_cast<float *>(player + 0x540) <= 0) {
+        restoreTacticalCombat(pool);
         updateDealerTalks(pool, player, false);
         closePhone();
         audio.stop();
@@ -1019,6 +1026,8 @@ void tick() {
     lastGameTime = time;
     DWORD now = GetTickCount();
     bool mission = storyActive();
+    const bool scriptMission = at<bool>(0xB5F851) || reinterpret_cast<bool(__cdecl *)()>(0x464D50)();
+    updateTacticalCombat(pool, player, scriptMission, gangWarActive());
     suppressCarSolicit(!mission);
     if (mission) {
         updateDealerTalks(pool, player, false);
@@ -1184,6 +1193,7 @@ void tick() {
     lastDirectorTick = now;
     updateMeetings(pool, player, elapsed, mission);
     updateSocialWorld(pool, player);
+    updateCommitments();
     updateBonds(pool, player, mission);
     updateCommunity(pool, player);
     updateAmbient(pool, player);

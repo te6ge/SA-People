@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.16.2 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.17.0 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -31,6 +31,43 @@ identities and relationships carry across game sessions.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
 - English, Turkish, Russian, Spanish and Simplified Chinese. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.17.0
+
+- **Relationship stages and marriage:** contacts now have a Relationship page in their
+  phone actions. A committed partner needs at least six successful dates, a day of
+  togetherness tracked from this update, high trust and a calm relationship before accepting
+  a proposal. Stand nearby on foot with your weapon put away. The ring costs **$250**, only
+  after explicit confirmation and acceptance. An accepted proposal is saved as an engagement.
+- **Small ceremonies:** engaged partners can confirm a **$500 non-refundable** booking.
+  Follow the normal meeting marker to the outdoor venue (Grove Street, Zero's area in San
+  Fierro, or Come-A-Lot in Las Venturas). Arrive on foot, stay together and keep weapons put
+  away for a brief exchange of vows. Marriage is recorded only when the sequence completes.
+  Interrupted or expired ceremonies can be arranged again; the couple remains engaged.
+- **Shared life:** married contacts have spouse-specific street remarks, outing lines and
+  messages. Arguments still have consequences. An argument can end the romance without
+  silently ending the marriage; separation requires a separate confirmed action. Existing
+  children and memories are preserved. The family page identifies the spouse as CJ Johnson.
+- **Experimental native combat assistance:** firearm-using gang fighters get modest,
+  reversible shooting/posture preferences for assault, support and cautious roles. During
+  native gang wars, a bounded scan helps eligible idle ambient gang members acquire visible
+  hostile targets and spread their attacks. Existing combat, native group commands, injuries
+  and story tasks are respected. No weapons, ammunition or health are granted. This is a
+  limited combat director, not a replacement for GTA's whole AI. Set `[World] CombatAI=0`
+  in the active settings.ini to disable it. Social gameplay still pauses during gang wars;
+  the combat director operates separately when no story mission/cutscene is active.
+- **Less repetitive dialogue:** 96 new UI/dialogue entries in all five languages, additional
+  Grove/stranger/familiar-person remarks, weapon awareness, help memories and more outing
+  topics. Recent lines are remembered per NPC and across nearby speakers. New unrecorded
+  dialogue remains subtitled. Russian, Spanish and Chinese additions are machine-assisted.
+  Chinese wrapping also accounts for wider characters so confirmation text stays readable.
+
+**Save format:** this version imports V16 and older mod archives and writes **V17**.
+`people.pre-0.17.dat` is kept before migration. To return to a 0.16 plugin, restore that
+backup as people.dat while the game is closed. Keep an independent backup before testing.
+**Validation:** logic, persistence, configuration and installer checks are automated;
+new relationship pages also have rendered previews. Full live-game gang-war and wedding
+scenarios remain unverified. Treat 0.17.0 as a beta test build.
 
 ## What's new in 0.16.2
 
@@ -232,8 +269,8 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of installation method. Version 0.16 uses archive format V16 and imports earlier archives.
-The first upgrade keeps `people.pre-0.16.dat` (and `people.pre-0.15.dat` from earlier upgrades). Older plugins cannot read V16: restore the
+of installation method. Version 0.17 uses archive format V17 and imports earlier archives.
+The first 0.17 upgrade keeps `people.pre-0.17.dat` (older upgrade backups are retained). Older plugins cannot read V17: restore the
 pre-update archive as well as the older plugin if you downgrade.
 
 To uninstall a root installation, run `Manual/Uninstall.cmd` or remove `SA-People.asi` from

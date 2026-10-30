@@ -16,6 +16,7 @@
 #include "SetupText.h"
 #include "Neighborhood.h"
 #include "GangCombat.h"
+#include "NpcBrain.h"
 #include "NpcVoices.h"
 #include "Community.h"
 #include <filesystem>
@@ -23,7 +24,14 @@
 #include <iostream>
 #include <set>
 #include <cassert>
+#ifdef _WIN32
+#include <crtdbg.h>
+#include <cstdlib>
+#endif
 int main() {
+#ifdef _WIN32
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
     for (unsigned language = 0; language < 5; ++language) {
         assert(setuptext::names[language][0]);
         for (unsigned key = 0; key < setuptext::Count; ++key)
@@ -1086,7 +1094,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 16", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 17", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1138,6 +1146,7 @@ int main() {
 #include "NpcVoiceTests.inc"
 #include "CommunityTests.inc"
 #include "BondsTests.inc"
+#include "CommitmentTests.inc"
     {
         assert(gangcombat::eligible(7,1,false,false,true,true,25));
         assert(gangcombat::eligible(9,1,false,false,true,true,625));

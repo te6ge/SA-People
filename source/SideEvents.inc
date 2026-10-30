@@ -110,7 +110,7 @@ bool offerSmallEvent(Pool *pool, Byte *player, encounters::Kind preferred) {
             continue;
         const auto &eventPerson = registry.families[id - 1];
         if (!socialprogress::availableForEvent(eventPerson.daily.busyUntil, registry.worldMinutes,
-                hasAppointment(id), false, eventPerson.social.romance)) continue;
+                hasAppointment(id), false, eventPerson.commitment.stage?3u:eventPerson.social.romance)) continue;
         const auto &social = eventPerson.social;
         if (social.anger >= 30 || social.robbed || social.cutOff ||
             (social.events & encounters::bit(preferred)))

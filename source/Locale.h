@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <string>
@@ -120,6 +121,7 @@ class Catalog {
 inline Catalog catalog;
 inline std::vector<std::string> wrap(std::string value, unsigned width) {
     std::vector<std::string> lines;
+    width=std::max(1u,width);
     while (!value.empty()) {
         std::size_t cut = 0, lastSpace = std::string::npos;
         unsigned count = 0;
@@ -127,8 +129,10 @@ inline std::vector<std::string> wrap(std::string value, unsigned width) {
             if (value[cut] == ' ')
                 lastSpace = cut;
             unsigned char c = static_cast<unsigned char>(value[cut]);
+            const unsigned cells=c>=0xE3 ? 2u : 1u;
+            if(count+cells>width && cut) break;
             cut += c < 0x80 ? 1 : (c & 0xE0) == 0xC0 ? 2 : (c & 0xF0) == 0xE0 ? 3 : 4;
-            ++count;
+            count+=cells;
         }
         cut = std::min(cut, value.size());
         if (cut < value.size() && lastSpace != std::string::npos && lastSpace > 0)

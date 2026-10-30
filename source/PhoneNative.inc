@@ -543,7 +543,9 @@ void processPhone(Byte *player) {
     }
     auto page = phoneState.page;
     if (back) {
-        if (page == phone::Page::Meeting)
+        if(page==phone::Page::RelationshipConfirm)phoneState.page=phone::Page::Relationship;
+        else if(page==phone::Page::Relationship)phoneState.page=phone::Page::Actions;
+        else if (page == phone::Page::Meeting)
             phoneState.page = phone::Page::Meetings;
         else if (page == phone::Page::Compose)
             openThread(phoneState.person);
@@ -559,6 +561,26 @@ void processPhone(Byte *player) {
         else
             phoneState.page = phone::Page::Contacts;
         phoneState.cursor = 0;
+        return;
+    }
+    if(page==phone::Page::Relationship || page==phone::Page::RelationshipConfirm) {
+        const unsigned count=page==phone::Page::Relationship?3u:2u;
+        if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;
+        if(down)phoneState.cursor=(phoneState.cursor+1)%count;
+        if(enter) {
+            if(page==phone::Page::RelationshipConfirm) {
+                if(!phoneState.cursor)relationshipChoice(player);
+                if(panelOpen)phoneState.page=phone::Page::Relationship;
+            } else if(phoneState.cursor==0) {
+                phoneState.notice=commitment::talk(registry,phoneState.person);dirty=true;save();
+            } else if(phoneState.cursor==1) {
+                if(phoneState.person && phoneState.person<=registry.families.size())
+                    phoneState.relationshipStage=registry.families[phoneState.person-1].commitment.stage;
+                phoneState.page=phone::Page::RelationshipConfirm;
+            }
+            else phoneState.page=phone::Page::Actions;
+            phoneState.cursor=0;
+        }
         return;
     }
     if (page == phone::Page::Compose) {
@@ -599,6 +621,7 @@ void processPhone(Byte *player) {
             }
             unsigned action = phoneState.cursor;
             const std::string actionKey = phone::actionKeys(registry, phoneState)[action];
+            if(actionKey=="REL_ACTION") {phoneState.page=phone::Page::Relationship;phoneState.cursor=0;return;}
             if (actionKey == "BDAY_GIVE" || actionKey == "PHONE_REQUEST") {
                 phoneState.page = actionKey == "BDAY_GIVE" ? phone::Page::Gift : phone::Page::Request;
                 phoneState.cursor = 0;

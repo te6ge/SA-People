@@ -44,6 +44,7 @@ unsigned lastOutfit = 0;
 bool outfitInitialized = false;
 std::unordered_map<unsigned, DWORD> ambientAfter;
 socialcontext::Topics ambientTopics;
+npcbrain::BarkMemory barkMemory;
 struct RecognitionRun {
     unsigned person = 0;
     people::Handle actor{};
@@ -78,7 +79,7 @@ void updateRecognition(Pool *pool, Byte *player) {
 void resetAmbient() {
     clearRecognition();
     nextAmbient = outfitChangedAt = lastOutfit = 0;
-    outfitInitialized = false; ambientAfter.clear(); ambientTopics = {};
+    outfitInitialized = false; ambientAfter.clear(); ambientTopics = {}; barkMemory = {};
     suppressCarSolicit(false);
 }
 void clearOldCarSolicit(Pool *pool, Byte *player) {
@@ -140,7 +141,8 @@ void updateAmbient(Pool *pool, Byte *player) {
     const auto weather = socialcontext::weather(at<float>(0xC81324), at<float>(0xC81300),
         std::max(at<float>(0xC812E0), at<float>(0xC812F8)), at<float>(0xC812F0), at<Byte>(0xB70153));
     static const char *groveLines[] = {"AMBIENT_GROVE_0", "AMBIENT_GROVE_1", "AMBIENT_GROVE_2",
-        "AMBIENT_GROVE_3", "AMBIENT_GROVE_4", "AMBIENT_GROVE_5", "AMBIENT_GROVE_6", "AMBIENT_GROVE_7"};
+        "AMBIENT_GROVE_3", "AMBIENT_GROVE_4", "AMBIENT_GROVE_5", "AMBIENT_GROVE_6", "AMBIENT_GROVE_7", "AMBIENT_GROVE_8", "AMBIENT_GROVE_9", "AMBIENT_GROVE_10", "AMBIENT_GROVE_11",
+        "AMBIENT_GROVE_12", "AMBIENT_GROVE_13", "AMBIENT_GROVE_14", "AMBIENT_GROVE_15"};
     static const char *rain[] = {"AMBIENT_RAIN_0", "AMBIENT_RAIN_1", "AMBIENT_RAIN_2"};
     static const char *fog[] = {"AMBIENT_FOG_0", "AMBIENT_FOG_1"};
     static const char *sun[] = {"AMBIENT_SUN_0", "AMBIENT_SUN_1"};
@@ -157,7 +159,18 @@ void updateAmbient(Pool *pool, Byte *player) {
     }
     else if (player[0x2F]) line=neighborhood::interiorLine(greetingDeck.take(4,seed));
     else if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
-    else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(8, seed)];
+    else if (f.commitment.stage==3 && f.social.romance>=3 && f.social.trust>=40 && f.social.resentment<25 && !f.social.cutOff) {
+        static const char *spouse[]={"REL_AMBIENT_0","REL_AMBIENT_1","REL_AMBIENT_2","REL_AMBIENT_3"};
+        line=spouse[seed%4];
+    }
+    else if (currentWeapon(player)>=22 && currentWeapon(player)<=38 && *reinterpret_cast<int *>(ped+0x598)>=4 &&
+             *reinterpret_cast<int *>(ped+0x598)<=6) {
+        static const char *armed[]={"BRAIN_ARMED_0","BRAIN_ARMED_1","BRAIN_ARMED_2"};line=armed[seed%3];
+    }
+    else if (f.social.helped && seed%3==0) {
+        static const char *helped[]={"BRAIN_HELPED_0","BRAIN_HELPED_1","BRAIN_HELPED_2"};line=helped[seed%3];
+    }
+    else if (grove) line = registry.honor <= -40 ? "AMBIENT_GROVE_WARY" : groveLines[groveDeck.take(16, seed)];
     else if (f.community.opinion<=-10) line="COMMUNITY_WARY";
     else if (f.community.opinion>=10) line="COMMUNITY_WARM";
     else if (registry.honor <= -40 && seed % 3 == 0) line = "AMBIENT_HONOR_LOW";
@@ -167,14 +180,18 @@ void updateAmbient(Pool *pool, Byte *player) {
     else if (weather == socialcontext::Weather::Sun && seed % 3 == 0) line = sun[sunDeck.take(2, seed)];
     else if (weather == socialcontext::Weather::Wind && seed % 3 == 0) line = "AMBIENT_WIND";
     else if (f.social.known & people::Name) {
-        static const char *known[] = {"AMBIENT_KNOWN", "AMBIENT_KNOWN_1", "AMBIENT_KNOWN_2", "AMBIENT_KNOWN_3"};
-        line = known[knownDeck.take(4, seed)];
+        static const char *known[] = {"AMBIENT_KNOWN", "AMBIENT_KNOWN_1", "AMBIENT_KNOWN_2", "AMBIENT_KNOWN_3", "AMBIENT_KNOWN_4", "AMBIENT_KNOWN_5", "AMBIENT_KNOWN_6",
+            "AMBIENT_KNOWN_7", "AMBIENT_KNOWN_8", "AMBIENT_KNOWN_9"};
+        line = known[knownDeck.take(10, seed)];
     } else {
         if (seed % 3) return;
-        static const char *greetings[] = {"AMBIENT_HELLO", "AMBIENT_HELLO_1", "AMBIENT_HELLO_2", "AMBIENT_HELLO_3"};
-        line = greetings[greetingDeck.take(4, seed)];
+        static const char *greetings[] = {"AMBIENT_HELLO", "AMBIENT_HELLO_1", "AMBIENT_HELLO_2", "AMBIENT_HELLO_3", "AMBIENT_HELLO_4", "AMBIENT_HELLO_5", "AMBIENT_HELLO_6",
+            "AMBIENT_HELLO_7", "AMBIENT_HELLO_8", "AMBIENT_HELLO_9"};
+        line = greetings[greetingDeck.take(10, seed)];
     } // Ordinary strangers often just carry on.
-    say(f, line);
+    const auto selectedBark=barkMemory.choose(identity,{line},seed,now);
+    if(selectedBark.empty())return;
+    say(f, selectedBark);
     ambientAfter[identity] = now + 300000;
     if (ambientAfter.size() > 512)
         for (auto it = ambientAfter.begin(); it != ambientAfter.end();)
