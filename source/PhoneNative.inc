@@ -92,33 +92,16 @@ void inviteContact(Byte *player) {
     unsigned id = phoneState.person;
     if (!id || id > registry.families.size())
         return;
-    auto &f = registry.families[id - 1];
-    if(auto reason=community::request(registry,id)){phoneState.notice=reason;dirty=true;return;}
-    if (f.daily.busyUntil > registry.worldMinutes) {
-        phoneState.notice = "PHONE_INVITE_BUSY";
-        return;
+    if(auto reason=meetings::unavailable(registry,id)){phoneState.notice=reason;return;}
+    DWORD now=GetTickCount();
+    if(nextInvitation.count(id) && !due(now,nextInvitation[id])) {
+        phoneState.notice="PHONE_INVITE_BUSY";return;
     }
-    DWORD now = GetTickCount();
-    for (const auto &a : registry.appointments)
-        if (a.person == id && meetings::active(a)) {
-            phoneState.notice = "PHONE_INVITE_ACTIVE";
-            return;
-        }
-    if (nextInvitation.count(id) && !due(now, nextInvitation[id])) {
-        phoneState.notice = "PHONE_INVITE_BUSY";
-        return;
-    }
-    if (!f.presence.alive || !f.presence.located) {
-        phoneState.notice = "PHONE_UNAVAILABLE";
-        return;
-    }
-    if (f.social.resentment >= 30 || f.social.anger >= 25 || f.social.robbed) {
-        phoneState.notice = "PHONE_INVITE_REFUSED";
-        return;
-    }
-    if (!meetings::canInvite(f)) {
-        phoneState.notice = "PHONE_INVITE_REJECT";
-        return;
+    const bool mission=storyActive();
+    const auto playerCar=drivenCar(player);
+    const bool parkedDriver=playerCar && stoppedCar(playerCar);
+    if(!meetings::safeToPlan(mission,player[0x2F]==0,busy(player),onFoot(player),parkedDriver)) {
+        phoneState.notice="PHONE_INVITE_SAFE";return;
     }
     releaseRoutine(id);
     {
@@ -132,13 +115,7 @@ void inviteContact(Byte *player) {
             }
         }
     }
-    bool mission = reinterpret_cast<bool(__cdecl *)()>(0x464D50)();
-    const bool driveFromCar = phoneState.activity == 2 && drivenCar(player) &&
-                              stoppedCar(drivenCar(player));
-    if (mission || (!onFoot(player) && !driveFromCar) || player[0x2F] != 0 || busy(player)) {
-        phoneState.notice = "PHONE_INVITE_SAFE";
-        return;
-    }
+    if(auto reason=community::request(registry,id)){phoneState.notice=reason;dirty=true;return;}
     Vec origin = position(player), place{};
     bool found = false;
     // Prefer a real venue (bar, diner, gym, casino, horse track) a short drive away.
@@ -445,6 +422,9 @@ void captureControl() {
 }
 // Phone → contact → Ask a favor (Favors.h). Effects apply at once; the friend texts back.
 void askFavor(Byte *player, unsigned id) {
+    if(!id || id>registry.families.size())return;
+    const auto &f=registry.families[id-1];
+    if(stories::unavailable(registry,f)){phoneState.notice=stories::lifeStatus(registry,f);return;}
     if(auto reason=community::request(registry,id)){phoneState.notice=reason;dirty=true;return;}
     if (auto reason = favors::refusal(registry, id)) {
         phoneState.notice = reason;
@@ -516,6 +496,12 @@ void openThread(unsigned id) {
 }
 void processPhone(Byte *player) {
     if (panelOpen && phoneState.page == phone::Page::Controls && phoneState.capturing) {
+        if(controls::padActions[controls::PhoneBack] || controls::padActions[controls::PhoneClose]) {
+            phoneState.capturing=false;panelInvalid=true;
+            phoneBack=controls::padActions[controls::PhoneBack]; // Cancel once; a held B must not also leave the page.
+            if(controls::padActions[controls::PhoneClose])closePhone();
+            return;
+        }
         captureControl();
         return;
     }
@@ -528,6 +514,7 @@ void processPhone(Byte *player) {
     if (!panelOpen)
         return;
     phoneState.typing = replyPending(phoneState.person);
+    phoneState.legacyImport=canImportSharedProfile();
     phoneState.events = sideEvents;
     phoneState.scale = static_cast<unsigned>(panelScale * 100 + 0.5f);
     phoneState.outing = companionOwns(phoneState.person) ? phoneState.person : 0;
@@ -543,7 +530,11 @@ void processPhone(Byte *player) {
     }
     auto page = phoneState.page;
     if (back) {
-        if(page==phone::Page::RelationshipConfirm)phoneState.page=phone::Page::Relationship;
+        if(page==phone::Page::ImportShared)phoneState.page=phone::Page::Settings;
+        else if(page==phone::Page::History || page==phone::Page::Peace)phoneState.page=phone::Page::Stories;
+        else if(page==phone::Page::PeaceConfirm)phoneState.page=phone::Page::Peace;
+        else if(page==phone::Page::Stories || page==phone::Page::AskAbout)phoneState.page=phone::Page::Actions;
+        else if(page==phone::Page::RelationshipConfirm)phoneState.page=phone::Page::Relationship;
         else if(page==phone::Page::Relationship)phoneState.page=phone::Page::Actions;
         else if (page == phone::Page::Meeting)
             phoneState.page = phone::Page::Meetings;
@@ -562,6 +553,52 @@ void processPhone(Byte *player) {
             phoneState.page = phone::Page::Contacts;
         phoneState.cursor = 0;
         return;
+    }
+    if(page==phone::Page::ImportShared) {
+        phoneState.cursor%=2;
+        if(up || down)phoneState.cursor=1-phoneState.cursor;
+        if(enter) {
+            if(!phoneState.cursor)importSharedProfile();
+            else {phoneState.page=phone::Page::Settings;phoneState.cursor=0;}
+        }
+        return;
+    }
+    if(page==phone::Page::Stories || page==phone::Page::Peace || page==phone::Page::PeaceConfirm) {
+        const unsigned count=page==phone::Page::PeaceConfirm?2u:3u;
+        phoneState.cursor%=count;
+        if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;
+        if(down)phoneState.cursor=(phoneState.cursor+1)%count;
+        if(enter) {
+            const auto choice=phoneState.cursor;
+            if(page==phone::Page::Stories)phoneState.page=choice==0?phone::Page::History:choice==1?phone::Page::Peace:phone::Page::AskAbout;
+            else if(page==phone::Page::PeaceConfirm) {
+                if(!choice)storyPeace(player,true,true);
+                phoneState.page=phone::Page::Peace;
+            } else if(choice==0)storyPeace(player,false,true);
+            else if(choice==1)phoneState.page=phone::Page::PeaceConfirm;
+            else phoneState.page=phone::Page::Stories;
+            phoneState.cursor=0;
+        }
+        return;
+    }
+    if(page==phone::Page::AskAbout) {
+        auto ids=phone::contacts(registry);ids.erase(std::remove(ids.begin(),ids.end(),phoneState.person),ids.end());
+        const auto count=static_cast<unsigned>(ids.size());
+        if(count){phoneState.cursor%=count;if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;if(down)phoneState.cursor=(phoneState.cursor+1)%count;}
+        if(enter && count)storyInquiry(player);
+        return;
+    }
+    if(page==phone::Page::News || page==phone::Page::History) {
+        const auto events=stories::news(registry,page==phone::Page::History?phoneState.person:0);
+        const auto count=static_cast<unsigned>(events.size());
+        if(count){phoneState.cursor%=count;if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;if(down)phoneState.cursor=(phoneState.cursor+1)%count;}
+        if(enter && count) {
+            const unsigned person=events[phoneState.cursor]->person;
+            if(!stories::contact(registry.families[person-1])){phoneState.notice="ST_UNKNOWN_PERSON";return;}
+            phoneState.person=person;phoneState.page=phone::Page::Stories;phoneState.cursor=0;return;
+        }
+        if(page==phone::Page::History)return;
+        if(!left && !right)return;
     }
     if(page==phone::Page::Relationship || page==phone::Page::RelationshipConfirm) {
         const unsigned count=page==phone::Page::Relationship?3u:2u;
@@ -621,6 +658,9 @@ void processPhone(Byte *player) {
             }
             unsigned action = phoneState.cursor;
             const std::string actionKey = phone::actionKeys(registry, phoneState)[action];
+            if(actionKey=="ST_PERSONAL" || actionKey=="ST_ASK") {
+                phoneState.page=actionKey=="ST_PERSONAL"?phone::Page::Stories:phone::Page::AskAbout;phoneState.cursor=0;return;
+            }
             if(actionKey=="REL_ACTION") {phoneState.page=phone::Page::Relationship;phoneState.cursor=0;return;}
             if (actionKey == "BDAY_GIVE" || actionKey == "PHONE_REQUEST") {
                 phoneState.page = actionKey == "BDAY_GIVE" ? phone::Page::Gift : phone::Page::Request;
@@ -682,7 +722,7 @@ void processPhone(Byte *player) {
             ++phoneState.textOffset;
         if (down && phoneState.textOffset)
             --phoneState.textOffset;
-        bool invite = !messages.empty() && !messages.back()->outgoing && messages.back()->kind == 2;
+        bool invite = !messages.empty() && phonedialogue::planOffer(*messages.back());
         bool request = bonds::open(registry, phoneState.person);
         if (enter && request && !phoneState.textOffset) {
             phoneState.page = phone::Page::Request;
@@ -705,7 +745,9 @@ void processPhone(Byte *player) {
             openCompose(false);
         return;
     }
-    if (page == phone::Page::Inbox) {
+    if(page==phone::Page::News) {
+        // Navigation continues to the top-level tab switch below.
+    } else if (page == phone::Page::Inbox) {
         auto messages = phone::inbox(registry);
         if (!messages.empty()) {
             unsigned count = static_cast<unsigned>(messages.size());
@@ -759,19 +801,24 @@ void processPhone(Byte *player) {
         // Read-only summary; left/right switch pages below.
     } else if (page == phone::Page::Settings) {
         if (up)
-            phoneState.cursor = (phoneState.cursor + 3) % 4;
+            phoneState.cursor = (phoneState.cursor + 4) % 5;
         if (down)
-            phoneState.cursor = (phoneState.cursor + 1) % 4;
-        if (enter && phoneState.cursor % 4 == 3) {
+            phoneState.cursor = (phoneState.cursor + 1) % 5;
+        if(enter && phoneState.cursor%5==4) {
+            if(phoneState.legacyImport){phoneState.page=phone::Page::ImportShared;phoneState.cursor=0;}
+            else phoneState.notice="PROFILE_IMPORT_UNAVAILABLE";
+            return;
+        }
+        if (enter && phoneState.cursor % 5 == 3) {
             phoneState.page = phone::Page::Controls;
             phoneState.cursor = 0;
             return;
         }
         if (enter) {
             auto ini = settingsFile.wstring();
-            if (phoneState.cursor % 4 == 0)
+            if (phoneState.cursor % 5 == 0)
                 changeLanguage(1);
-            else if (phoneState.cursor % 4 == 1) {
+            else if (phoneState.cursor % 5 == 1) {
                 sideEvents = !sideEvents;
                 if (!sideEvents)
                     cancelEvents();
@@ -867,13 +914,15 @@ void processPhone(Byte *player) {
         unsigned tab = phoneState.page == phone::Page::Inbox      ? 1u
                        : phoneState.page == phone::Page::Meetings ? 2u
                        : phoneState.page == phone::Page::Life     ? 3u
-                       : phoneState.page == phone::Page::Settings ? 4u
+                       : phoneState.page == phone::Page::News     ? 4u
+                       : phoneState.page == phone::Page::Settings ? 5u
                                                                   : 0u;
-        tab = (tab + (left ? 4u : 1u)) % 5;
+        tab = (tab + (left ? 5u : 1u)) % 6;
         phoneState.page = tab == 0   ? phone::Page::Contacts
                           : tab == 1 ? phone::Page::Inbox
                           : tab == 2 ? phone::Page::Meetings
                           : tab == 3 ? phone::Page::Life
+                          : tab == 4 ? phone::Page::News
                                      : phone::Page::Settings;
         phoneState.cursor = 0;
     }

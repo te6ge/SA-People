@@ -32,6 +32,8 @@ struct Posture {
             oldRange=ped[0x46e]&0x48;oldDuck=ped[0x46f]&2;
             oldRate=ped[0x719];oldAccuracy=ped[0x71a];active=true;
         } else {
+            if((ped[0x46e]&0x48)!=lastRange)oldRange=ped[0x46e]&0x48;
+            if((ped[0x46f]&2)!=lastDuck)oldDuck=ped[0x46f]&2;
             if(ped[0x719]!=lastRate) oldRate=ped[0x719];
             if(ped[0x71a]!=lastAccuracy) oldAccuracy=ped[0x71a];
         }

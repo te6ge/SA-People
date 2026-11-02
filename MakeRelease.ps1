@@ -33,8 +33,17 @@ foreach ($f in 'LICENSE.txt', 'Install.cmd', 'Uninstall.cmd') {
 Copy-Item "$root\README.md" $stage
 
 [IO.File]::WriteAllText("$stage\SA-People\settings.ini", @"
+[Controller]
+; Requires GInputSA. 1 = enabled. Glyphs: -1 auto, 0 Xbox, 1 PlayStation.
+Enabled=1
+Glyphs=-1
+
 [World]
 CombatAI=1
+; Nearby civilians can react to approaching fast vehicles.
+StreetAwareness=1
+; Personal grudges, contact life events and witnessed whereabouts.
+PersonalStories=1
 CommunityLife=1
 AutoRestore=1
 SideEvents=1
@@ -43,6 +52,7 @@ FirstEventSeconds=45
 [Interface]
 ScalePercent=100
 AutoCloseSeconds=0
+; Mod languages: en, tr, ru, es, zh, ja
 Language=en
 ; 0 = original GTA menu, 1 = SA People menu. Restart the game after changing.
 ModernMenu=0
@@ -133,8 +143,8 @@ New-Zip $modStage $modZip
 # Source package.
 $src = "$out\$name-source"
 New-Item -ItemType Directory -Force "$src\source" | Out-Null
-Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc
-foreach ($f in 'Build.cmd', 'README.md', 'LICENSE.txt', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini') { Copy-Item "$root\$f" $src }
+Copy-Item "$root\source\*" "$src\source\" -Include *.h, *.cpp, *.inc, *.def
+foreach ($f in 'Build.cmd', 'BuildCleo.cmd', 'BuildAll.cmd', 'MakeAllReleases.ps1', 'MakeCleoRelease.ps1', 'README.md', 'LICENSE.txt', 'languages.tsv', '.clang-format', 'MakeRelease.ps1', 'settings.example.ini') { Copy-Item "$root\$f" $src }
 Copy-Item "$root\assets" "$src\assets" -Recurse
 foreach ($folder in 'loader', 'release-template', 'tests') {
     if (Test-Path "$root\$folder") { Copy-Item "$root\$folder" "$src\$folder" -Recurse }

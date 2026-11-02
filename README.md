@@ -1,12 +1,17 @@
 # SA People — NPC Interactions
 
-**Version 0.17.0 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.18.0 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
 identities and relationships carry across game sessions.
 
 [Download the latest release](https://github.com/te6ge/SA-People/releases/latest)
+
+- [Normal ASI download](https://github.com/te6ge/SA-People/releases/download/v0.18.0-beta/SA-People-0.18.0-beta-normal.zip)
+- [CLEO 5 plugin download](https://github.com/te6ge/SA-People/releases/download/v0.18.0-beta/SA-People-0.18.0-beta-CLEO.zip)
+
+Choose one edition. Both use the same gameplay source; do not install them together.
 
 ## Features
 
@@ -29,8 +34,95 @@ identities and relationships carry across game sessions.
 - Close-range rival gang negotiations. A truce does not make you friends; a failed
   negotiation can lead to an attack using the gang members' existing weapons.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
-- English, Turkish, Russian, Spanish and Simplified Chinese. Story missions and cutscenes suspend social
+- English, Turkish, Russian, Spanish, Simplified Chinese and Japanese. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
+
+## What's new in 0.18.0 — Everyone Has a Reason
+
+- **Personal grudges and motives:** robbery, violence and repeated insults can leave a
+  persistent grievance. Temperament and fear influence whether a civilian keeps away,
+  confronts CJ or asks him to make amends. Reactions use the actual person when encountered
+  locally, with day-scale cooldowns and a three-encounter limit until a new harmful deed.
+  New robberies no longer schedule the old random revenge ambush. Existing delayed revenge
+  entries and family feuds remain compatible. This does not add automatic gang leadership
+  changes or force every enemy to attack.
+- **Making peace:** meet someone nearby on foot, unarmed, and use Defuse or the contact's
+  Personal story → Make peace page. Apologies and an explicitly confirmed **$100** offer can
+  reduce a grievance once per game day, after a cooling-off period. Compensation may only
+  partly help; it does not restore friendship, romance, honor or erase a blood feud.
+- **Lives outside CJ:** civilian contacts can fall ill, look for another job, start work
+  again or spend time with family. Current circumstances affect availability and routine
+  destinations; close contacts can send news by text. The first event is scheduled 3–24
+  tracked game hours after initialization, with later events 4–8 game days apart. Active
+  meetings, accepted favors and other owned interactions delay changes. These are abstract
+  circumstances and route targets, not new hospital interiors, job minigames or illness animations.
+- **Witnessed whereabouts:** choose a contact's Ask about someone action. A friendly
+  informant needs a recent, actual nearby sighting of a socially connected contact before
+  sharing a last-seen area. Information expires after a day. The temporary map marker is
+  approximate and never spawns or tracks the person. Distrust, danger and current commitments
+  can prevent an answer; repeated questions have a one-hour cooldown.
+- **Neighborhood news and personal history:** a new phone tab and each contact's Personal
+  story page show dated events. Direct experiences and news passed through actual social
+  connections are recorded, with the informant identified when applicable. Unknown identities
+  remain unknown. The feed is bounded to 192 entries and sightings to 128 records.
+- New UI, messages and subtitles in all six languages. New unrecorded dialogue uses
+  subtitles; the existing voice pack remains included. `[World] PersonalStories=0` disables
+  the native personal-story director; it does not remove existing history.
+
+- **GInput controller support in both editions:** bumper chords for NPC focus, phone and honor;
+  gamepad navigation and Xbox/PlayStation interaction prompts. Focus keeps walking and camera
+  input available while consuming its face-button actions, with release protection after closing
+  the phone. Story missions and loss of focus suspend controller capture.
+
+- **Meeting invitations:** an available contact's text now opens activity selection. Availability
+  replies use the same trust, commitments and personal-boundary checks as scheduling. Any
+  activity can be arranged while safely parked outside; moving vehicles remain excluded.
+- **Conversation audio:** ordinary greetings no longer randomly play the Rickroll recording.
+
+- **Separate worlds for GTA saves:** honor, contacts, relationships, messages, appointments and
+  personal history now follow the GTA save you load. Loading a save restores its mod checkpoint;
+  unsaved actions in another session do not carry into it. Save GTA after social progress to keep it.
+- **Japanese:** phone, subtitles and setup now support Japanese (`ja`), with a Japanese font.
+  The initial translation is machine-assisted and can be improved through community feedback.
+
+**Existing players:** older versions used one shared `SA-People/people.dat` for every GTA save.
+That file is preserved. Load the GTA save which should receive it, then choose phone → Settings →
+Import shared archive and confirm. This replaces the current save's social data, not other saves.
+It cannot undo cross-save crimes already mixed into the old archive. Other saves start with a
+fresh social world unless you explicitly import into them too. The shared input and a
+`people.pre-save-profiles.dat` backup remain available.
+
+**Storage:** this version reads older archives and writes V18. Checkpoints are stored in
+`SA-People/worlds/<save-fingerprint>/checkpoint.dat`, with matching backups. Each checkpoint is
+associated with the save filename and contents; replacing a GTA save with a different file starts
+another world. Copy the `worlds` folder when transferring your GTA saves to another installation.
+The separate `live.dat` is a recovery copy; loading GTA uses its checkpoint, not unsaved live changes.
+Keep independent backups of GTA saves and mod data before updating or downgrading.
+
+**Validation:** automated logic, persistence, native safety, installation and package checks,
+with six-language phone previews. Full live-game save transitions and story encounters still
+require testing. Controller integration is beta and has not yet been tested with a physical pad.
+
+## What's new in 0.17.1
+
+- **Street traffic awareness:** eligible free-roam civilians can briefly flee from a
+  fast player-driven vehicle predicted to pass dangerously close, with occasional warnings.
+  Stationary/receding vehicles, safe clearance, different floors, gang members, scripted
+  actors and active social participants are excluded. Existing combat and physical responses
+  retain priority. Scans and reactions are bounded; this is additional avoidance, not a
+  guarantee that pedestrians cannot be hit. Set `[World] StreetAwareness=0` to disable it.
+- **More world context:** pedestrians can notice CJ's visible injuries and comment on
+  late-night streets. Ten new subtitle entries are included in all five languages; no new
+  voice recordings are bundled. These additions do not grant healing or automatic honor.
+- **Relationship fix:** breaking up before engagement clears the old togetherness clock.
+  Reuniting with the same person starts a new period instead of bypassing proposal readiness.
+  A deceased spouse now has the correct status in the interaction guide too.
+- **Compatibility fix:** combat posture refreshes preserve externally changed posture flags,
+  as well as accuracy and shooting rate, when releasing temporary adjustments.
+
+**Validation:** automated logic/native checks cover the new behavior and exclusions.
+Live-game traffic scenarios remain unverified. The archive format remains **V17**; keep
+backups and test these beta features in your game.
 
 ## What's new in 0.17.0
 
@@ -156,7 +248,16 @@ live scenarios and SilentPatch coexistence have not yet been verified.
 
 This build targets **classic GTA San Andreas PC 1.0 US**. Other executable versions,
 Steam/Rockstar builds, Definitive Edition and multiplayer clients are not supported.
-Close the target game before installing. Back up your game saves and `SA-People/people.dat`.
+Close the target game before installing. Back up your game saves and the entire `SA-People` folder.
+
+## CLEO edition installation
+
+Requires CLEO 5 and an existing ASI Loader. These dependencies are not bundled in the CLEO ZIP.
+With the game closed, copy the **contents** of `Copy to game folder` beside `gta_sa.exe`.
+The plugin must end up at `CLEO/cleo_plugins/SA-People.cleo`. Remove any `SA-People.asi`
+from the game root or ModLoader first. Keep the game's `SA-People` data folder and settings.
+To remove this edition, delete only `CLEO/cleo_plugins/SA-People.cleo` while the game is closed.
+The normal install methods below apply to the ASI download.
 
 ## Installation — choose ONE method
 
@@ -269,9 +370,12 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of installation method. Version 0.17 uses archive format V17 and imports earlier archives.
-The first 0.17 upgrade keeps `people.pre-0.17.dat` (older upgrade backups are retained). Older plugins cannot read V17: restore the
-pre-update archive as well as the older plugin if you downgrade.
+of edition or installation method. Version 0.18 writes archive format V18 and imports earlier
+archives through the confirmed legacy-import option. The original shared `people.dat` is
+preserved. New per-save checkpoints are stored under `worlds`; back up the complete folder.
+Do not expect an older plugin to read V18 data. Restore its matching pre-update backup if
+you downgrade. Previously mixed events in a shared archive cannot be assigned retroactively
+to their original GTA saves.
 
 To uninstall a root installation, run `Manual/Uninstall.cmd` or remove `SA-People.asi` from
 the game root. For ModLoader, remove `modloader/SA-People` while the game is closed. Keep
@@ -291,16 +395,17 @@ still need wider in-game testing. SilentPatch coexistence has not yet been verif
 ## Source and building
 
 The [source repository](https://github.com/te6ge/SA-People) contains the C++ source,
-`Build.cmd`, `MakeRelease.ps1` and installer tests. Install Visual Studio with the desktop
-C++ workload and a Windows SDK, then run `Build.cmd` to build the x86 plugin, helpers and
-simulations. The plugin is written to `build/SA-People.asi`.
+`BuildAll.cmd`, release scripts and installer tests. Install Visual Studio with the desktop
+C++ workload and a Windows SDK, then run `BuildAll.cmd` to build and test both x86 editions.
+Outputs are `build/SA-People.asi` and `build/SA-People.cleo`.
 
 Release media is distributed in the download, not tracked in Git. To reproduce the full
 package, supply the release's audio files in `audio/`, its three menu pictures in
-`backgrounds/` and the upstream loader in `loader/dinput8.dll`, then run `MakeRelease.ps1`.
+`backgrounds/` and the upstream loader in `loader/dinput8.dll`, then run `MakeAllReleases.ps1`.
 Run `python tests/InstallerTests.py` to exercise the EXE/CMD installers in disposable folders.
-The only public release asset is the `*-complete.zip`; other generated archives are build
-and test artifacts.
+The public release has two downloads: `*-normal.zip` (the complete ASI package) and
+`*-CLEO.zip` (the CLEO plugin with a direct `Copy to game folder` layout). Other generated
+archives are build and test artifacts.
 
 ## Credits and license
 
@@ -308,3 +413,28 @@ Source code: MIT; see `LICENSE.txt`. Bundled Ultimate ASI Loader: ThirteenAG, MI
 license notices are retained with the loader. Supplied audio and artwork have separate
 rights and are not automatically covered by the source license. NPC recordings were supplied
 by the author. Developed with AI assistance. Not affiliated with Rockstar Games.
+
+## GInput controls (normal ASI and CLEO)
+
+Install [GInputSA from Silent's site](https://silentsblog.com/mods/gta-sa/#ginput) separately.
+It is optional and is not bundled. Without it, the existing keyboard controls remain available.
+
+| Action | Xbox | PlayStation |
+| --- | --- | --- |
+| Focus NPC while walking or parked | Hold LB + RB | Hold L1 + R1 |
+| Greet / provoke / defuse / rob | Focus + A / B / X / Y | Focus + Cross / Circle / Square / Triangle |
+| Repair nearby event vehicle | Focus + D-pad Right | Focus + D-pad Right |
+| Open phone | LB + D-pad Up | L1 + D-pad Up |
+| Honor panel | Hold LB + D-pad Down | Hold L1 + D-pad Down |
+| Phone navigation | D-pad | D-pad |
+| Select / back / close phone | A / B / Y | Cross / Circle / Triangle |
+
+Prompts follow GInput's button style. Gamepad chords are fixed; in-phone rebinding changes
+keyboard keys. Existing keyboard bindings continue to work. To disable controller integration
+set `[Controller] Enabled=0` in settings.ini. `Glyphs=-1` follows GInput; `0` forces Xbox and
+`1` forces PlayStation. Restart after changing these settings. Only the single-player primary
+pad is used. Synthetic controller/ABI tests do not replace live testing with a physical pad.
+
+For maintainers: `BuildAll.cmd` builds and tests both editions from the same gameplay source;
+`MakeAllReleases.ps1` produces the two separate downloads. The CLEO ZIP has `Copy to game folder`
+at its top level and contains no ASI or loader DLL.

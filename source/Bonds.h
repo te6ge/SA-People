@@ -204,7 +204,7 @@ inline bool ask(people::Registry &r, unsigned id, unsigned seed) {
     if (r.request.state || !id || id > r.families.size())
         return false;
     auto &f = r.families[id - 1];
-    if (!friendly(f, 35) || f.origin)
+    if (stories::unavailable(r,f) || f.story.grievance>=30 || !friendly(f, 35) || f.origin)
         return false;
     unsigned target = talkTarget(r, id);
     Kind kinds[3] = {Ride, TalkTo, Lend};

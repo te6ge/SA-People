@@ -28,7 +28,8 @@ void deliverReplies() {
             ++it;
             continue;
         }
-        registry.post(id, it->reply, false, 0, 0, false);
+        const auto reply=std::string(it->reply)=="TXT_AVAIL_FREE" ? phonedialogue::availability(registry,id) : it->reply;
+        registry.post(id, reply, false, 0, 0, false);
         bool reading = panelOpen && phoneState.page == phone::Page::Messages && phoneState.person == id;
         if (reading) {
             for (auto &m : registry.letters)

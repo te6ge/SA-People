@@ -12,6 +12,7 @@
 #include <functional>
 #include "SocialData.h"
 #include "CommitmentData.h"
+#include "StoryData.h"
 
 namespace people {
 constexpr unsigned MaxFamilies = 32768;
@@ -77,6 +78,7 @@ struct Family {
         0; // 0 legacy married parent; 1 single; 2 married parent; 3 separated parent.
     CommunityMemory community{};
     Commitment commitment{};
+    Story story{};
 };
 struct Person {
     unsigned id;
@@ -228,6 +230,9 @@ struct Registry {
     std::array<int, DistrictCount> districts{};
     WeekStats week;
     Request request;
+    unsigned nextNews=1;
+    std::vector<StoryNews> news;
+    std::vector<Sighting> sightings;
     Registry() {
         families.reserve(MaxFamilies);
     }
@@ -258,6 +263,8 @@ struct Registry {
             return 0;
         std::unordered_set<unsigned> keep;
         if (request.state) { keep.insert(request.person); keep.insert(request.target); }
+        for(const auto &n:news){keep.insert(n.person);keep.insert(n.source);}
+        for(const auto &s:sightings){keep.insert(s.observer);keep.insert(s.person);}
         for (const auto &e : connections) {
             keep.insert(e.a);
             keep.insert(e.b);
@@ -289,7 +296,7 @@ struct Registry {
                 s.trust || s.anger || s.attempts || s.lastReaction || s.meaningful ||
                 s.encounters || s.helped || s.lastNote || s.journal || s.robbed || s.events ||
                 s.resentment || s.newsFrom || s.newsKind || s.provokes || s.cutOff || s.feud ||
-                s.romance || s.dates || s.homeVisits || s.childStage || !f.community.empty() || !f.commitment.empty())
+                s.romance || s.dates || s.homeVisits || s.childStage || !f.community.empty() || !f.commitment.empty() || !f.story.empty())
                 continue;
             recycleCursor = i + 1;
             return f.id;
@@ -301,7 +308,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 17\n"
+        out << "SAPEOPLE 18\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -418,8 +425,35 @@ struct Registry {
             out << f.id << ' ' << c.stage << ' ' << c.venue << ' ' << c.since << ' '
                 << c.lastTalk << ' ' << c.proposedAt << ' ' << c.marriedAt << '\n';
         }
+        if(!validStories(static_cast<unsigned>(families.size())))
+            throw std::runtime_error("Invalid stories");
+        unsigned stories=0;for(const auto &f:families)if(!f.story.empty())++stories;
+        out<<"STORIES "<<stories<<' '<<nextNews<<' '<<news.size()<<' '<<sightings.size()<<'\n';
+        for(const auto &f:families)if(!f.story.empty()){out<<f.id<<' ';f.story.write(out);out<<'\n';}
+        for(const auto &n:news)out<<n.id<<' '<<n.person<<' '<<n.source<<' '<<n.kind<<' '<<n.minute<<'\n';
+        for(const auto &s:sightings)out<<s.observer<<' '<<s.person<<' '<<s.minute<<' '
+            <<s.point.x<<' '<<s.point.y<<' '<<s.point.z<<'\n';
         if (!out)
             throw std::runtime_error("Write failed");
+    }
+    bool validStories(unsigned count) const {
+        if(!nextNews || nextNews>1000000000 || news.size()>192 || sightings.size()>128)return false;
+        unsigned previous=0;std::uint64_t minute=0;
+        for(const auto &f:families) {
+            const auto &s=f.story;
+            if(!s.valid() || s.lastHarm>worldMinutes+1 || s.lastPeace>worldMinutes+1 || s.lastInquiry>worldMinutes+1)return false;
+        }
+        for(const auto &n:news) {
+            if(n.id<=previous || n.id>=nextNews || !n.person || n.person>count || n.source>count ||
+                !n.kind || n.kind>14 || n.minute>worldMinutes || n.minute<minute)return false;
+            previous=n.id;minute=n.minute;
+        }
+        std::unordered_set<std::uint64_t> pairs;
+        for(const auto &s:sightings)
+            if(!s.observer || !s.person || s.observer>count || s.person>count || s.observer==s.person ||
+               s.minute>worldMinutes || !valid(s.point) ||
+               !pairs.insert((std::uint64_t(s.observer)<<32)|s.person).second)return false;
+        return true;
     }
     bool validBonds(unsigned count) const {
         for (int d : districts)
@@ -442,7 +476,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 17 || count > MaxFamilies)
+            version > 18 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -668,6 +702,30 @@ struct Registry {
                 if(c.stage==3 && r.families[id-1].presence.alive) ++married;
             }
             if(married>1) throw std::runtime_error("Multiple living spouses");
+        }
+        if(version>=18) {
+            std::string marker;unsigned size=0,newsCount=0,seenCount=0,previous=0;
+            if(!(in>>marker>>size>>r.nextNews>>newsCount>>seenCount) || marker!="STORIES" ||
+               size>count || newsCount>192 || seenCount>128)throw std::runtime_error("Corrupt story header");
+            for(unsigned n=0;n<size;++n) {
+                unsigned id=0;Story story;
+                if(!(in>>id) || !id || id<=previous || id>count || !story.read(in) || story.empty())
+                    throw std::runtime_error("Corrupt personal story");
+                r.families[id-1].story=story;previous=id;
+            }
+            for(unsigned n=0;n<newsCount;++n) {
+                StoryNews news;
+                if(!(in>>news.id>>news.person>>news.source>>news.kind>>news.minute))
+                    throw std::runtime_error("Corrupt story news");
+                r.news.push_back(news);
+            }
+            for(unsigned n=0;n<seenCount;++n) {
+                Sighting sighting;
+                if(!(in>>sighting.observer>>sighting.person>>sighting.minute>>
+                    sighting.point.x>>sighting.point.y>>sighting.point.z))throw std::runtime_error("Corrupt sighting");
+                r.sightings.push_back(sighting);
+            }
+            if(!r.validStories(count))throw std::runtime_error("Invalid story data");
         }
         in >> std::ws;
         if (!in.eof())

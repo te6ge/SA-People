@@ -157,7 +157,15 @@ void updateAmbient(Pool *pool, Byte *player) {
             line=seed%2 ? "RECOG_APPROACH_0" : "RECOG_APPROACH_1";
         } else line="AMBIENT_KNOWN";
     }
+    else if (f.story.grievance>=30)line=f.story.intent==stories::Avoid?"ST_STREET_AVOID":"ST_STREET_REMEMBER";
+    else if (stories::unavailable(registry,f))line=f.story.life==stories::Ill?"ST_SAY_SICK":"ST_SAY_FAMILY";
+    else if (f.story.until>registry.worldMinutes && f.story.life==stories::Unemployed && seed%3==0)line="ST_SAY_JOB";
+    else if (f.story.until>registry.worldMinutes && f.story.life==stories::Working && seed%3==0)line="ST_SAY_WORK";
     else if (player[0x2F]) line=neighborhood::interiorLine(greetingDeck.take(4,seed));
+    else if (*reinterpret_cast<float *>(player+0x540)<35 && seed%2==0) {
+        static const char *injured[]={"WORLD_HURT_0","WORLD_HURT_1","WORLD_HURT_2"};
+        line=injured[seed%3];
+    }
     else if (changed) { line = registry.honor <= -40 ? "AMBIENT_CLOTHES_WARY" : "AMBIENT_CLOTHES"; outfitChangedAt = 0; }
     else if (f.commitment.stage==3 && f.social.romance>=3 && f.social.trust>=40 && f.social.resentment<25 && !f.social.cutOff) {
         static const char *spouse[]={"REL_AMBIENT_0","REL_AMBIENT_1","REL_AMBIENT_2","REL_AMBIENT_3"};
@@ -179,6 +187,10 @@ void updateAmbient(Pool *pool, Byte *player) {
     else if (weather == socialcontext::Weather::Fog && seed % 3 == 0) line = fog[fogDeck.take(2, seed)];
     else if (weather == socialcontext::Weather::Sun && seed % 3 == 0) line = sun[sunDeck.take(2, seed)];
     else if (weather == socialcontext::Weather::Wind && seed % 3 == 0) line = "AMBIENT_WIND";
+    else if ((at<Byte>(0xB70153)>=23 || at<Byte>(0xB70153)<5) && seed%3==0) {
+        static const char *night[]={"WORLD_NIGHT_0","WORLD_NIGHT_1","WORLD_NIGHT_2"};
+        line=night[seed%3];
+    }
     else if (f.social.known & people::Name) {
         static const char *known[] = {"AMBIENT_KNOWN", "AMBIENT_KNOWN_1", "AMBIENT_KNOWN_2", "AMBIENT_KNOWN_3", "AMBIENT_KNOWN_4", "AMBIENT_KNOWN_5", "AMBIENT_KNOWN_6",
             "AMBIENT_KNOWN_7", "AMBIENT_KNOWN_8", "AMBIENT_KNOWN_9"};

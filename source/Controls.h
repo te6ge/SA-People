@@ -7,31 +7,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <array>
+#include "ControlActions.h"
 // Rebindable keys. Every action has a primary and a secondary key; the secondaries give
 // keyboards without arrow or function keys a full set (P opens the phone, WASD/E/Q drive it while
 // it is open and CJ's controls are locked). Stored in settings.ini, [Controls] Name=KEY,KEY.
 namespace controls {
-enum Action : unsigned {
-    Focus,
-    Greet,
-    Provoke,
-    Defuse,
-    Rob,
-    Repair,
-    Phone,
-    PhoneUp,
-    PhoneDown,
-    PhoneLeft,
-    PhoneRight,
-    PhoneSelect,
-    PhoneBack,
-    PhoneClose,
-    Vitals,
-    Contacts,
-    Meetings,
-    Save,
-    Count
-};
+inline std::array<bool,Count> padActions{};
+inline bool padInHands=false,padPlayStation=false,padEnabled=true;
+inline int padGlyphs=-1; // -1: follow GInput, 0: Xbox, 1: PlayStation.
 struct Binding {
     int primary = 0, secondary = 0;
 };
@@ -122,7 +106,7 @@ inline bool held(int vk) {
     return vk > 0 && (GetAsyncKeyState(vk) & 0x8000) != 0;
 }
 inline bool down(unsigned a) {
-    return a < Count && (held(keys[a].primary) || held(keys[a].secondary));
+    return a < Count && (padActions[a] || held(keys[a].primary) || held(keys[a].secondary));
 }
 inline std::string describe(unsigned a) {
     if (a >= Count)
@@ -132,7 +116,35 @@ inline std::string describe(unsigned a) {
         s += " / " + keyName(keys[a].secondary);
     return s;
 }
+inline std::string buttonHint(unsigned a) {
+    if(!padInHands || a>=Count)return a<Count?keyName(keys[a].primary):"";
+    switch(a) {
+    case Focus:return padPlayStation?"L1+R1":"LB+RB";
+    case Greet:case PhoneSelect:return padPlayStation?u8"×":"A";
+    case Provoke:case PhoneBack:return padPlayStation?u8"○":"B";
+    case Defuse:return padPlayStation?u8"□":"X";
+    case Rob:case PhoneClose:return padPlayStation?u8"△":"Y";
+    case Phone:return padPlayStation?u8"L1+↑":u8"LB+↑";
+    case Vitals:return padPlayStation?u8"L1+↓":u8"LB+↓";
+    case Repair:return padPlayStation?u8"L1+R1+→":u8"LB+RB+→";
+    default:return "D-PAD";
+    }
+}
+inline std::string phoneHint(std::string value) {
+    if(!padInHands)return value;
+    const std::pair<const char *,Action> tokens[]={{"BACKSPACE",PhoneBack},{"ENTER",PhoneSelect},{"ESC",PhoneClose}};
+    for(const auto &token:tokens) {
+        const auto replacement=buttonHint(token.second);std::size_t cursor=0;
+        while((cursor=value.find(token.first,cursor))!=std::string::npos) {
+            value.replace(cursor,std::strlen(token.first),replacement);cursor+=replacement.size();
+        }
+    }
+    return value;
+}
 inline void load(const wchar_t *ini) {
+    padEnabled=GetPrivateProfileIntW(L"Controller",L"Enabled",1,ini)!=0;
+    padGlyphs=static_cast<int>(GetPrivateProfileIntW(L"Controller",L"Glyphs",-1,ini));
+    if(padGlyphs < -1 || padGlyphs>1)padGlyphs=-1;
     for (unsigned a = 0; a < Count; ++a) {
         keys[a] = defaults[a];
         std::wstring name(iniName(a), iniName(a) + std::strlen(iniName(a)));
@@ -171,6 +183,11 @@ inline bool seedMissing(const wchar_t *ini) {
         const std::wstring wide(text.begin(), text.end());
         if (!WritePrivateProfileStringW(L"Controls", name.c_str(), wide.c_str(), ini))
             ok = false;
+    }
+    for(const auto *name:{L"Enabled",L"Glyphs"}) {
+        wchar_t value[32]={};
+        if(!GetPrivateProfileStringW(L"Controller",name,L"",value,32,ini) &&
+           !WritePrivateProfileStringW(L"Controller",name,wcscmp(name,L"Enabled")==0?L"1":L"-1",ini))ok=false;
     }
     return ok;
 }

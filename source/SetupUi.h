@@ -127,7 +127,7 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
         if(LOWORD(wp)==IDCANCEL) {if(!busy) DestroyWindow(hwnd); return 0;}
         if(LOWORD(wp)==103 && HIWORD(wp)==CBN_SELCHANGE) {
             auto index=SendMessageW(languageBox,CB_GETCURSEL,0,0);
-            if(index>=0 && index<5) language=static_cast<setuptext::Language>(index);
+            if(index>=0 && index<6) language=static_cast<setuptext::Language>(index);
             refresh(); return 0;
         }
         if(LOWORD(wp)==101 && !busy && !finished) {
@@ -163,12 +163,13 @@ inline bool create() {
     language=primary==LANG_TURKISH?setuptext::Language::Turkish:
         primary==LANG_RUSSIAN?setuptext::Language::Russian:
         primary==LANG_SPANISH?setuptext::Language::Spanish:
-        primary==LANG_CHINESE?setuptext::Language::Chinese:setuptext::Language::English;
+        primary==LANG_CHINESE?setuptext::Language::Chinese:
+        primary==LANG_JAPANESE?setuptext::Language::Japanese:setuptext::Language::English;
     auto dc=GetDC(nullptr); scale=GetDeviceCaps(dc,LOGPIXELSX)/96.0f; ReleaseDC(nullptr,dc);
     RECT work{}; SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
     scale=std::min(scale,std::min((work.right-work.left-40)/820.0f,(work.bottom-work.top-90)/560.0f));
     auto font=[](int height,int weight) {return CreateFontW(-px(height),0,0,0,weight,FALSE,FALSE,FALSE,
-        DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");};
+        DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,language==setuptext::Language::Japanese?L"Yu Gothic":L"Segoe UI");};
     regular=font(16,FW_NORMAL); smallFont=font(13,FW_NORMAL); heading=font(32,FW_SEMIBOLD);
     brand=font(39,FW_BLACK); bold=font(16,FW_SEMIBOLD); editBrush=CreateSolidBrush(RGB(35,38,43));
     checkBrush=CreateSolidBrush(RGB(18,20,23));

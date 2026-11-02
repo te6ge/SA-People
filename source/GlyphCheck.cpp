@@ -45,6 +45,9 @@ int main() {
     drawn = renderer.draw(device, 40, 140, 900, 30, u8"Контакты  Встречи  Настройки",
                           {174, 210, 139, 255}, panel::Align::Left, true) &&
             drawn;
+    locale::language=locale::Language::Japanese;
+    drawn=renderer.draw(device,40,180,940,26,u8"日本語：連絡先・待ち合わせ・名誉と人間関係",
+                        {240,237,219,255},panel::Align::Left,true) && drawn;
     sprites::Image icon;
     drawn = icon.draw(device, L"assets/meeting.png", 40, 250, 32, 32) && drawn;
     drawn = icon.draw(device, L"assets/meeting.png", 110, 240, 48, 48) && drawn;
@@ -106,6 +109,6 @@ int main() {
     device->Release();
     api->Release();
     DestroyWindow(window);
-    std::cout << "Glyphs rendered=" << filled << "; Direct3D state restored; four scripts drawn.\n";
+    std::cout << "Glyphs rendered=" << filled << "; Direct3D state restored; Latin, Cyrillic and Japanese text drawn.\n";
     return filled > 1000 ? 0 : 7;
 }

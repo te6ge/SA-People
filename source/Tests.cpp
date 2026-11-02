@@ -1,4 +1,7 @@
 #include "World.h"
+#include "ControllerPolicy.h"
+#include "SaveProfiles.h"
+#include "Stories.h"
 #include "Panel.h"
 #include "AudioPolicy.h"
 #include "Encounters.h"
@@ -17,6 +20,7 @@
 #include "Neighborhood.h"
 #include "GangCombat.h"
 #include "NpcBrain.h"
+#include "WorldAwareness.h"
 #include "NpcVoices.h"
 #include "Community.h"
 #include <filesystem>
@@ -31,8 +35,9 @@
 int main() {
 #ifdef _WIN32
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    _set_error_mode(_OUT_TO_STDERR);
 #endif
-    for (unsigned language = 0; language < 5; ++language) {
+    for (unsigned language = 0; language < 6; ++language) {
         assert(setuptext::names[language][0]);
         for (unsigned key = 0; key < setuptext::Count; ++key)
             assert(setuptext::get(static_cast<setuptext::Language>(language),
@@ -42,7 +47,7 @@ int main() {
            L"Установить SA People");
     assert(std::wstring(setuptext::get(setuptext::Language::Spanish, setuptext::Missing)).find(
            L"gta_sa.exe") != std::wstring::npos);
-    std::cout << "PASS: complete setup catalog in four languages, including Cyrillic.\n";
+    std::cout << "PASS: complete setup catalog in six languages, including Japanese and Cyrillic.\n";
     // Recordings are optional and not shipped; skip file checks when the folder is empty.
     const bool audioAvailable = std::filesystem::exists("audio/high.mp3");
     std::cout << std::unitbuf;
@@ -589,9 +594,10 @@ int main() {
     }
     locale::language = locale::Language::Chinese;
     assert(locale::tr("PHONE_CONTACTS") == u8"联系人");
+    locale::cycle(1); assert(locale::language == locale::Language::Japanese);
+    assert(locale::tr("PHONE_CONTACTS")==u8"連絡先" && std::string(locale::code(locale::language))=="ja");
     locale::cycle(1); assert(locale::language == locale::Language::Turkish);
-    locale::cycle(-1); assert(locale::language == locale::Language::Chinese);
-    assert(std::string(locale::code(locale::language)) == "zh");
+    locale::cycle(-1); assert(locale::language == locale::Language::Japanese);
     locale::language = locale::Language::English;
     assert(locale::tr("Tamirci olarak calisiyorum. Gecinip gidiyoruz.").find("Mechanic") !=
            std::string::npos);
@@ -1094,7 +1100,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 17", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 18", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1147,6 +1153,10 @@ int main() {
 #include "CommunityTests.inc"
 #include "BondsTests.inc"
 #include "CommitmentTests.inc"
+#include "StoryTests.inc"
+#include "SaveProfilesTests.inc"
+#include "MeetingOfferTests.inc"
+#include "ControllerTests.inc"
     {
         assert(gangcombat::eligible(7,1,false,false,true,true,25));
         assert(gangcombat::eligible(9,1,false,false,true,true,625));

@@ -40,7 +40,7 @@ inline bool mayGreet(const Encounter &e) {
 }
 inline bool mayDefuse(const people::Family &f, const Encounter &e, bool fighting = false) {
     return !f.social.cutOff && !f.social.feud && !e.apologyUsed && !e.brokenTruce &&
-           f.social.resentment < 55 && (f.social.anger > 0 || fighting);
+           f.social.resentment < 55 && (f.social.anger > 0 || fighting || f.story.grievance>=20);
 }
 // A passing stranger can stage a random incident; someone CJ has already dealt with
 // keeps that history even before their number is added to the phone.
@@ -76,7 +76,8 @@ inline bool journaled(const people::Family &f) {
     return f.social.journal;
 }
 inline const char *relationship(const people::Family &f) {
-    return f.commitment.stage==3 ? (f.social.romance<3 || f.social.cutOff || f.social.trust<20 ? "REL_ESTRANGED" : "REL_MARRIED")
+    return !f.presence.alive && f.commitment.stage==3 ? "REL_BEREAVED"
+           : f.commitment.stage==3 ? (f.social.romance<3 || f.social.cutOff || f.social.trust<20 ? "REL_ESTRANGED" : "REL_MARRIED")
            : f.commitment.stage==2 ? "REL_BOOKED"
            : f.commitment.stage==1 ? "REL_ENGAGED"
            : f.social.romance >= 3   ? "Sevgili"

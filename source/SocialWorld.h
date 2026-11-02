@@ -1,6 +1,7 @@
 #pragma once
 #include "Network.h"
 #include "Meetings.h"
+#include "Stories.h"
 namespace socialworld {
 enum class Activity : unsigned { Meal, Pool, Drive, Walk };
 enum class Intent : unsigned { Neutral, Friendly, Insult, Threat, Apology };
@@ -10,7 +11,8 @@ inline unsigned phase(unsigned minute) {
 }
 inline people::Point destination(const people::Family &f, unsigned minute,
                                  std::uint64_t world = 0) {
-    if (f.daily.busyUntil > world)
+    if (f.daily.busyUntil > world || (f.story.until>world &&
+        (f.story.life==1 || f.story.life==2 || f.story.life==4)))
         return f.daily.home;
     return phase(minute) == 1 ? f.daily.work : phase(minute) == 2 ? f.daily.leisure : f.daily.home;
 }
@@ -107,7 +109,7 @@ inline bool complete(people::Registry &r, people::Appointment &a, people::Family
 }
 inline bool spontaneous(people::Registry &r, people::Family &f, unsigned minute) {
     unsigned day = static_cast<unsigned>(r.worldMinutes / 1440 + 1);
-    if (!canHangOut(f) || f.daily.busyUntil > r.worldMinutes || minute < 9 * 60 ||
+    if (stories::unavailable(r,f) || f.story.grievance>=30 || !canHangOut(f) || f.daily.busyUntil > r.worldMinutes || minute < 9 * 60 ||
         minute > 21 * 60 || f.daily.lastInvitation == day)
         return false;
     f.daily.lastInvitation = day;

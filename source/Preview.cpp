@@ -37,7 +37,7 @@ bool render(const panel::Scene &scene, panel::Layout layout, int width, int heig
         for (const auto &t : scene.texts) {
             SolidBrush brush(color(t.color));
             auto value = wide(t.value);
-            Font font(locale::language == locale::Language::Chinese ? L"Microsoft YaHei" : L"Tahoma", std::max(8.0f, t.size * layout.scale), FontStyleBold, UnitPixel);
+            Font font(locale::language == locale::Language::Japanese ? L"Yu Gothic" : locale::language == locale::Language::Chinese ? L"Microsoft YaHei" : L"Tahoma", std::max(8.0f, t.size * layout.scale), FontStyleBold, UnitPixel);
             RectF rect(layout.x + t.x * layout.scale, layout.y + t.y * layout.scale,
                        t.width * layout.scale, std::max(12.0f, 40 * layout.scale));
             format.SetAlignment(t.align == panel::Align::Right    ? StringAlignmentFar
@@ -100,7 +100,7 @@ int main() {
         std::wstring code(locale::code(locale::language), locale::code(locale::language) + 2);
         for (const auto &size : dimensions) {
             float width = static_cast<float>(size[0]), height = static_cast<float>(size[1]);
-            for (unsigned page = 0; page < 24; ++page) {
+            for (unsigned page = 0; page < 31; ++page) {
                 phone::State state;
                 state.page = page == 0   ? phone::Page::Contacts
                              : page == 1 ? phone::Page::Contact
@@ -146,7 +146,7 @@ int main() {
                     viewRegistry.request = {1,bonds::Lend,0,1,200,viewRegistry.worldMinutes+180};
                 }
                 if (page == 18) state.page = phone::Page::Life;
-                if (page >= 19) {
+                if (page >= 19 && page<=23) {
                     state.page=(page==20 || page==21)?phone::Page::RelationshipConfirm:
                         page==23?phone::Page::Contact:phone::Page::Relationship;
                     auto &partnerView=viewRegistry.families[0];
@@ -157,6 +157,15 @@ int main() {
                     if(page>=22)partnerView.commitment.marriedAt=1441;
                     if(page==23){state.detail=4;partnerView.social.childStage=2;partnerView.social.childMinutes=10080;}
                 }
+                if(page>=24 && page<=29) {
+                    const phone::Page storiesViews[]={phone::Page::News,phone::Page::Stories,phone::Page::History,
+                        phone::Page::AskAbout,phone::Page::Peace,phone::Page::PeaceConfirm};
+                    state.page=storiesViews[page-24];viewRegistry.worldMinutes=181;
+                    viewRegistry.families[0].story.grievance=45;viewRegistry.families[0].story.intent=stories::Demand;
+                    viewRegistry.families[0].story.life=stories::Unemployed;viewRegistry.families[0].story.until=3000;
+                    stories::publish(viewRegistry,1,stories::LostJob);
+                }
+                if(page==30){state.page=phone::Page::ImportShared;state.legacyImport=true;}
                 auto scene = phone::compose(viewRegistry, state, "14:35");
                 auto path = std::filesystem::path("preview") /
                             (L"phone-" + code + L"-" + std::to_wstring(size[0]) + L"-" +
@@ -200,6 +209,19 @@ int main() {
             }
         }
     }
+    locale::language=locale::Language::English;
+    controls::padInHands=true;
+    for(bool ps:{false,true}) {
+        controls::padPlayStation=ps;
+        phone::State state;state.page=phone::Page::Messages;state.person=1;
+        const std::wstring suffix=ps?L"ps":L"xbox";
+        if(!render(phone::compose(registry,state,"14:35"),phone::layout(1280,720),1280,720,
+            std::filesystem::path("preview")/(L"controller-phone-"+suffix+L".png"),png))return 6;
+        panel::Hints hints;hints.canRob=true;hints.canGreet=true;hints.angry=true;
+        auto scene=panel::roaming(&registry.families[0],true,"A familiar face","",true,false,0,1280,720,hints);
+        if(!render(scene,{0,0,1},1280,720,std::filesystem::path("preview")/(L"controller-focus-"+suffix+L".png"),png))return 6;
+    }
+    controls::padInHands=false;controls::padPlayStation=false;
     GdiplusShutdown(token);
-    std::cout << "Phone and street previews: 5 languages, 3 resolutions.\n";
+    std::cout << "Phone and street previews: 6 languages, 3 resolutions.\n";
 }

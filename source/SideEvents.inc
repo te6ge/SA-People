@@ -353,7 +353,7 @@ void robPerson(Pool *pool, Byte *player) {
     companionWitness(f.id, socialcontext::Witness::Provoke);
     discoverNetwork(f.id);
     observeDeed(f.id,community::Deed::Robbery);
-    later::robbed(registry, f.id);
+    // Personal story intentions now replace the old random revenge scheduling.
     bonds::count(registry, bonds::Stat::Robbed);
     nextSpeech = now + 3000;
     dirty = true;

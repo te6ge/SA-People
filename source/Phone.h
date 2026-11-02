@@ -8,6 +8,7 @@
 #include "SocialWorld.h"
 #include "PhoneDialogue.h"
 #include "Bonds.h"
+#include "Stories.h"
 namespace phone {
 enum class Page {
     Contacts,
@@ -26,7 +27,14 @@ enum class Page {
     Gift,
     Request,
     Relationship,
-    RelationshipConfirm
+    RelationshipConfirm,
+    Stories,
+    History,
+    News,
+    AskAbout,
+    Peace,
+    PeaceConfirm,
+    ImportShared
 };
 struct State {
     Page page = Page::Contacts;
@@ -34,6 +42,7 @@ struct State {
     unsigned distance = 0;
     unsigned networkOffset = 0;
     unsigned arrival = 0, relationshipStage = 0;
+    bool peaceOffer=false, legacyImport=false;
     std::string notice;
     bool call = false;
     unsigned activity = 0, outing = 0;
@@ -49,6 +58,8 @@ inline std::vector<const char *> actionKeys(const people::Registry &r, const Sta
     if (bonds::open(r, state.person)) keys.push_back("PHONE_REQUEST");
     if(state.person && state.person<=r.families.size() && (r.families[state.person-1].social.romance ||
        !r.families[state.person-1].commitment.empty())) keys.push_back("REL_ACTION");
+    keys.push_back("ST_PERSONAL");
+    keys.push_back("ST_ASK");
     return keys;
 }
 inline std::vector<const people::Letter *> thread(const people::Registry &r, unsigned id) {
@@ -70,7 +81,7 @@ inline std::string letterText(const people::Registry &r, const people::Letter &m
     for (const char *choice : phonedialogue::choices)
         if (m.body == choice)
             preset = true;
-    preset = preset || m.body.rfind("TXT_", 0) == 0;
+    preset = preset || m.body.rfind("TXT_", 0) == 0 || m.body.rfind("ST_TXT_",0)==0;
     std::string text = m.outgoing && !preset ? m.body : locale::tr(m.body);
     if (m.source && m.source <= r.families.size()) {
         auto pos = text.find("{0}");
@@ -124,7 +135,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
     };
     auto text = [&](float x, float y, float w, float size, const std::string &value,
                     Align align = Align::Left, Color c = Color{30, 45, 29, 255}) {
-        scene.texts.push_back({x, y, w, size, locale::tr(value), c, align, false});
+        scene.texts.push_back({x, y, w, size, controls::phoneHint(locale::tr(value)), c, align, false});
     };
     box(274, 0, 14, 67, edge);
     box(269, 7, 24, 11, plastic);
@@ -161,6 +172,11 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         title = "PHONE_SET_CONTROLS";
     if (state.page == Page::Life)
         title = "LIFE_TITLE";
+    if(state.page==Page::Stories || state.page==Page::History)title="ST_PERSONAL";
+    if(state.page==Page::News)title="ST_NEWS";
+    if(state.page==Page::AskAbout)title="ST_ASK";
+    if(state.page==Page::Peace || state.page==Page::PeaceConfirm)title="ST_PEACE";
+    if(state.page==Page::ImportShared)title="PROFILE_IMPORT";
     if (state.page == Page::Gift) title = "BDAY_GIVE";
     if (state.page == Page::Request) title = "PHONE_REQUEST";
     if (state.page == Page::Relationship || state.page == Page::RelationshipConfirm) title = "REL_ACTION";
@@ -170,7 +186,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         title = locale::tr(title) + " (" + std::to_string(socialworld::unread(registry)) + ")";
     const bool topLevel = state.page == Page::Contacts || state.page == Page::Inbox ||
                           state.page == Page::Meetings || state.page == Page::Settings ||
-                          state.page == Page::Life;
+                          state.page == Page::Life || state.page==Page::News;
     if (topLevel) // Arrows show that left/right switch between the main pages.
         title = u8"‹ " + locale::tr(title) + u8" ›";
     text(38, 157, 256, 18, title, Align::Center);
@@ -180,6 +196,64 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         auto lines = locale::wrap(locale::tr(state.notice), 30);
         for (unsigned row = 0; row < 6 && row < lines.size(); ++row)
             text(41, 198 + row * 23.0f, 248, 15, lines[row]);
+    } else if(state.page==Page::ImportShared) {
+        const auto lines=locale::wrap(locale::tr("PROFILE_IMPORT_CONFIRM"),30);
+        for(unsigned row=0;row<lines.size() && row<6;++row)text(41,197+row*16.0f,248,12,lines[row]);
+        for(unsigned row=0;row<2;++row) {
+            const float y=301+row*24.0f;if(row==state.cursor)box(36,y-1,260,24,dark);
+            text(44,y,244,13,row?"CONFIRM_CANCEL":"REL_CONFIRM_YES",Align::Left,row==state.cursor?screen:ink);
+        }
+    } else if (state.page==Page::News || state.page==Page::History) {
+        const auto events=stories::news(registry,state.page==Page::History?state.person:0);
+        if(events.empty())text(41,225,248,14,"ST_NEWS_EMPTY",Align::Center);
+        else {
+            const auto &event=*events[state.cursor%events.size()];const auto &person=registry.families[event.person-1];
+            text(41,197,248,13,dialogue::displayName(person));
+            text(41,219,248,11,locale::format("ST_DAY",std::to_string(event.minute/1440+1))+"  "+
+                std::to_string(event.minute%1440/60)+":"+(event.minute%60<10?"0":"")+std::to_string(event.minute%60));
+            if(event.source) {
+                const auto source=locale::format("ST_HEARD_FROM",locale::tr(dialogue::displayName(registry.families[event.source-1])));
+                const auto sourceLines=locale::wrap(source,36);if(!sourceLines.empty())text(41,238,248,10,sourceLines[0]);
+            }
+            const auto lines=locale::wrap(locale::tr(stories::newsKey(event.kind)),30);
+            for(unsigned row=0;row<lines.size() && row<4;++row)text(41,(event.source?258.0f:246.0f)+row*16.0f,248,12,lines[row]);
+            text(41,335,248,10,std::to_string(state.cursor%events.size()+1)+" / "+std::to_string(events.size())+
+                "  "+locale::tr("ST_SCROLL"),Align::Center);
+        }
+    } else if (state.page==Page::AskAbout) {
+        auto targets=ids;targets.erase(std::remove(targets.begin(),targets.end(),state.person),targets.end());
+        if(targets.empty())text(41,227,248,13,"ST_ASK_EMPTY",Align::Center);
+        else {
+            text(41,196,248,11,"ST_ASK_HINT");
+            const unsigned start=state.cursor>=4?state.cursor-3:0;
+            for(unsigned row=0;row<4 && start+row<targets.size();++row) {
+                const auto index=start+row;const float y=223+row*27.0f;
+                if(index==state.cursor)box(36,y-1,260,26,dark);
+                text(44,y,244,13,dialogue::displayName(registry.families[targets[index]-1]),Align::Left,index==state.cursor?screen:ink);
+            }
+        }
+    } else if ((state.page==Page::Stories || state.page==Page::Peace || state.page==Page::PeaceConfirm) &&
+        state.person && state.person<=registry.families.size()) {
+        const auto &person=registry.families[state.person-1];
+        if(state.page==Page::PeaceConfirm) {
+            const auto lines=locale::wrap(locale::tr("ST_PAY_CONFIRM"),30);
+            for(unsigned row=0;row<lines.size() && row<5;++row)text(41,198+row*18.0f,248,12,lines[row]);
+            const char *choices[]={"REL_CONFIRM_YES","CONFIRM_CANCEL"};
+            for(unsigned row=0;row<2;++row) {
+                const float y=297+row*25.0f;if(row==state.cursor)box(36,y-1,260,25,dark);
+                text(44,y,244,13,choices[row],Align::Left,row==state.cursor?screen:ink);
+            }
+        } else {
+            text(41,196,248,14,dialogue::displayName(person));
+            text(41,222,248,12,stories::intentStatus(person));
+            text(41,244,248,11,stories::lifeStatus(registry,person));
+            const char *personal[]={"ST_HISTORY","ST_PEACE","ST_ASK"};
+            const char *peace[]={"ST_APOLOGY","ST_COMPENSATE","CONFIRM_CANCEL"};
+            for(unsigned row=0;row<3;++row) {
+                const float y=277+row*24.0f;if(row==state.cursor)box(36,y-1,260,24,dark);
+                text(44,y,244,12,state.page==Page::Stories?personal[row]:peace[row],Align::Left,row==state.cursor?screen:ink);
+            }
+        }
     } else if (state.page == Page::Inbox) {
         auto messages = inbox(registry);
         if (messages.empty())
@@ -218,7 +292,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                 text(40, y, 192, 12, line.text, Align::Left, ink);
             }
         }
-        bool invite = !messages.empty() && !messages.back()->outgoing && messages.back()->kind == 2;
+        bool invite = !messages.empty() && phonedialogue::planOffer(*messages.back());
         bool request = bonds::open(registry, state.person);
         text(41, 331, 248, 11,
              request  ? "MAIL_ACCEPT_REQUEST"
@@ -384,7 +458,7 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                  chosen && state.capturing ? locale::tr("CTRL_PRESS") : controls::describe(index),
                  Align::Right, chosen ? screen : ink);
         }
-        text(41, 331, 248, 11, state.capturing ? "CTRL_PRESS_HINT" : "CTRL_HINT", Align::Center);
+        text(41, 331, 248, 11, state.capturing ? "CTRL_PRESS_HINT" : controls::padInHands?"CTRL_PAD_HINT":"CTRL_HINT", Align::Center);
     } else if (state.page == Page::Life) {
         // "My life": this week's tally, the people who matter and how town sees CJ.
         const auto week = bonds::current(registry);
@@ -428,14 +502,14 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
     } else if (state.page == Page::Settings) {
         const std::string values[] = {locale::nativeName(locale::language),
                                       locale::tr(state.events ? "PHONE_ON" : "PHONE_OFF"),
-                                      std::to_string(state.scale) + "%", u8"›"};
+                                      std::to_string(state.scale) + "%", u8"›", state.legacyImport?u8"›":u8"—"};
         const char *labels[] = {"PHONE_LANGUAGE", "PHONE_SET_EVENTS", "PHONE_SET_SCALE",
-                                "PHONE_SET_CONTROLS"};
-        for (unsigned row = 0; row < 4; ++row) {
-            float y = 196 + row * 31.0f;
-            bool chosen = state.cursor % 4 == row;
+                                "PHONE_SET_CONTROLS", "PROFILE_IMPORT"};
+        for (unsigned row = 0; row < 5; ++row) {
+            float y = 196 + row * 25.0f;
+            bool chosen = state.cursor % 5 == row;
             if (chosen)
-                box(36, y - 2, 260, 29, dark);
+                box(36, y - 2, 260, 25, dark);
             text(44, y, 244, 11, labels[row], Align::Left, chosen ? screen : ink);
             text(44, y + 13, 244, 12, values[row], Align::Right, chosen ? screen : ink);
         }
@@ -539,8 +613,8 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
              Align::Center);
     }
     box(37, 352, 258, 1, dark);
-    text(40, 358, 120, 13, state.notice.empty() ? "PHONE_SELECT" : "PHONE_OK");
-    text(163, 358, 130, 13, "PHONE_BACK", Align::Right);
+    text(40,358,120,13,(controls::padInHands?controls::buttonHint(controls::PhoneSelect)+": ":"")+locale::tr(state.notice.empty()?"PHONE_SELECT":"PHONE_OK"));
+    text(163,358,130,13,(controls::padInHands?controls::buttonHint(controls::PhoneBack)+": ":"")+locale::tr("PHONE_BACK"),Align::Right);
     box(36, 401, 86, 29, plastic);
     box(211, 401, 86, 29, plastic);
     text(38, 405, 82, 15, u8"—", Align::Center, Color{205, 209, 200, 255});

@@ -99,6 +99,8 @@ inline const char *talk(people::Registry &r,unsigned id) {
 }
 inline bool update(people::Registry &r,people::Family &f) {
     auto &c=f.commitment;
+    // A renewed romance starts its own togetherness period; old dating time is not transferable.
+    if(!c.stage && f.social.romance<3 && c.since){c={};return true;}
     if(!c.since && f.social.romance>=3 && f.presence.alive){c.since=r.worldMinutes+1;return true;}
     if(c.stage==1 && (f.social.romance<3 || f.social.cutOff || !f.presence.alive)) {c={};return true;}
     if(c.stage==2 && (!booked(r,f) || f.social.cutOff || !f.presence.alive)) {

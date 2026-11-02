@@ -94,7 +94,7 @@ bool npcSees(Byte *observer,Vec point) {
         eyes,point,true,false,false,true,true,false,false);
 }
 void observeDeed(unsigned victim,community::Deed deed) {
-    if(!communityEnabled || storyActive() || !victim || victim>registry.families.size()) return;
+    if((!communityEnabled && !storyLife) || storyActive() || !victim || victim>registry.families.size()) return;
     const DWORD now=GetTickCount();
     const unsigned key=victim*8+static_cast<unsigned>(deed);
     if(deedAfter.count(key) && !due(now,deedAfter[key])) return;
@@ -103,11 +103,19 @@ void observeDeed(unsigned victim,community::Deed deed) {
     auto pool=at<Pool *>(0xB74490);
     auto player=reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
     if(!player || !validPool(pool)) return;
-    const auto token=community::incident(registry);
-    if(!token) return;
     const auto &p=registry.families[victim-1].presence;
     const Vec scene{p.x,p.y,p.z};
-    if(p.alive) community::remember(registry,victim,victim,deed,token);
+    if(storyLife) {
+        if(p.alive)stories::harm(registry,victim,deed==community::Deed::Help?stories::Helped:
+            deed==community::Deed::Robbery?stories::Robbed:stories::Hurt,stories::visibleWeapon(currentWeapon(player)));
+        else if(deed==community::Deed::Killing && stories::contact(registry.families[victim-1]))
+            stories::publish(registry,victim,stories::Died);
+        dirty=true;
+    }
+    if(!communityEnabled)return;
+    const auto token=community::incident(registry);
+    if(!token)return;
+    if(p.alive)community::remember(registry,victim,victim,deed,token);
     unsigned count=0;
     for(unsigned slot=0;slot<static_cast<unsigned>(pool->size) && count<6;++slot) {
         if(pool->flags[slot]&0x80) continue;

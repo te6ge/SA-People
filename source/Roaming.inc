@@ -584,6 +584,10 @@ bool departureOwns(unsigned);
 void acceptRequest(Byte *player);
 void giveBirthdayGift(Byte *player);
 void relationshipChoice(Byte *);
+void storyInquiry(Byte *);
+void storyPeace(Byte *,bool,bool);
+bool storyStreet(people::Family &,street::Action);
+bool storyLife=true;
 bool beginCeremony(people::Family &, people::Handle);
 void runWeddingScene(Pool *, Byte *);
 void updateCommitments();
@@ -594,7 +598,10 @@ bool recognitionOwns(unsigned);
 #include "MarriageNative.inc"
 #include "Ambient.inc"
 #include "CommunityNative.inc"
+#include "WorldAwareness.inc"
+#include "StoriesNative.inc"
 #include "Bonds.inc"
+#include "SaveProfilesNative.inc"
 void observeCriminalAttack(Pool *pool, Byte *player) {
     const float health = *reinterpret_cast<float *>(player + 0x540);
     const bool hurt = observedPlayerHealth >= 0 && health + 0.5f < observedPlayerHealth;
@@ -850,6 +857,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         if (smallEvent.person == focused)
             cancelSmallEvent();
     }
+    if(storyLife && storyStreet(f,action)){live.last=now;live.next=now+4000;nextSpeech=now+4000;dirty=true;save();return;}
     int trustBefore = f.social.trust;
     bool friendBefore = street::isFriend(f);
     const bool familiarVoiceBefore = npcvoice::knowsCJ(f);
@@ -874,11 +882,9 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         }
     }
     const wchar_t *clip = audioChoices.choose(context, now + f.id + audioVariation++);
-    // Rare easter eggs: a local curse when provoking, the odd rickroll when greeting.
-    if (action == street::Action::Greet && people::mix(now * 7 + f.id) % 150 == 0)
-        clip = socialaudio::rickroll();
-    else if (action == street::Action::Provoke && !reply.arrest &&
-             people::mix(now + f.id * 3) % 4 == 0)
+    // Keep greetings conversational: no automatic music/easter-egg replacement.
+    if (action == street::Action::Provoke && !reply.arrest &&
+        people::mix(now + f.id * 3) % 4 == 0)
         if (auto local = socialaudio::localizedInsult(static_cast<unsigned>(locale::language)))
             clip = local;
     audio.speak(clip);
@@ -936,14 +942,19 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         " action=" + std::to_string(static_cast<unsigned>(action)) +
         " reaction=" + std::to_string(static_cast<unsigned>(reply.reaction)) +
         " anger=" + std::to_string(f.social.anger));
+    if (action == street::Action::Provoke && storyLife && !reply.line.empty())
+        stories::harm(registry,f.id,stories::Insulted,stories::visibleWeapon(currentWeapon(player)));
     if (action == street::Action::Provoke)
         companionWitness(f.id, socialcontext::Witness::Provoke);
 }
 void resetRuntime() {
+    resetControllerInput();
     restoreTacticalCombat(at<Pool *>(0xB74490));
     cancelCommunity();
     updateDealerTalks(at<Pool *>(0xB74490), nullptr, false);
     resetAmbient();
+    resetAwareness();
+    resetStories();
     honorBatch = {};
     honorCheat = {};
     defendedOffenders.clear();
@@ -999,6 +1010,8 @@ void tick() {
     auto pool = at<Pool *>(0xB74490);
     if (!player || !validPool(pool)) {restoreTacticalCombat(pool);return;}
     releaseLeasedExits(player);
+    if(pendingProfile!=ProfilePending::None)applyPendingProfile();
+    if(!profileReady)return;
     if (*reinterpret_cast<float *>(player + 0x540) <= 0) {
         restoreTacticalCombat(pool);
         updateDealerTalks(pool, player, false);
@@ -1079,6 +1092,8 @@ void tick() {
         modTalkOverNative =
             GetPrivateProfileIntW(L"Interface", L"ModTalkOverNative", 1, ini.c_str()) != 0;
         gangTalk = GetPrivateProfileIntW(L"World", L"GangTalk", 1, ini.c_str()) != 0;
+        storyLife=GetPrivateProfileIntW(L"World",L"PersonalStories",1,ini.c_str())!=0;
+        streetAwareness=GetPrivateProfileIntW(L"World",L"StreetAwareness",1,ini.c_str())!=0;
         communityEnabled=GetPrivateProfileIntW(L"World",L"CommunityLife",1,ini.c_str())!=0;
         eventDirector.initial(
             GetPrivateProfileIntW(L"World", L"FirstEventSeconds", 45, ini.c_str()));
@@ -1192,10 +1207,12 @@ void tick() {
     eventDirector.step(elapsed, eventSafe);
     lastDirectorTick = now;
     updateMeetings(pool, player, elapsed, mission);
+    updateStories(pool,player);
     updateSocialWorld(pool, player);
     updateCommitments();
     updateBonds(pool, player, mission);
     updateCommunity(pool, player);
+    updateStreetAwareness(pool, player);
     updateAmbient(pool, player);
     if (sideEvents && eventSafe && !eventActive() && !focusHeld && due(now, nextNightProbe) &&
         due(now, nextNightOffer) && life::night(at<Byte>(0xB70153))) {

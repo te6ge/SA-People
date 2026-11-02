@@ -199,14 +199,14 @@ inline Scene roaming(const people::Family *focus, bool continuing, const std::st
                !hints.canGreet             ? "KONUSMAK ISTEMIYOR"
                : hints.eventAction.empty() ? (continuing ? "KONUSMAYA DEVAM ET" : "SELAMLA")
                                            : hints.eventAction,
-               controls::keyName(controls::keys[controls::Greet].primary),
+               controls::buttonHint(controls::Greet),
                hints.canGreet && hints.ready);
         option(1, !hints.defuseAction.empty() ? hints.defuseAction : hints.canDecline ? "NIGHT_DECLINE" : "SAKINLESTIR",
-               controls::keyName(controls::keys[controls::Defuse].primary),
+               controls::buttonHint(controls::Defuse),
                hints.ready && (!hints.defuseAction.empty() || hints.canDecline || hints.angry));
-        option(2, "KISKIRT", controls::keyName(controls::keys[controls::Provoke].primary), hints.ready);
+        option(2, "KISKIRT", controls::buttonHint(controls::Provoke), hints.ready);
         option(3, hints.robbed ? "PARASINI ZATEN ISTEDIN" : "SOY",
-               controls::keyName(controls::keys[controls::Rob].primary),
+               controls::buttonHint(controls::Rob),
                hints.canRob && !hints.robbed && hints.ready);
         // Name plate: name, relationship and a small trust gauge (centre = neutral).
         const float plateRight = keyX + radius, plateWidth = 300 * scale, plateY = y0 - 74 * scale;

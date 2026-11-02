@@ -1,5 +1,6 @@
 #pragma once
 #include "Street.h"
+#include "Community.h"
 #include <algorithm>
 namespace meetings {
 // Real San Andreas places for dates and meetups. Names are translation keys.
@@ -65,10 +66,26 @@ inline const Venue *activityVenue(float x, float y, unsigned seed, unsigned acti
 inline bool canInvite(const people::Family &f) {
     return f.presence.alive && f.presence.located && f.presence.area == 0 && f.social.journal &&
            f.social.trust >= 20 && f.social.anger < 25 && f.social.resentment < 30 &&
-           !f.social.robbed;
+           !f.social.robbed && !f.social.cutOff && !f.social.feud && f.story.grievance<30;
 }
 inline bool active(const people::Appointment &a) {
     return a.state == 1 || a.state == 2;
+}
+// The text reply and the scheduling screen share the same contact-side checks.
+inline const char *unavailable(const people::Registry &r,unsigned id) {
+    if(!id || id>r.families.size())return "PHONE_UNAVAILABLE";
+    const auto &f=r.families[id-1];
+    if(!f.presence.alive || !f.presence.located || !f.social.journal)return "PHONE_UNAVAILABLE";
+    if(f.social.robbed || f.social.cutOff || f.social.feud || f.social.anger>=25 ||
+       f.social.resentment>=30 || f.story.grievance>=30)return "PHONE_INVITE_REFUSED";
+    if(!canInvite(f))return "PHONE_INVITE_REJECT";
+    if(stories::unavailable(r,f))return stories::lifeStatus(r,f);
+    if(f.daily.busyUntil>r.worldMinutes)return "TXT_AVAIL_BUSY";
+    for(const auto &a:r.appointments)if(a.person==id && active(a))return "PHONE_INVITE_ACTIVE";
+    return community::requestReason(r,id);
+}
+inline bool safeToPlan(bool mission,bool outside,bool playerBusy,bool onFoot,bool parkedDriver) {
+    return !mission && outside && !playerBusy && (onFoot || parkedDriver);
 }
 inline bool schedule(people::Registry &registry, unsigned id, float x, float y, float z,
                      unsigned delay = 60000, unsigned window = 300000) {

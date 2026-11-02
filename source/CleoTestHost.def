@@ -1,0 +1,6 @@
+EXPORTS
+    _CLEO_GetVersion@0=_CLEO_GetVersion@0
+    _CLEO_RegisterCallback@8=_CLEO_RegisterCallback@8
+    TestVersion=_TestVersion@4
+    TestCount=_TestCount@0
+    TestInvoke=_TestInvoke@4

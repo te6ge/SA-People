@@ -1,12 +1,12 @@
 #pragma once
 #include <cstddef>
 namespace setuptext {
-enum class Language { English, Turkish, Russian, Spanish, Chinese };
+enum class Language { English, Turkish, Russian, Spanish, Chinese, Japanese };
 enum Key { Subtitle, Headline, Intro, People, PeopleBody, Phone, PhoneBody, Memory, MemoryBody,
     Folder, Browse, Hint, Preserve, Install, Close, Installing, Complete, Failed, Pick,
     Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, WithNewMenu, Count };
-inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español", L"简体中文"};
-inline constexpr const wchar_t *copy[5][Count] = {
+inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español", L"简体中文", L"日本語"};
+inline constexpr const wchar_t *copy[6][Count] = {
     {L"NPC INTERACTIONS  /  PC 1.0 US", L"A city full of people.",
      L"Make friends. Make enemies. Give the streets a memory.",
      L"Meet the city", L"Names, families and relationships.", L"Stay connected",
@@ -67,7 +67,20 @@ inline constexpr const wchar_t *copy[5][Count] = {
      L"未找到游戏程序。支持 gta_sa.exe 和 gta-sa.exe。请选择正确的文件夹。",
      L"游戏程序与支持的 1.0 US 特征不符，模组可能无法运行。仍然安装吗？",
      L"无法写入文件。请关闭游戏并检查文件夹权限：", L"检查写入权限、只读文件和路径冲突。",
-     L"同时安装了 Ultimate ASI Loader (dinput8.dll)。", L"语言", L"使用新菜单"}
+     L"同时安装了 Ultimate ASI Loader (dinput8.dll)。", L"语言", L"使用新菜单"},
+    {L"NPC との交流 / PC 1.0 US", L"街の一人ひとりに物語がある。",
+     L"友達を作り、時には敵を作る。あなたの行動を街が覚えている。",
+     L"街の人々を知る", L"名前、家族、人間関係。", L"つながりを保つ",
+     L"SA CELL でメッセージや待ち合わせ。", L"足跡を残す", L"人々はあなたの接し方を覚えています。",
+     L"ゲームフォルダー", L"参照…", L"gta_sa.exe があるフォルダーを選択し、先にゲームを終了してください。",
+     L"既存の設定と人間関係は保持されます。", L"SA People をインストール", L"閉じる",
+     L"SA People をインストール中…", L"この街へようこそ。", L"インストールできませんでした。",
+     L"GTA San Andreas のフォルダーを選択", L"インストールパッケージが破損しています。",
+     L"ゲームの実行ファイルが見つかりません。正しいフォルダーを選択してください。",
+     L"対応する 1.0 US 版の実行ファイルではないようです。続行しますか？",
+     L"ファイルを書き込めません。ゲームを終了して書き込み権限を確認してください：",
+     L"書き込み権限、読み取り専用ファイル、パスの競合を確認してください。",
+     L"Ultimate ASI Loader (dinput8.dll) もインストールされました。", L"言語", L"新しいメニューを使用"}
 };
 inline const wchar_t *get(Language language, Key key) {
     return copy[static_cast<std::size_t>(language)][key];

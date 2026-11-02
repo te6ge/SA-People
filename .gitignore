@@ -27,3 +27,6 @@ backup-*/
 
 # Obtain the ASI loader from its upstream release
 loader/*.dll
+
+# Private CLEO candidate packages
+release-cleo/

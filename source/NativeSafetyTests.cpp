@@ -6,10 +6,38 @@
 namespace {
 unsigned chainedCalls=0;
 Process chainedPrevious=nullptr;
+unsigned nativeSaveCalls=0;
+bool __cdecl failedGameSave(int argument){assert(argument==27);++nativeSaveCalls;return false;}
 void __cdecl foreignCallback(){++chainedCalls;}
 void __cdecl ourCallback(){++chainedCalls;chainedPrevious();}
 }
 int main() {
+    {
+        panelOpen=true;phoneState.page=phone::Page::Controls;phoneState.capturing=true;
+        controls::padActions[controls::PhoneBack]=true;phoneBack=false;
+        processPhone(nullptr);
+        assert(!phoneState.capturing && panelOpen && phoneBack && phoneState.page==phone::Page::Controls);
+        controls::padActions.fill(false);controls::padActions[controls::PhoneClose]=true;
+        phoneState.capturing=true;processPhone(nullptr);
+        assert(!phoneState.capturing && !panelOpen);
+        controls::padActions.fill(false);phoneState={};phoneBack=false;
+        std::cout<<"PASS: controller cancel exits keyboard capture once; close exits the phone without accessing game memory.\n";
+    }
+    {
+        previousGameSave=failedGameSave;
+        profileReady=true;profileKey=std::string(32,'a');registry.honor=-37;dirty=true;
+        assert(!gameSaveProfileHook(27) && nativeSaveCalls==1);
+        assert(profileReady && profileKey==std::string(32,'a') && registry.honor==-37 && dirty);
+        previousGameSave=nullptr;profileReady=false;profileKey.clear();registry={};dirty=false;
+        char nativeName[]="GTASAsf1.b";
+        const auto cwd=std::filesystem::temp_directory_path();
+        assert(nativeSaveName(reinterpret_cast<std::uintptr_t>(nativeName),sizeof(nativeName),cwd)==cwd/L"GTASAsf1.b");
+        bool bounded=false;
+        try {nativeSaveName(reinterpret_cast<std::uintptr_t>(nativeName),3,cwd);}
+        catch(const std::exception &){bounded=true;}
+        assert(bounded);
+        std::cout<<"PASS: failed native saves run once, preserve their result and leave mod checkpoints/state untouched; bounded native filename parsing.\n";
+    }
     {
         wchar_t temp[MAX_PATH] = {}, ini[MAX_PATH] = {};
         assert(GetTempPathW(MAX_PATH, temp));
@@ -116,6 +144,8 @@ int main() {
     assert(page);
     page[0]=0xE8;page[5]=0xC3;
     *reinterpret_cast<int *>(page+1)=static_cast<int>(reinterpret_cast<std::uintptr_t>(&foreignCallback)-reinterpret_cast<std::uintptr_t>(page+5));
+    assert(stockProfileCall(reinterpret_cast<std::uintptr_t>(page),reinterpret_cast<std::uintptr_t>(&foreignCallback)));
+    assert(!stockProfileCall(reinterpret_cast<std::uintptr_t>(page),reinterpret_cast<std::uintptr_t>(&ourCallback)));
     assert(patchCall(reinterpret_cast<std::uintptr_t>(page),ourCallback,chainedPrevious));
     assert(chainedPrevious==foreignCallback);
     reinterpret_cast<Process>(page)();assert(chainedCalls==2);

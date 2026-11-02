@@ -63,6 +63,8 @@ def old_state(game):
         'SA-People.asi': b'previous ASI',
         'SA-People/people.dat': b'user identities',
         'SA-People/people.dat.bak': b'user identity backup',
+        'SA-People/worlds/' + 'a'*32 + '/checkpoint.dat': b'save-specific checkpoint',
+        'SA-People/worlds/' + 'a'*32 + '/live.dat': b'unsaved recovery data',
         'SA-People/settings.ini': b'[Interface]\r\nLanguage=tr\r\n',
         'SA-People/languages.tsv': b'previous translations',
         'SA-People/audio/custom.wav': b'custom sound',
@@ -75,7 +77,7 @@ def old_state(game):
 def preserved(game):
     return {str(p.relative_to(game)): p.read_bytes() for p in (game / 'SA-People').rglob('*')
             if p.is_file() and not any(part.startswith('backup-') for part in p.relative_to(game).parts)
-            and p.name in ('people.dat', 'people.dat.bak', 'settings.ini', 'custom.wav', 'custom.png')}
+            and p.name in ('people.dat', 'people.dat.bak', 'settings.ini', 'custom.wav', 'custom.png', 'checkpoint.dat', 'live.dat')}
 
 try:
     stub = (project / 'build/Installer.exe').read_bytes()

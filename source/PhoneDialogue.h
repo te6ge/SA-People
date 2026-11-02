@@ -6,7 +6,7 @@ inline constexpr const char *choices[] = {"TXT_HELLO", "TXT_CHECK",  "TXT_MEMORY
                                           "TXT_THANKS_ACK", "TXT_OUTING_ACK", "TXT_FAMILY_ACK",
                                           "TXT_AVAILABLE", "TXT_VISIT_AGAIN", "TXT_SUPPORT"};
 inline constexpr unsigned ChoiceCount = static_cast<unsigned>(sizeof(choices) / sizeof(*choices));
-enum class Context { General, Thanks, Outing, Family, Visit, Invitation };
+enum class Context { General, Thanks, Outing, Family, Visit, Invitation, Health, Work };
 inline Context context(const people::Registry &r, unsigned id) {
     for (auto it = r.letters.rbegin(); it != r.letters.rend(); ++it) {
         if (it->person != id) continue;
@@ -15,6 +15,9 @@ inline Context context(const people::Registry &r, unsigned id) {
         if (it->body.rfind("MAIL_LATER_", 0) == 0) return Context::Thanks;
         if (it->body.rfind("MAIL_STORY_", 0) == 0 && it->body != "MAIL_STORY_NEW_CONTACT") return Context::Thanks;
         if (it->body.rfind("MAIL_GOOD_OUTING", 0) == 0) return Context::Outing;
+        if(it->body=="ST_MAIL_SICK" || it->body=="ST_MAIL_RECOVERED")return Context::Health;
+        if(it->body=="ST_MAIL_JOB" || it->body=="ST_MAIL_WORK")return Context::Work;
+        if(it->body=="ST_MAIL_FAMILY")return Context::Family;
         if (it->body == "MAIL_FAMILY_PLANS") return Context::Family;
         if (it->kind == 2) return Context::Invitation;
         return Context::General;
@@ -24,6 +27,7 @@ inline Context context(const people::Registry &r, unsigned id) {
 inline std::vector<unsigned> options(const people::Registry &r, unsigned id) {
     std::vector<unsigned> result;
     auto c = context(r, id);
+    if(c==Context::Health || c==Context::Work)result.push_back(11);
     if (c == Context::Thanks) result.push_back(6);
     if (c == Context::Outing) result.push_back(7);
     if (c == Context::Family) result.push_back(8);
@@ -31,7 +35,7 @@ inline std::vector<unsigned> options(const people::Registry &r, unsigned id) {
     if (c == Context::Invitation) result.push_back(9);
     for (unsigned i = 0; i < 6; ++i) result.push_back(i);
     result.push_back(9);
-    result.push_back(11);
+    if(c!=Context::Health && c!=Context::Work)result.push_back(11);
     if (c == Context::Invitation) result.erase(result.end() - 2);
     return result;
 }
@@ -39,12 +43,26 @@ inline const char *label(const people::Registry &r, unsigned id, unsigned choice
     if (choice >= ChoiceCount) return "";
     if (choice == 0 && id && id <= r.families.size() &&
         (r.families[id - 1].social.known & people::Name)) return "TXT_HELLO_AGAIN";
+    if(choice==11) {
+        const auto topic=context(r,id);
+        if(topic==Context::Health)return "ST_TXT_HEALTH";
+        if(topic==Context::Work)return "ST_TXT_WORK";
+    }
     return choices[choice];
 }
 inline const char *menuLabel(const people::Registry &r, unsigned id, unsigned choice) {
+    if(choice==11 && context(r,id)==Context::Health)return "ST_MENU_HEALTH";
+    if(choice==11 && context(r,id)==Context::Work)return "ST_MENU_WORK";
     static const char *shortLabels[] = {"TXT_MENU_THANKS", "TXT_MENU_OUTING", "TXT_MENU_FAMILY",
         "TXT_MENU_AVAILABLE", "TXT_MENU_VISIT", "TXT_MENU_SUPPORT"};
     return choice >= 6 && choice < ChoiceCount ? shortLabels[choice - 6] : label(r, id, choice);
+}
+inline bool planOffer(const people::Letter &letter) {
+    return !letter.outgoing && (letter.kind==2 || letter.body=="TXT_AVAIL_FREE");
+}
+inline const char *availability(const people::Registry &r,unsigned id) {
+    if(auto reason=meetings::unavailable(r,id))return reason;
+    return "TXT_AVAIL_FREE";
 }
 inline constexpr const char *Hello[] = {"TXT_REPLY_HELLO_0", "TXT_REPLY_HELLO_1", "TXT_REPLY_HELLO_2",
                                         "TXT_REPLY_HELLO_3", "TXT_REPLY_HELLO_4", "TXT_REPLY_HELLO_5",
@@ -72,7 +90,7 @@ template <std::size_t N> inline const char *pick(const char *const (&pool)[N], u
 inline bool answers(const people::Family &f, unsigned choice) {
     if (!f.presence.alive || !f.social.journal || f.social.cutOff || f.social.anger >= 60)
         return false;
-    const bool sulking = f.social.anger >= 20 ||
+    const bool sulking = f.story.grievance>=30 || f.social.anger >= 20 ||
                          ((f.daily.memories & 2) && f.social.resentment >= 15);
     return !sulking || choice == 3;
 }
@@ -88,7 +106,7 @@ inline const char *send(people::Registry &r, unsigned id, unsigned choice, bool 
         return "PHONE_UNAVAILABLE";
     if (f.social.cutOff || f.social.anger >= 60)
         return "MAIL_BLOCKED";
-    if (call && (f.daily.busyUntil > r.worldMinutes ||
+    if (call && (stories::unavailable(r,f) || f.daily.busyUntil > r.worldMinutes ||
                  (socialworld::phase(minute) == 1 && people::mix(id) % 3 != 0)))
         return "MAIL_CALL_BUSY";
     for (auto i = r.letters.rbegin(); i != r.letters.rend(); ++i)
@@ -110,7 +128,7 @@ inline const char *send(people::Registry &r, unsigned id, unsigned choice, bool 
         if (lastIncoming == pool[index]) index = (index + 1) % length;
         return pool[index];
     };
-    bool cold = f.social.anger >= 25 || f.social.resentment >= 35 || f.social.robbed;
+    bool cold = f.story.grievance>=30 || f.social.anger >= 25 || f.social.resentment >= 35 || f.social.robbed;
     // Someone CJ just provoked (or who is still fuming) reads the text and leaves it unanswered;
     // only an apology may get a cool reply.
     // The same text again and again: "you said that already", then annoyance, then silence.
@@ -150,13 +168,15 @@ inline const char *send(people::Registry &r, unsigned id, unsigned choice, bool 
         static const char *pool[] = {"TXT_ACK_OUTING_0", "TXT_ACK_OUTING_1", "TXT_ACK_OUTING_2", "TXT_ACK_OUTING_3"};
         reply = choose(pool);
     } else if (choice == 8) reply = "TXT_ACK_FAMILY";
-    else if (choice == 9) reply = cold ? choose(Cold)
-                                 : f.daily.busyUntil > r.worldMinutes ? "TXT_AVAIL_BUSY" : "TXT_AVAIL_FREE";
+    else if (choice == 9) reply = cold ? choose(Cold) : availability(r,id);
     else if (choice == 10) reply = cold ? choose(Cold) : "TXT_ACK_VISIT";
     else if (choice == 11) {
         static const char *pool[] = {"TXT_SUPPORT_0", "TXT_SUPPORT_1", "TXT_SUPPORT_2"};
         reply = choose(pool);
     }
+    if(!cold && (choice==1 || choice==9) && stories::unavailable(r,f))
+        reply=f.story.life==stories::Ill?"ST_MAIL_SICK":"ST_MAIL_FAMILY";
+    if(!cold && choice==11 && (context(r,id)==Context::Health || context(r,id)==Context::Work))reply="ST_SUPPORT_ACK";
     if (choice < 3 && !cold && r.honor <= -40) reply = "TXT_HONOR_WARY";
     if (choice == 0 && !cold && r.honor >= 40) reply = "TXT_HONOR_WARM";
     if (repeats >= 1 && choice != 4)
@@ -172,6 +192,7 @@ inline const char *send(people::Registry &r, unsigned id, unsigned choice, bool 
                               choice == 4   ? socialworld::Intent::Insult
                               : choice == 3 ? socialworld::Intent::Apology
                                             : socialworld::Intent::Neutral);
+    if(choice==4)stories::harm(r,id,stories::Insulted);
     if (deferred) // The caller delivers the reply after a short, realistic delay.
         *deferred = reply;
     else if (reply)

@@ -39,7 +39,7 @@ class Renderer {
             return result;
         HFONT font = CreateFontW(size, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                                  OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-                                 DEFAULT_PITCH, std::any_of(value.begin(), value.end(), [](wchar_t c) { return c >= 0x3000 && c <= 0x9fff; })
+                                 DEFAULT_PITCH, locale::language==locale::Language::Japanese ? L"Yu Gothic" : std::any_of(value.begin(), value.end(), [](wchar_t c) { return c >= 0x3000 && c <= 0x9fff; })
                                      ? L"Microsoft YaHei" : size >= 28 ? L"Georgia" : L"Tahoma");
         auto oldFont = SelectObject(dc, font);
         SIZE extent{};
@@ -108,7 +108,8 @@ class Renderer {
             clear();
         auto value = wide(text);
         int pixels = std::clamp(static_cast<int>(size + 0.5f), 8, 96);
-        auto key = std::to_wstring(pixels) + L":" + value;
+        auto key = std::to_wstring(static_cast<unsigned>(locale::language)) + L":" +
+                   std::to_wstring(pixels) + L":" + value;
         auto entry = cache.find(key);
         if (entry == cache.end())
             entry = cache.emplace(key, make(device, value, pixels)).first;

@@ -93,3 +93,55 @@
         assert(barkHistory.people.size()<=512);
         std::cout<<"PASS: gang-war eligibility and mission/social exclusions, target spreading, reversible bounded combat posture, external field changes and per-person/global bark repetition limits.\n";
     }
+
+    {
+        people::Registry town;auto &renewedPartner=town.create(true);renewedPartner.household=1;renewedPartner.presence.alive=true;
+        renewedPartner.social.romance=3;renewedPartner.social.dates=6;renewedPartner.social.trust=90;
+        assert(commitment::update(town,renewedPartner));town.worldMinutes=2000;
+        renewedPartner.social.romance=0;assert(commitment::update(town,renewedPartner) && renewedPartner.commitment.empty());
+        renewedPartner.social.romance=3;assert(commitment::update(town,renewedPartner) && renewedPartner.commitment.since==2001);
+        assert(std::string(commitment::proposalBlock(town,renewedPartner))=="REL_NEED_TIME");
+        renewedPartner.social.romance=1;renewedPartner.commitment={};renewedPartner.commitment.lastTalk=2001;
+        assert(!commitment::update(town,renewedPartner) && renewedPartner.commitment.lastTalk==2001);
+        renewedPartner.social.romance=3;renewedPartner.commitment.since=2001;
+        renewedPartner.commitment.stage=3;renewedPartner.commitment.proposedAt=2001;renewedPartner.commitment.marriedAt=2001;
+        renewedPartner.presence.alive=false;
+        assert(std::string(street::relationship(renewedPartner))=="REL_BEREAVED");
+        std::vector<unsigned char> ped(0x7c4,0);npcbrain::Posture lease;
+        lease.apply(ped.data(),npcbrain::Role::Support,225);
+        ped[0x46e]&=~0x48;ped[0x46f]&=~2; // Another mod changes owned bits during the lease.
+        lease.apply(ped.data(),npcbrain::Role::Assault,4);lease.restore(ped.data());
+        assert(!(ped[0x46e]&0x48) && !(ped[0x46f]&2));
+        assert(awareness::nearMiss(8,1,0,12,0));
+        assert(!awareness::nearMiss(-8,1,0,12,0)); // Receding car.
+        assert(!awareness::nearMiss(8,5,0,12,0)); // Safe lateral clearance.
+        assert(!awareness::nearMiss(8,1,4,12,0)); // Overpass.
+        assert(!awareness::nearMiss(8,1,0,0,0));
+        assert(!awareness::nearMiss(14,1,0,6,0)); // Not an imminent approach.
+        assert(!awareness::nearMiss(8,1,0,std::numeric_limits<float>::infinity(),0));
+        assert(awareness::civilian(4,1,false,true,true,false,false,false));
+        assert(!awareness::civilian(7,1,false,true,true,false,false,false));
+        assert(!awareness::civilian(6,1,false,true,true,false,false,false)); // Police keep native responses.
+        assert(!awareness::civilian(18,1,false,true,true,false,false,false));
+        assert(!awareness::civilian(4,2,false,true,true,false,false,false));
+        assert(!awareness::civilian(4,1,false,true,true,false,true,false));
+        assert(!awareness::civilian(4,1,false,true,true,true,false,false));
+        assert(!awareness::civilian(4,1,true,true,true,false,false,false));
+        awareness::Cooldowns cooldown;assert(cooldown.ready(1,100));cooldown.record(1,100);
+        assert(!cooldown.ready(1,50000) && !cooldown.ready(2,200));
+        assert(cooldown.ready(2,3100));assert(cooldown.ready(1,90100));
+        for(unsigned n=1;n<300;++n)cooldown.record(n,n*3000);
+        assert(cooldown.people.size()<=128);
+        cooldown={};cooldown.record(1,0xfffffff0u);
+        assert(!cooldown.ready(1,100) && cooldown.ready(1,100000));
+        for(unsigned lang=0;lang<locale::LanguageCount;++lang) {
+            locale::language=static_cast<locale::Language>(lang);
+            for(const auto *prefix:{"WORLD_TRAFFIC_","WORLD_HURT_","WORLD_NIGHT_"})
+                for(unsigned n=0;n<(std::string(prefix)=="WORLD_TRAFFIC_"?4u:3u);++n) {
+                    const auto key=std::string(prefix)+std::to_string(n);
+                    assert(locale::tr(key)!=key);
+                }
+        }
+        locale::language=locale::Language::Turkish;
+        std::cout<<"PASS: renewed relationship clock, bereaved status, external posture bits, traffic prediction/exclusions, bounded rollover-safe cooldowns and five-language world remarks.\n";
+    }

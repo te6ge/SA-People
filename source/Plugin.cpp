@@ -2,6 +2,9 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#ifdef SA_PEOPLE_CLEO
+#include "CleoBridge.h"
+#endif
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
@@ -9,6 +12,10 @@
 #include <cstring>
 #include <ctime>
 #include "Network.h"
+#include "Stories.h"
+#include "SaveProfiles.h"
+#include "ControllerPolicy.h"
+#include "GInputBridge.h"
 #include "World.h"
 #include "ModelTraits.h"
 #include "Panel.h"
@@ -38,6 +45,7 @@
 #include "Neighborhood.h"
 #include "GangCombat.h"
 #include "NpcBrain.h"
+#include "WorldAwareness.h"
 #include "Community.h"
 #include "OutingSafety.h"
 namespace {
@@ -55,9 +63,21 @@ struct Pool {
 };
 bool validPool(Pool *);
 using Process = void(__cdecl *)();
+bool patchCall(std::uintptr_t,Process,Process &);
+void resetRuntime();
+void resetControllerInput();
+bool canImportSharedProfile();
 Process original = nullptr, originalRestart = nullptr, originalDraw = nullptr;
 HMODULE moduleHandle = nullptr;
-std::filesystem::path directory, resourceDirectory, settingsFile;
+std::filesystem::path directory, resourceDirectory, settingsFile, activeArchive, pendingGameSave;
+enum class ProfilePending {None,NewGame,Load};
+ProfilePending pendingProfile=ProfilePending::NewGame;
+std::string profileKey;
+bool profileReady=false, profileHooksReady=false;
+void applyPendingProfile();
+void importSharedProfile();
+bool installProfileHooks();
+void queueNewProfile();
 HANDLE instanceGuard = nullptr;
 socialaudio::Player audio;
 unsigned audioVariation = 0;
@@ -297,8 +317,10 @@ void capture(people::Family &f, Byte *ped) {
     dirty = true;
 }
 bool save() {
+    if(!profileReady || activeArchive.empty())return false;
     try {
-        auto tmp = directory / L"people.dat.tmp", target = directory / L"people.dat";
+        auto target=activeArchive;auto tmp=target;tmp+=L".tmp";
+        std::filesystem::create_directories(target.parent_path());
         {
             std::ofstream out(tmp, std::ios::trunc);
             registry.savedAt = static_cast<std::uint64_t>(std::time(nullptr));
@@ -308,7 +330,7 @@ bool save() {
                 throw std::runtime_error("Archive flush failed");
         }
         if (std::filesystem::exists(target) &&
-            !CopyFileW(target.c_str(), (directory / L"people.dat.bak").c_str(), FALSE))
+            !CopyFileW(target.c_str(), std::filesystem::path(target.wstring()+L".bak").c_str(), FALSE))
             throw std::runtime_error("Archive backup failed");
         if (!MoveFileExW(tmp.c_str(), target.c_str(),
                          MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
@@ -364,7 +386,8 @@ void initialize() {
     }
     wchar_t language[16] = {};
     GetPrivateProfileStringW(L"Interface", L"Language", L"tr", language, 16, ini.c_str());
-    locale::language = (wcscmp(language, L"zh") == 0 || wcscmp(language, L"zh-CN") == 0) ? locale::Language::Chinese
+    locale::language = wcscmp(language,L"ja")==0 ? locale::Language::Japanese
+                       : (wcscmp(language, L"zh") == 0 || wcscmp(language, L"zh-CN") == 0) ? locale::Language::Chinese
                        : wcscmp(language, L"ru") == 0   ? locale::Language::Russian
                        : wcscmp(language, L"es") == 0 ? locale::Language::Spanish
                        : wcscmp(language, L"en") == 0 ? locale::Language::English
@@ -374,55 +397,11 @@ void initialize() {
         log("SETTINGS could not write missing control bindings; existing bindings remain active.");
     gallery.initialize(resourceDirectory);
     audio.initialize(directory, log, resourceDirectory, settingsFile);
-    auto archive = directory / L"people.dat";
-    if (std::filesystem::exists(archive)) {
-        const auto beforeNeighborhood = directory / L"people.pre-0.15.dat";
-        if (!std::filesystem::exists(beforeNeighborhood) &&
-            !CopyFileW(archive.c_str(), beforeNeighborhood.c_str(), TRUE))
-            throw std::runtime_error("Neighborhood upgrade backup failed");
-        const auto beforeCommitment = directory / L"people.pre-0.17.dat";
-        if (!std::filesystem::exists(beforeCommitment) &&
-            !CopyFileW(archive.c_str(), beforeCommitment.c_str(), TRUE))
-            throw std::runtime_error("Relationship upgrade backup failed");
-        const auto beforeBonds = directory / L"people.pre-0.16.dat"; // 0.15 cannot read V16.
-        if (!std::filesystem::exists(beforeBonds) &&
-            !CopyFileW(archive.c_str(), beforeBonds.c_str(), TRUE))
-            throw std::runtime_error("Bonds upgrade backup failed");
-        try {
-            std::ifstream in(archive);
-            registry = people::Registry::read(in);
-        } catch (const std::exception &e) {
-            // Never overwrite an unreadable archive; fall back to the previous good save.
-            auto spare = directory / L"people.dat.bak";
-            log(std::string("Archive unreadable (") + e.what() + "); trying people.dat.bak");
-            std::ifstream in(spare);
-            if (!std::filesystem::exists(spare) || !in)
-                throw;
-            registry = people::Registry::read(in);
-            CopyFileW(
-                archive.c_str(),
-                (directory / (L"people.corrupt-" + std::to_wstring(std::time(nullptr)) + L".dat"))
-                    .c_str(),
-                TRUE);
-            recovered = true;
-            dirty = true;
-            log("Archive recovered from people.dat.bak");
-        }
-        auto backup = directory / L"people.pre-0.12.dat";
-        if (!std::filesystem::exists(backup) && !CopyFileW(archive.c_str(), backup.c_str(), TRUE))
-            throw std::runtime_error("Pre-upgrade backup failed");
-    }
-    expiredMeetings = meetings::resume(registry, static_cast<std::uint64_t>(std::time(nullptr)));
-    for (auto &f : registry.families) {
-        if (f.presence.located)
-            f.female = modelTraits.female(f.presence.model, f.female);
-        spatial.update(f);
-    }
-    const auto existingCount = registry.families.size();
-    for (unsigned i = 0; i < existingCount; ++i)
-        if (!registry.families[i].origin && (registry.families[i].social.known & people::Name))
-            discoverNetwork(i + 1);
-    log("SA People 0.17.0 initialized; persistent identities=" +
+    // World state is selected only after a successful native load (or a new game).
+    // The legacy shared people.dat remains available for an explicit one-save import.
+    registry=people::Registry{};spatial=people::SpatialIndex{};
+    profileKey.clear();activeArchive.clear();profileReady=false;pendingProfile=ProfilePending::NewGame;
+    log("SA People 0.18.0 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -898,8 +877,8 @@ void __cdecl drawHook() {
         log(std::string("UI: ") + e.what());
     }
 }
-void __cdecl processHook() {
-    original();
+#include "ControllerNative.inc"
+void processPeople() {
     try {
         tick();
     } catch (const std::exception &e) {
@@ -929,10 +908,12 @@ void __cdecl processHook() {
         disabled = true;
     }
 }
+void __cdecl processHook(){original();processPeople();}
 void __cdecl restartHook() {
     if (dirty)
         save();
     resetRuntime();
+    queueNewProfile();
     originalRestart();
 }
 bool patchCall(std::uintptr_t address, Process replacement, Process &previous) {
@@ -964,19 +945,26 @@ bool supportedExecutable() {
 }
 bool install() {
     if (!supportedExecutable()) return false;
+    if(!installProfileHooks()){log("SAVE isolation hooks unavailable; social gameplay refused.");return false;}
+#ifndef SA_PEOPLE_CLEO
     if (!patchCall(0x53E981, processHook, original))
         return false;
+#endif
     if (!patchCall(0x53EBB1, drawHook, originalDraw)) {
         disabled = true;
         log("UI hook unavailable; interface disabled.");
         return false;
     }
+    installControllerHook();
     log("UI HOOK OK: phone and street renderer installed.");
     log(installLanguageMenu()
             ? "MENU language row installed."
             : "MENU native language row kept; mod language is in phone settings.");
-    if (!patchCall(0x748E48, restartHook, originalRestart))
-        log("WARNING: restart hook unavailable; timer-reset fallback active.");
+    if (!patchCall(0x748E48, restartHook, originalRestart)) {
+        disabled=true;profileReady=false;
+        log("SAVE isolation requires the restart hook; social gameplay refused.");
+        return false;
+    }
     return true;
 }
 } // namespace
@@ -992,7 +980,7 @@ void startupDiagnostic(const wchar_t *diagnosticText) {
     WriteFile(file, diagnosticText, static_cast<DWORD>(wcslen(diagnosticText) * sizeof(wchar_t)), &written, nullptr);
     CloseHandle(file);
 }
-extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
+void initializePeople() {
     static volatile LONG initialized = 0;
     if (InterlockedCompareExchange(&initialized, 1, 0) != 0) return;
     if (!supportedExecutable()) {
@@ -1008,11 +996,15 @@ extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
         OutputDebugStringW(L"SA People: another copy is already running; initialization skipped.");
         return;
     }
-    startupDiagnostic(L"InitializeASI called; starting SA People 0.17.0.\r\n");
+    startupDiagnostic(L"InitializeASI called; starting SA People 0.18.0.\r\n");
     try {
         initialize();
-        if (install())
+        if (install()) {
+#ifdef SA_PEOPLE_CLEO
+            log("CLEO 5 plugin active; processing through CLEO callbacks.");
+#endif
             log("HOOK OK: GTA SA 1.0 US persistent population adapter installed.");
+        }
         else {
             disabled = true;
             log("HOOK REFUSED: unsupported executable or multiplayer.");
@@ -1023,10 +1015,40 @@ extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
             log(e.what());
     }
 }
+#ifdef SA_PEOPLE_CLEO
+namespace {
+bool cleoReady = false;
+void WINAPI cleoStartup() {
+    static bool attempted = false;
+    if (attempted) return;
+    attempted = true;
+    if (!supportedExecutable()) {
+        OutputDebugStringW(L"SA People CLEO: GTA SA 1.0 US single player required.");
+        return;
+    }
+    // Native game hooks must remain mapped until process exit, even if a loader unloads plugins.
+    HMODULE pinned = nullptr;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+            reinterpret_cast<LPCWSTR>(&cleoStartup), &pinned)) return;
+    initializePeople();
+    cleoReady = instanceGuard != nullptr && !disabled;
+}
+void WINAPI cleoProcess() {
+    cleoStartup();
+    if (cleoReady) processPeople();
+}
+}
+#else
+extern "C" __declspec(dllexport) void __cdecl InitializeASI() { initializePeople(); }
+#endif
 BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         moduleHandle = module;
         DisableThreadLibraryCalls(module);
+#ifdef SA_PEOPLE_CLEO
+        startupDiagnostic(L"SA-People CLEO library loaded; registering CLEO 5 callbacks.\r\n");
+        if(!cleobridge::attach(GetModuleHandleW(L"CLEO.asi"),cleoStartup,cleoProcess))return FALSE;
+#else
         startupDiagnostic(L"SA-People library loaded; waiting for InitializeASI or ModLoader startup.\r\n");
         // ModLoader's std.asi calls LoadLibrary, but not the Ultimate ASI Loader export.
         // Initialization here does no COM/media playback and creates no worker threads.
@@ -1042,6 +1064,7 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
                 }
             }
         }
+#endif
     }
     return TRUE;
 }

@@ -17,7 +17,9 @@ inline Layout resolve(const std::filesystem::path &executable, const std::filesy
     result.game = executable.parent_path();
     result.state = result.game / L"SA-People";
     auto beside = module.parent_path();
-    result.resources = sameDirectory(beside, result.game) ? result.state
+    const bool cleoPlugin=sameDirectory(beside,result.game/L"cleo"/L"cleo_plugins") &&
+        sameDirectory(module.extension(),L".cleo");
+    result.resources = (sameDirectory(beside, result.game) || cleoPlugin) ? result.state
         : std::filesystem::is_regular_file(beside / L"languages.tsv") ? beside
         : beside / L"SA-People";
     return result;

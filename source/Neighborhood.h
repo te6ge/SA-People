@@ -28,7 +28,7 @@ struct TruceBits {
 };
 inline bool canRecognize(const people::Family &f, bool mission, bool native, bool owned,
                          unsigned area, float distanceSquared) {
-    return !mission && !native && !owned && f.social.journal &&
+    return !mission && !native && !owned && f.story.grievance<30 && f.social.journal &&
         (f.social.known & people::Name) && socialworld::available(f) && f.social.trust >= 15 &&
         f.presence.area == area && distanceSquared >= 16 && distanceSquared <= 225;
 }

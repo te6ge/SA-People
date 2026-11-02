@@ -1,5 +1,6 @@
 #pragma once
 #include "Network.h"
+#include "Stories.h"
 #include "SocialProgress.h"
 namespace community {
 enum class Deed : unsigned { Help=1, Robbery, Violence, Killing };
@@ -45,6 +46,10 @@ inline bool gossip(people::Registry &r,unsigned from,unsigned to) {
     const auto memory=m;
     if (!remember(r,to,memory.victim,static_cast<Deed>(memory.kind),memory.incident,from,memory.hops+1)) return false;
     m.sharedAt=static_cast<unsigned>(r.worldMinutes+1);
+    if(stories::contact(r.families[to-1]))
+        stories::publish(r,memory.victim,memory.kind==static_cast<unsigned>(Deed::Help)?stories::Helped:
+            memory.kind==static_cast<unsigned>(Deed::Robbery)?stories::Robbed:
+            memory.kind==static_cast<unsigned>(Deed::Killing)?stories::Died:stories::Hurt,from);
     if(r.families[to-1].social.journal)
         r.post(to,memory.kind==static_cast<unsigned>(Deed::Help)?"COMMUNITY_MAIL_GOOD":"COMMUNITY_MAIL_BAD",false,1,from);
     return true;
@@ -61,10 +66,9 @@ inline Response response(const people::Registry &r,unsigned id,unsigned victim,D
     if (courage<45 || weapon) return Response::Flee;
     return courage<75 ? Response::Warn : Response::Report;
 }
-inline const char *request(people::Registry &r,unsigned id) {
-    if (!id || id>r.families.size()) return "FAVOR_NO";
-    auto &f=r.families[id-1]; auto &m=f.community;
-    const auto now=static_cast<unsigned>(r.worldMinutes+1);
+inline const char *requestFor(people::Family &f,std::uint64_t worldMinutes,unsigned id) {
+    auto &m=f.community;
+    const auto now=static_cast<unsigned>(worldMinutes+1);
     const unsigned elapsed=m.lastRequest && now>=m.lastRequest ? now-m.lastRequest : 1440;
     if (elapsed>=60) {
         m.requests=0;
@@ -78,10 +82,19 @@ inline const char *request(people::Registry &r,unsigned id) {
         return "BOUND_TOO_MUCH";
     }
     if (m.strain>=60) return "BOUND_SPACE";
-    if (f.daily.busyUntil>r.worldMinutes) return "BOUND_BUSY";
-    const auto hour=static_cast<unsigned>(r.worldMinutes/60);
+    if (f.daily.busyUntil>worldMinutes) return "BOUND_BUSY";
+    const auto hour=static_cast<unsigned>(worldMinutes/60);
     if (hour%24>=8 && hour%24<17 && people::mix(id+hour/24)%5==0) return "BOUND_WORK";
     return nullptr;
+}
+inline const char *request(people::Registry &r,unsigned id) {
+    if(!id || id>r.families.size())return "FAVOR_NO";
+    return requestFor(r.families[id-1],r.worldMinutes,id);
+}
+inline const char *requestReason(const people::Registry &r,unsigned id) {
+    if(!id || id>r.families.size())return "FAVOR_NO";
+    auto preview=r.families[id-1];
+    return requestFor(preview,r.worldMinutes,id); // Checking availability never consumes a request.
 }
 inline bool unsafeRide(people::Family &f,float damage,bool collision,unsigned elapsed) {
     if (elapsed<4000 || (!collision && damage<30)) return false;
