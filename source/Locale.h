@@ -7,15 +7,15 @@
 #include <vector>
 #include <stdexcept>
 namespace locale {
-enum class Language : unsigned { Turkish, Russian, Spanish, English, Chinese, Japanese };
-inline constexpr unsigned LanguageCount = 6;
+enum class Language : unsigned { Turkish, Russian, Spanish, English, Chinese, Japanese, Polish };
+inline constexpr unsigned LanguageCount = 7;
 inline Language language = Language::Turkish;
 inline const char *code(Language value) {
-    static const char *names[] = {"tr", "ru", "es", "en", "zh", "ja"};
+    static const char *names[] = {"tr", "ru", "es", "en", "zh", "ja", "pl"};
     return names[static_cast<unsigned>(value) % LanguageCount];
 }
 inline std::string nativeName(Language value) {
-    static const char *names[] = {u8"Türkçe", u8"Русский", u8"Español", "English", u8"简体中文", u8"日本語"};
+    static const char *names[] = {u8"Türkçe", u8"Русский", u8"Español", "English", u8"简体中文", u8"日本語", "Polski"};
     return names[static_cast<unsigned>(value) % LanguageCount];
 }
 inline void cycle(int direction) {
@@ -74,11 +74,12 @@ class Catalog {
                 if (end == std::string::npos) break;
                 start = end + 1;
             }
-            if (fields.size() != 5 && fields.size() != 6 && fields.size() != 7)
+            if (fields.size() < 5 || fields.size() > LanguageCount + 1)
                 throw std::runtime_error("Invalid language row");
             if (fields[0].empty()) throw std::runtime_error("Empty language key");
-            std::array<std::string, LanguageCount> values = {
-                fields[1], fields[2], fields[3], fields[4], fields.size() >= 6 ? fields[5] : fields[4], fields.size()>=7?fields[6]:fields[4]};
+            std::array<std::string, LanguageCount> values;
+            for(unsigned column=0;column<LanguageCount;++column)
+                values[column]=fields.size()>column+1?fields[column+1]:fields[4];
             for (const auto &value : values)
                 if (value.empty())
                     throw std::runtime_error("Empty translation");

@@ -9,6 +9,8 @@
 #include "PhoneDialogue.h"
 #include "Bonds.h"
 #include "Stories.h"
+#include "ContactCare.h"
+#include "Grove.h"
 namespace phone {
 enum class Page {
     Contacts,
@@ -34,7 +36,9 @@ enum class Page {
     AskAbout,
     Peace,
     PeaceConfirm,
-    ImportShared
+    ImportShared,
+    Care,
+    Grove, GroveDonate, GroveUpgrades, GroveSupplies, GroveConfirm
 };
 struct State {
     Page page = Page::Contacts;
@@ -42,7 +46,9 @@ struct State {
     unsigned distance = 0;
     unsigned networkOffset = 0;
     unsigned arrival = 0, relationshipStage = 0;
-    bool peaceOffer=false, legacyImport=false;
+    bool peaceOffer=false, legacyImport=false, groveHere=false;
+    unsigned groveMode=0, groveProject=0, groveAmount=0;
+    float ledgerX=700,ledgerY=300;
     std::string notice;
     bool call = false;
     unsigned activity = 0, outing = 0;
@@ -58,6 +64,7 @@ inline std::vector<const char *> actionKeys(const people::Registry &r, const Sta
     if (bonds::open(r, state.person)) keys.push_back("PHONE_REQUEST");
     if(state.person && state.person<=r.families.size() && (r.families[state.person-1].social.romance ||
        !r.families[state.person-1].commitment.empty())) keys.push_back("REL_ACTION");
+    keys.push_back("CARE_TITLE");
     keys.push_back("ST_PERSONAL");
     keys.push_back("ST_ASK");
     return keys;
@@ -81,7 +88,7 @@ inline std::string letterText(const people::Registry &r, const people::Letter &m
     for (const char *choice : phonedialogue::choices)
         if (m.body == choice)
             preset = true;
-    preset = preset || m.body.rfind("TXT_", 0) == 0 || m.body.rfind("ST_TXT_",0)==0;
+    preset = preset || m.body.rfind("TXT_", 0) == 0 || m.body.rfind("ST_TXT_",0)==0 || m.body.rfind("CARE_",0)==0;
     std::string text = m.outgoing && !preset ? m.body : locale::tr(m.body);
     if (m.source && m.source <= r.families.size()) {
         auto pos = text.find("{0}");
@@ -123,8 +130,10 @@ inline panel::Layout layout(float width, float height, float preference = 1) {
                  height / 680.0f);
     return {width - 365 * s, (height - 650 * s) * 0.5f, s};
 }
+#include "GroveLedger.inc"
 inline panel::Scene compose(const people::Registry &registry, const State &state,
                             const std::string &clock) {
+    if(ledgerPage(state.page))return composeLedger(registry,state,clock);
     panel::Scene scene;
     using panel::Align;
     using panel::Color;
@@ -174,6 +183,9 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
         title = "LIFE_TITLE";
     if(state.page==Page::Stories || state.page==Page::History)title="ST_PERSONAL";
     if(state.page==Page::News)title="ST_NEWS";
+    if(state.page==Page::Care)title="CARE_TITLE";
+    if(state.page==Page::Grove || state.page==Page::GroveDonate || state.page==Page::GroveUpgrades ||
+       state.page==Page::GroveSupplies || state.page==Page::GroveConfirm)title="GROVE_TITLE";
     if(state.page==Page::AskAbout)title="ST_ASK";
     if(state.page==Page::Peace || state.page==Page::PeaceConfirm)title="ST_PEACE";
     if(state.page==Page::ImportShared)title="PROFILE_IMPORT";
@@ -231,6 +243,15 @@ inline panel::Scene compose(const people::Registry &registry, const State &state
                 if(index==state.cursor)box(36,y-1,260,26,dark);
                 text(44,y,244,13,dialogue::displayName(registry.families[targets[index]-1]),Align::Left,index==state.cursor?screen:ink);
             }
+        }
+    } else if(state.page==Page::Care && state.person && state.person<=registry.families.size()) {
+        const auto &person=registry.families[state.person-1];
+        text(41,196,248,14,dialogue::displayName(person));
+        text(41,222,248,12,stories::lifeStatus(registry,person));
+        for(unsigned row=0;row<contactcare::Count;++row) {
+            const float y=256+row*25.0f;
+            if(row==state.cursor)box(36,y-1,260,25,dark);
+            text(44,y,244,12,contactcare::label(row),Align::Left,row==state.cursor?screen:ink);
         }
     } else if ((state.page==Page::Stories || state.page==Page::Peace || state.page==Page::PeaceConfirm) &&
         state.person && state.person<=registry.families.size()) {

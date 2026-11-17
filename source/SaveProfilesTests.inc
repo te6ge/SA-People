@@ -7,6 +7,8 @@
         auto writeFile=[](const fs::path &p,const std::string &s){std::ofstream f(p,std::ios::binary);f<<s;};
         writeFile(slotA,std::string(256,'a'));writeFile(slotB,std::string(256,'a'));
         people::Registry profileA,profileB;
+        profileA.grove.balance=125;profileA.grove.contributed=125;
+        profileB.grove.balance=500;profileB.grove.contributed=500;
         profileA.honor=-40;profileA.create(false).social.trust=-20;
         profileA.families[0].social.cutOff=1;
         profileB.honor=70;profileB.create(true).social.trust=65;
@@ -14,6 +16,7 @@
         assert(keyA!=keyB); // Even byte-identical GTA saves in different slots are independent.
         auto loadedA=saveprofiles::load(root,slotA),loadedB=saveprofiles::load(root,slotB);
         assert(loadedA.status==saveprofiles::Status::Loaded && loadedA.world.honor==-40);
+        assert(loadedA.world.grove.balance==125 && loadedB.world.grove.balance==500);
         assert(loadedB.world.honor==70 && loadedB.world.families[0].social.trust==65);
         assert(loadedA.world.families[0].social.cutOff==1 && !loadedB.world.families[0].social.cutOff);
         loadedA.world.honor=-100;loadedA.world.families[0].social.trust=-80;

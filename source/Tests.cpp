@@ -1,4 +1,6 @@
 #include "World.h"
+#include "GrovePickups.h"
+#include "LedgerPointer.h"
 #include "ControllerPolicy.h"
 #include "SaveProfiles.h"
 #include "Stories.h"
@@ -37,7 +39,7 @@ int main() {
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
     _set_error_mode(_OUT_TO_STDERR);
 #endif
-    for (unsigned language = 0; language < 6; ++language) {
+    for (unsigned language = 0; language < std::size(setuptext::names); ++language) {
         assert(setuptext::names[language][0]);
         for (unsigned key = 0; key < setuptext::Count; ++key)
             assert(setuptext::get(static_cast<setuptext::Language>(language),
@@ -47,7 +49,46 @@ int main() {
            L"Установить SA People");
     assert(std::wstring(setuptext::get(setuptext::Language::Spanish, setuptext::Missing)).find(
            L"gta_sa.exe") != std::wstring::npos);
-    std::cout << "PASS: complete setup catalog in six languages, including Japanese and Cyrillic.\n";
+    std::cout << "PASS: complete setup catalog in seven languages, including Polish, Japanese and Cyrillic.\n";
+    {
+        auto chosenLanguage=setuptext::Language::English;
+        assert(setuptext::selectLanguage(6,chosenLanguage) && chosenLanguage==setuptext::Language::Polish);
+        assert(!setuptext::selectLanguage(7,chosenLanguage) && chosenLanguage==setuptext::Language::Polish);
+        assert(!setuptext::selectLanguage(-1,chosenLanguage));
+        assert(phone::ledgerBack(phone::Page::Grove,0)==phone::Page::Grove);
+        assert(phone::ledgerBack(phone::Page::GroveConfirm,0)==phone::Page::GroveDonate);
+        assert(phone::ledgerBack(phone::Page::GroveConfirm,1)==phone::Page::GroveUpgrades);
+        assert(phone::ledgerBack(phone::Page::GroveSupplies,0)==phone::Page::Grove);
+        phone::State isolatedScreen;isolatedScreen.page=phone::Page::Messages;isolatedScreen.person=7;isolatedScreen.cursor=2;
+        phone::LedgerSession isolatedLedger;isolatedLedger.open(isolatedScreen);
+        assert(isolatedLedger.active && isolatedScreen.page==phone::Page::Grove && !isolatedScreen.person);
+        isolatedScreen.page=phone::Page::GroveConfirm;isolatedScreen.cursor=1;
+        isolatedLedger.close(isolatedScreen);
+        assert(!isolatedLedger.active && isolatedScreen.page==phone::Page::Messages && isolatedScreen.person==7 && isolatedScreen.cursor==2);
+        isolatedLedger.close(isolatedScreen);assert(isolatedScreen.page==phone::Page::Messages);
+        isolatedScreen.page=phone::Page::GroveConfirm;isolatedLedger.close(isolatedScreen);
+        assert(isolatedScreen.page==phone::Page::Contacts);
+        ledgerpointer::State pointerInput;pointerInput.open(true,false);
+        assert(pointerInput.keyboard({true,false,false,false})==0); // Opening key cannot select anything.
+        assert(pointerInput.keyboard({false,false,false,false})==0);
+        assert(pointerInput.keyboard({true,false,false,false})==1);
+        assert(pointerInput.keyboard({true,false,false,false})==0);
+        assert(pointerInput.keyboard({false,false,true,false})==4);
+        assert(pointerInput.keyboard({false,false,false,true})==8);
+        assert(pointerInput.update(0,0,0,true,false,true,false)==-1);
+        pointerInput.x=600;pointerInput.y=160;
+        assert(pointerInput.update(0,0,0,false,false,true,false)==-1);
+        assert(pointerInput.update(0,0,0,true,false,true,false)==0);
+        assert(pointerInput.update(0,0,0,true,false,true,false)==-1);
+        assert(pointerInput.update(0,0,0,false,true,true,false)==-3);
+        assert(ledgerpointer::hit(0,885,40)==-2);
+        assert(ledgerpointer::hit(0,650,525)==-3);
+        assert(ledgerpointer::hit(2,600,380)==3);
+        assert(!grove::atLedger(2495,-1694,13.4f,0));
+        assert(grove::atLedger(2481,-1684,13.4f,0));
+        assert(!grove::atLedger(2487,-1686,13.4f,1));
+        std::cout<<"PASS: Polish installer selection boundary, isolated mouse-click targets, held-click quarantine and outdoor stand access.\n";
+    }
     // Recordings are optional and not shipped; skip file checks when the folder is empty.
     const bool audioAvailable = std::filesystem::exists("audio/high.mp3");
     std::cout << std::unitbuf;
@@ -596,8 +637,21 @@ int main() {
     assert(locale::tr("PHONE_CONTACTS") == u8"联系人");
     locale::cycle(1); assert(locale::language == locale::Language::Japanese);
     assert(locale::tr("PHONE_CONTACTS")==u8"連絡先" && std::string(locale::code(locale::language))=="ja");
+    locale::cycle(1); assert(locale::language == locale::Language::Polish);
+    assert(locale::tr("PHONE_CONTACTS")=="Kontakty" && std::string(locale::code(locale::language))=="pl");
     locale::cycle(1); assert(locale::language == locale::Language::Turkish);
-    locale::cycle(-1); assert(locale::language == locale::Language::Japanese);
+    locale::cycle(-1); assert(locale::language == locale::Language::Polish);
+    for(unsigned legacyColumns=5;legacyColumns<=7;++legacyColumns) {
+        std::stringstream legacyPolishCatalog;
+        for(unsigned entry=0;entry<30;++entry) {
+            legacyPolishCatalog<<"LEGACY_"<<entry<<"\tTurkce\tRussian\tSpanish\tEnglish";
+            if(legacyColumns>=6)legacyPolishCatalog<<"\tChinese";
+            if(legacyColumns>=7)legacyPolishCatalog<<"\tJapanese";
+            legacyPolishCatalog<<'\n';
+        }
+        locale::Catalog legacyPolishFallback;legacyPolishFallback.read(legacyPolishCatalog);
+        assert(legacyPolishFallback.translate("LEGACY_0",locale::Language::Polish)=="English");
+    }
     locale::language = locale::Language::English;
     assert(locale::tr("Tamirci olarak calisiyorum. Gecinip gidiyoruz.").find("Mechanic") !=
            std::string::npos);
@@ -1100,7 +1154,7 @@ int main() {
         assert(later::schedule(contextBook, 1, later::Visit));
         std::stringstream v13;
         contextBook.write(v13);
-        assert(v13.str().rfind("SAPEOPLE 18", 0) == 0);
+        assert(v13.str().rfind("SAPEOPLE 20", 0) == 0);
         auto reopened = people::Registry::read(v13);
         assert(reopened.later.size() == 1 && reopened.later[0].kind == later::Visit);
         reopened.worldMinutes = reopened.later[0].due;
@@ -1157,6 +1211,8 @@ int main() {
 #include "SaveProfilesTests.inc"
 #include "MeetingOfferTests.inc"
 #include "ControllerTests.inc"
+#include "ContactCareTests.inc"
+#include "GroveTests.inc"
     {
         assert(gangcombat::eligible(7,1,false,false,true,true,25));
         assert(gangcombat::eligible(9,1,false,false,true,true,625));

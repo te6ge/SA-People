@@ -1,12 +1,17 @@
 #pragma once
 #include <cstddef>
 namespace setuptext {
-enum class Language { English, Turkish, Russian, Spanish, Chinese, Japanese };
+enum class Language { English, Turkish, Russian, Spanish, Chinese, Japanese, Polish };
 enum Key { Subtitle, Headline, Intro, People, PeopleBody, Phone, PhoneBody, Memory, MemoryBody,
     Folder, Browse, Hint, Preserve, Install, Close, Installing, Complete, Failed, Pick,
     Damaged, Missing, Unsupported, WriteError, Failure, Loader, LanguageLabel, WithNewMenu, Count };
-inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español", L"简体中文", L"日本語"};
-inline constexpr const wchar_t *copy[6][Count] = {
+inline constexpr const wchar_t *names[] = {L"English", L"Türkçe", L"Русский", L"Español", L"简体中文", L"日本語", L"Polski"};
+inline constexpr std::size_t LanguageCount=sizeof(names)/sizeof(names[0]);
+inline bool selectLanguage(std::ptrdiff_t index,Language &selected) {
+    if(index<0 || static_cast<std::size_t>(index)>=LanguageCount)return false;
+    selected=static_cast<Language>(index);return true;
+}
+inline constexpr const wchar_t *copy[7][Count] = {
     {L"NPC INTERACTIONS  /  PC 1.0 US", L"A city full of people.",
      L"Make friends. Make enemies. Give the streets a memory.",
      L"Meet the city", L"Names, families and relationships.", L"Stay connected",
@@ -81,6 +86,20 @@ inline constexpr const wchar_t *copy[6][Count] = {
      L"ファイルを書き込めません。ゲームを終了して書き込み権限を確認してください：",
      L"書き込み権限、読み取り専用ファイル、パスの競合を確認してください。",
      L"Ultimate ASI Loader (dinput8.dll) もインストールされました。", L"言語", L"新しいメニューを使用"}
+    ,{L"INTERAKCJE Z NPC / PC 1.0 US", L"Miasto pełne ludzi.",
+     L"Zdobywaj przyjaciół. Zyskuj wrogów. Zostaw ślad na ulicach.",
+     L"Poznaj miasto", L"Imiona, rodziny i relacje.", L"Bądź w kontakcie",
+     L"Wiadomości, kontakty i spotkania w SA CELL.", L"Zostaw ślad", L"Ludzie pamiętają, jak ich traktujesz.",
+     L"FOLDER GRY", L"Przeglądaj…", L"Wybierz folder z gta_sa.exe. Najpierw zamknij grę.",
+     L"Twoje ustawienia i relacje zostaną zachowane.", L"Zainstaluj SA People", L"Zamknij",
+     L"Instalowanie SA People…", L"Witaj w sąsiedztwie.", L"Nie udało się ukończyć instalacji.",
+     L"Wybierz folder GTA San Andreas", L"Pakiet instalacyjny jest uszkodzony.",
+     L"Nie znaleziono gta_sa.exe ani gta-sa.exe. Wybierz właściwy folder.",
+     L"Ten plik gry nie odpowiada wersji 1.0 US. Mod może nie działać. Mimo to zainstalować?",
+     L"Nie można zapisać pliku. Zamknij grę i sprawdź uprawnienia do zapisu:",
+     L"Sprawdź uprawnienia folderu, pliki tylko do odczytu i konflikty ścieżek.",
+     L"Zainstalowano też Ultimate ASI Loader (dinput8.dll).", L"Język", L"Z nowym menu"}
+
 };
 inline const wchar_t *get(Language language, Key key) {
     return copy[static_cast<std::size_t>(language)][key];

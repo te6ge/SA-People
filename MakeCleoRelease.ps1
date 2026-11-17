@@ -40,7 +40,7 @@ It does not guarantee compatibility with every third-party script or mod pack.
    The plugin must end up at CLEO/cleo_plugins/SA-People.cleo.
 4. Start the game normally. Do not run this file and do not rename it to .asi.
 
-Existing settings and the legacy people.dat are preserved. Version 0.18 uses separate
+Existing settings and the legacy people.dat are preserved. Version 0.19 uses separate
 social checkpoints for each GTA save, matching the ASI edition. Save GTA after social
 progress. To carry older contacts into a selected save, load it and choose phone →
 Settings → Import shared archive, then confirm. Other saves remain separate.
@@ -49,12 +49,27 @@ The example INI is
 used only when no settings.ini exists. Do not run the ASI and CLEO editions together;
 duplicate-instance protection allows only the first one to initialize.
 
+## Grove cashbook and home supplies
+Walk to the outdoor stand in front of CJ's house and press L to open or close the paper cashbook.
+W/S or Up/Down select a row; E/Enter confirms; Q/A/Left goes back. Mouse controls also work.
+Collect unlocked supplies from the two tables. Contributions are $100/$1,000/$10,000.
+Polish installer language selection is fixed in the normal edition.
+Buy two levels each of food supplies ($2,500/$6,500), workshop ($5,000/$10,000),
+protective equipment ($6,000/$12,000) and weapon cache ($20,000/$45,000).
+Health/armor pickups appear outside the house, restocking after 24/12 tracked hours.
+Weapons: pistol (34 rounds), then shotgun (12 shells) and Micro SMG (60 rounds), each
+restocking after 24 hours. The game's native pickup and weapon-swap controls apply.
+Workshop engine repairs retain +250/+500 health with 24/12-hour cooldowns.
+Runtime pickups are removed before GTA saves/loads and during story missions.
+Per-save archive V20 preserves old V19 balances/upgrades using a migration credit.
+Back up the entire SA-People folder before testing; older plugins cannot read V20.
+
 ## Controls and optional menu
 Hold Left Alt to focus. G: greet, H: provoke, J: calm down, R: rob.
 F6 or P: phone. Hold TAB: honor. Rebind through phone settings or settings.ini.
 The original GTA menu is the default. Set [Interface] ModernMenu=1 in settings.ini
 to opt into the SA People main/pause menu, then restart. ModernMenu=0 restores it.
-Languages: English, Turkish, Russian, Spanish, Simplified Chinese, Japanese. The phone remains available either way.
+Languages: English, Turkish, Russian, Spanish, Simplified Chinese, Japanese, Polish. The phone remains available either way.
 
 ## Optional GInput support
 Install GInputSA separately from https://silentsblog.com/mods/gta-sa/#ginput .

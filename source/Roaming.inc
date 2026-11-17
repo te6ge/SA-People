@@ -602,6 +602,7 @@ bool recognitionOwns(unsigned);
 #include "StoriesNative.inc"
 #include "Bonds.inc"
 #include "SaveProfilesNative.inc"
+#include "GroveStockNative.inc"
 void observeCriminalAttack(Pool *pool, Byte *player) {
     const float health = *reinterpret_cast<float *>(player + 0x540);
     const bool hurt = observedPlayerHealth >= 0 && health + 0.5f < observedPlayerHealth;
@@ -948,6 +949,7 @@ void interact(Pool *pool, Byte *player, street::Action action) {
         companionWitness(f.id, socialcontext::Witness::Provoke);
 }
 void resetRuntime() {
+    clearGroveStock();
     resetControllerInput();
     restoreTacticalCombat(at<Pool *>(0xB74490));
     cancelCommunity();
@@ -1008,10 +1010,11 @@ void tick() {
     }
     auto player = reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E210)(0);
     auto pool = at<Pool *>(0xB74490);
-    if (!player || !validPool(pool)) {restoreTacticalCombat(pool);return;}
+    if (!player || !validPool(pool)) {clearGroveStock();restoreTacticalCombat(pool);return;}
     releaseLeasedExits(player);
     if(pendingProfile!=ProfilePending::None)applyPendingProfile();
-    if(!profileReady)return;
+    if(!profileReady){clearGroveStock();return;}
+    updateGroveStock(player);
     if (*reinterpret_cast<float *>(player + 0x540) <= 0) {
         restoreTacticalCombat(pool);
         updateDealerTalks(pool, player, false);
@@ -1232,6 +1235,7 @@ void tick() {
         nextHeartbeat = now + 30000;
         log("WORLD records=" + std::to_string(registry.families.size()));
     }
+    bool ledger=pressAction(controls::Ledger,heldLedger);
     bool toggle = pressAction(controls::Phone, heldPanel),
          page = pressAction(controls::Contacts, heldPage),
          archive = pressAction(controls::Meetings, heldArchive), reunion = press(VK_F9, heldReunion),
@@ -1240,7 +1244,7 @@ void tick() {
          provoke = pressAction(controls::Provoke, heldProvoke),
          defuse = pressAction(controls::Defuse, heldDefuse), rob = pressAction(controls::Rob, heldRob);
     auto car = drivenCar(player);
-    focusHeld = !mission && !(panelOpen && phoneState.page == phone::Page::Compose) &&
+    focusHeld = !mission && !(panelOpen && (phoneState.page == phone::Page::Compose || phone::ledgerPage(phoneState.page))) &&
                 (onFoot(player) || (car && stoppedCar(car))) &&
                 controls::down(controls::Focus);
     if (focusHeld) {
@@ -1260,6 +1264,11 @@ void tick() {
             interact(pool, player, street::Action::Provoke);
     } else
         focused = 0;
+    if(ledger && (!panelOpen || phoneState.page!=phone::Page::Controls) && !controls::down(controls::Focus)){openGroveLedger(player);return;}
+    if(panelOpen && phone::ledgerPage(phoneState.page)) {
+        if(toggle && !controls::down(controls::Focus)){closePhone();togglePhone();return;}
+        processPhone(player);return;
+    }
     if (toggle && !controls::down(controls::Focus)) {
         togglePhone();
         return;

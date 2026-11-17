@@ -13,6 +13,33 @@ void __cdecl ourCallback(){++chainedCalls;chainedPrevious();}
 }
 int main() {
     {
+        startup::Gate gate;
+        assert(!gate.attempted);
+        assert(gate.begin());
+        assert(!gate.begin()); // Nested/repeated callbacks cannot re-enter initialization.
+        assert(!gate.begin()); // Refusal/failure is not retried every frame.
+        assert(!runtimeStartup.attempted && !runtimeReady);
+        auto memory=static_cast<Byte *>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+        assert(memory);
+        memory[0]=0xE8; memory[16]=0xE8;
+        const auto target=reinterpret_cast<std::uintptr_t>(&foreignCallback);
+        auto writeCall=[&](Byte *atCall){const auto rel=static_cast<int>(target-reinterpret_cast<std::uintptr_t>(atCall+5));std::memcpy(atCall+1,&rel,4);};
+        writeCall(memory);writeCall(memory+16);
+        assert(armNormalHooks(reinterpret_cast<std::uintptr_t>(memory),reinterpret_cast<std::uintptr_t>(memory+16)));
+        assert(original==foreignCallback && originalDraw==foreignCallback);
+        assert(!runtimeStartup.attempted && !runtimeReady); // Arming never reads settings/resources or installs game hooks.
+        assert(armNormalHooks(reinterpret_cast<std::uintptr_t>(memory),reinterpret_cast<std::uintptr_t>(memory+16)));
+        assert(original==foreignCallback && originalDraw==foreignCallback); // Export after DllMain cannot self-chain.
+        normalHooksArmed=false; original=originalDraw=nullptr;
+        writeCall(memory);memory[16]=0x90;
+        assert(!armNormalHooks(reinterpret_cast<std::uintptr_t>(memory),reinterpret_cast<std::uintptr_t>(memory+16)));
+        assert(callDestination(reinterpret_cast<std::uintptr_t>(memory))==target && !normalHooksArmed);
+        assert(!runtimeStartup.attempted && !runtimeReady);
+        assert(VirtualFree(memory,0,MEM_RELEASE));
+        std::cout<<"PASS: ASI startup is deferred; duplicate loader/export calls cannot self-chain; failed bootstrap rolls back.\n";
+    }
+
+    {
         panelOpen=true;phoneState.page=phone::Page::Controls;phoneState.capturing=true;
         controls::padActions[controls::PhoneBack]=true;phoneBack=false;
         processPhone(nullptr);
@@ -22,6 +49,13 @@ int main() {
         assert(!phoneState.capturing && !panelOpen);
         controls::padActions.fill(false);phoneState={};phoneBack=false;
         std::cout<<"PASS: controller cancel exits keyboard capture once; close exits the phone without accessing game memory.\n";
+    }
+    {
+        phoneState.page=phone::Page::Inbox;phoneState.cursor=3;
+        ledgerSession.open(phoneState);phoneState.page=phone::Page::GroveConfirm;panelOpen=true;
+        closePhone();assert(!panelOpen && !ledgerSession.active && phoneState.page==phone::Page::Inbox && phoneState.cursor==3);
+        phoneState={};
+        std::cout<<"PASS: closing a native ledger session restores the phone screen; F6 cannot reopen its confirmation page.\n";
     }
     {
         previousGameSave=failedGameSave;

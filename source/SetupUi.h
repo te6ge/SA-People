@@ -127,7 +127,7 @@ inline LRESULT CALLBACK procedure(HWND hwnd, UINT message, WPARAM wp, LPARAM lp)
         if(LOWORD(wp)==IDCANCEL) {if(!busy) DestroyWindow(hwnd); return 0;}
         if(LOWORD(wp)==103 && HIWORD(wp)==CBN_SELCHANGE) {
             auto index=SendMessageW(languageBox,CB_GETCURSEL,0,0);
-            if(index>=0 && index<6) language=static_cast<setuptext::Language>(index);
+            setuptext::selectLanguage(index,language);
             refresh(); return 0;
         }
         if(LOWORD(wp)==101 && !busy && !finished) {
@@ -164,7 +164,8 @@ inline bool create() {
         primary==LANG_RUSSIAN?setuptext::Language::Russian:
         primary==LANG_SPANISH?setuptext::Language::Spanish:
         primary==LANG_CHINESE?setuptext::Language::Chinese:
-        primary==LANG_JAPANESE?setuptext::Language::Japanese:setuptext::Language::English;
+        primary==LANG_JAPANESE?setuptext::Language::Japanese:
+        primary==LANG_POLISH?setuptext::Language::Polish:setuptext::Language::English;
     auto dc=GetDC(nullptr); scale=GetDeviceCaps(dc,LOGPIXELSX)/96.0f; ReleaseDC(nullptr,dc);
     RECT work{}; SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
     scale=std::min(scale,std::min((work.right-work.left-40)/820.0f,(work.bottom-work.top-90)/560.0f));

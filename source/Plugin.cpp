@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <cstring>
 #include <ctime>
+#include "StartupGate.h"
 #include "Network.h"
 #include "Stories.h"
 #include "SaveProfiles.h"
@@ -28,6 +29,8 @@
 #include "Sprites.h"
 #include "Backdrop.h"
 #include "Phone.h"
+#include "GrovePickups.h"
+#include "LedgerPointer.h"
 #include "ModernMenu.h"
 #include "Life.h"
 #include "SocialWorld.h"
@@ -48,6 +51,7 @@
 #include "WorldAwareness.h"
 #include "Community.h"
 #include "OutingSafety.h"
+void initializePeople();
 namespace {
 using Byte = unsigned char;
 template <class T> T &at(std::uintptr_t a) {
@@ -65,6 +69,8 @@ bool validPool(Pool *);
 using Process = void(__cdecl *)();
 bool patchCall(std::uintptr_t,Process,Process &);
 void resetRuntime();
+void clearGroveStock();
+void updateGroveStock(Byte *);
 void resetControllerInput();
 bool canImportSharedProfile();
 Process original = nullptr, originalRestart = nullptr, originalDraw = nullptr;
@@ -94,6 +100,9 @@ people::SpatialIndex spatial;
 std::unordered_set<unsigned> restored;
 unsigned selected = 0, currentPage = 0, lastGameTime = 0, restoreCursor = 0;
 DWORD nextScan = 0, nextSave = 0, nextRestore = 0, nextHeartbeat = 0;
+startup::Gate runtimeStartup;
+bool runtimeReady = false;
+bool normalHooksArmed = false;
 bool disabled = false, dirty = false, gameplaySeen = false, saveErrorReported = false,
      autoRestore = true;
 bool storySuspended = false;
@@ -111,6 +120,7 @@ bool storyActive() {
            gangWarActive();
 }
 bool heldPage = false, heldArchive = false, heldReunion = false, heldSave = false;
+bool heldLedger=false;
 bool heldPanel = false, panelOpen = false, panelInvalid = true;
 bool developerReunion = false;
 DWORD panelTouched = 0, sceneRefresh = 0, toastUntil = 0, toastStart = 0;
@@ -386,7 +396,8 @@ void initialize() {
     }
     wchar_t language[16] = {};
     GetPrivateProfileStringW(L"Interface", L"Language", L"tr", language, 16, ini.c_str());
-    locale::language = wcscmp(language,L"ja")==0 ? locale::Language::Japanese
+    locale::language = wcscmp(language,L"pl")==0 ? locale::Language::Polish
+                       : wcscmp(language,L"ja")==0 ? locale::Language::Japanese
                        : (wcscmp(language, L"zh") == 0 || wcscmp(language, L"zh-CN") == 0) ? locale::Language::Chinese
                        : wcscmp(language, L"ru") == 0   ? locale::Language::Russian
                        : wcscmp(language, L"es") == 0 ? locale::Language::Spanish
@@ -401,7 +412,7 @@ void initialize() {
     // The legacy shared people.dat remains available for an explicit one-save import.
     registry=people::Registry{};spatial=people::SpatialIndex{};
     profileKey.clear();activeArchive.clear();profileReady=false;pendingProfile=ProfilePending::NewGame;
-    log("SA People 0.18.0 initialized; persistent identities=" +
+    log("SA People 0.19.0 initialized; persistent identities=" +
         std::to_string(registry.families.size()));
 }
 void scan(Pool *pool, Byte *player) {
@@ -790,7 +801,7 @@ void renderInterface() {
     if (width < 320 || height < 200 || width > 16384 || height > 16384)
         return;
     float fw = static_cast<float>(width), fh = static_cast<float>(height);
-    auto l = phone::layout(fw, fh, panelScale);
+    auto l = phone::viewLayout(phoneState.page,fw,fh,panelScale);
     // CFont global settings + RenderState; do not leak our style into the HUD.
     std::array<Byte, 0x7C> fontState{};
     std::memcpy(fontState.data(), reinterpret_cast<void *>(0xC71A54), fontState.size());
@@ -868,9 +879,12 @@ void renderInterface() {
 }
 void __cdecl drawHook() {
     originalDraw();
+    initializePeople();
+    if (!runtimeReady) return;
     try {
         renderInterface();
     } catch (const std::exception &e) {
+        clearGroveStock();
         restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         toastUntil = 0;
@@ -882,6 +896,7 @@ void processPeople() {
     try {
         tick();
     } catch (const std::exception &e) {
+        clearGroveStock();
         restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         audio.stop();
@@ -895,6 +910,7 @@ void processPeople() {
         disabled = true;
         log(e.what());
     } catch (...) {
+        clearGroveStock();
         restoreTacticalCombat(at<Pool *>(0xB74490));
         closePhone();
         audio.stop();
@@ -908,8 +924,13 @@ void processPeople() {
         disabled = true;
     }
 }
-void __cdecl processHook(){original();processPeople();}
+void __cdecl processHook(){
+    original();
+    initializePeople();
+    if(runtimeReady) processPeople();
+}
 void __cdecl restartHook() {
+    clearGroveStock();
     if (dirty)
         save();
     resetRuntime();
@@ -947,14 +968,16 @@ bool install() {
     if (!supportedExecutable()) return false;
     if(!installProfileHooks()){log("SAVE isolation hooks unavailable; social gameplay refused.");return false;}
 #ifndef SA_PEOPLE_CLEO
-    if (!patchCall(0x53E981, processHook, original))
-        return false;
+    // The ASI bootstrap already owns these two callbacks. Never chain a hook to itself.
+    if (!normalHooksArmed) return false;
 #endif
+#ifdef SA_PEOPLE_CLEO
     if (!patchCall(0x53EBB1, drawHook, originalDraw)) {
         disabled = true;
         log("UI hook unavailable; interface disabled.");
         return false;
     }
+#endif
     installControllerHook();
     log("UI HOOK OK: phone and street renderer installed.");
     log(installLanguageMenu()
@@ -981,8 +1004,7 @@ void startupDiagnostic(const wchar_t *diagnosticText) {
     CloseHandle(file);
 }
 void initializePeople() {
-    static volatile LONG initialized = 0;
-    if (InterlockedCompareExchange(&initialized, 1, 0) != 0) return;
+    if (!runtimeStartup.begin()) return;
     if (!supportedExecutable()) {
         startupDiagnostic(L"Unsupported executable or multiplayer detected.\r\n");
         OutputDebugStringW(L"SA People: unsupported executable; initialization skipped.");
@@ -996,10 +1018,11 @@ void initializePeople() {
         OutputDebugStringW(L"SA People: another copy is already running; initialization skipped.");
         return;
     }
-    startupDiagnostic(L"InitializeASI called; starting SA People 0.18.0.\r\n");
+    startupDiagnostic(L"InitializeASI called; starting SA People 0.19.0.\r\n");
     try {
         initialize();
         if (install()) {
+            runtimeReady = true;
 #ifdef SA_PEOPLE_CLEO
             log("CLEO 5 plugin active; processing through CLEO callbacks.");
 #endif
@@ -1039,7 +1062,29 @@ void WINAPI cleoProcess() {
 }
 }
 #else
-extern "C" __declspec(dllexport) void __cdecl InitializeASI() { initializePeople(); }
+// Loader entry points only arm callbacks. Filesystem, locale, settings and game/menu
+// initialization run on the game's first process/draw callback, after DLL loading finishes.
+// This also supports ModLoader and legacy loaders that never call InitializeASI.
+bool armNormalHooks(std::uintptr_t processCall=0x53E981, std::uintptr_t drawCall=0x53EBB1) {
+    if(normalHooksArmed) return true;
+    if(!patchCall(processCall, processHook, original)) return false;
+    if(!patchCall(drawCall, drawHook, originalDraw)) {
+        Process ignored=nullptr;
+        patchCall(processCall,original,ignored);
+        original=nullptr;
+        return false;
+    }
+    normalHooksArmed=true;
+    return true;
+}
+extern "C" __declspec(dllexport) void __cdecl InitializeASI() {
+    if(!supportedExecutable()) return;
+    // The bootstrap and permanent callbacks must survive a loader unloading a duplicate.
+    HMODULE pinned=nullptr;
+    if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_PIN,
+            reinterpret_cast<LPCWSTR>(&InitializeASI), &pinned)) return;
+    if(!armNormalHooks()) OutputDebugStringW(L"SA People: startup callbacks unavailable.\n");
+}
 #endif
 BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
@@ -1049,21 +1094,8 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID) {
         startupDiagnostic(L"SA-People CLEO library loaded; registering CLEO 5 callbacks.\r\n");
         if(!cleobridge::attach(GetModuleHandleW(L"CLEO.asi"),cleoStartup,cleoProcess))return FALSE;
 #else
-        startupDiagnostic(L"SA-People library loaded; waiting for InitializeASI or ModLoader startup.\r\n");
-        // ModLoader's std.asi calls LoadLibrary, but not the Ultimate ASI Loader export.
-        // Initialization here does no COM/media playback and creates no worker threads.
-        if (GetModuleHandleW(L"modloader.asi")) {
-            // The root copy must still wait for Ultimate ASI Loader's export callback.
-            // Merely having ModLoader installed is not evidence that it loaded this copy.
-            wchar_t executable[32768]={}, modulePath[32768]={};
-            if(GetModuleFileNameW(nullptr,executable,32768) && GetModuleFileNameW(module,modulePath,32768)) {
-                try {
-                    if(installpaths::modLoaderModule(executable,modulePath)) InitializeASI();
-                } catch(const std::exception &) {
-                    OutputDebugStringW(L"SA People: could not resolve loader startup path.");
-                }
-            }
-        }
+        // No file I/O, configuration parsing or initialization while the loader lock is held.
+        InitializeASI();
 #endif
     }
     return TRUE;

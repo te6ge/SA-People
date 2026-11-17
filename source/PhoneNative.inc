@@ -1,5 +1,6 @@
 // Phone input and appointment actors. Only tasks and control bits owned here are released.
 phone::State phoneState;
+phone::LedgerSession ledgerSession;
 void deliverReplies();
 bool replyPending(unsigned id);
 bool hasAppointment(unsigned id) {
@@ -30,6 +31,7 @@ void closePhone() {
     phoneOwnsControl = false;
     phoneControl = nullptr;
     panelOpen = false;
+    ledgerSession.close(phoneState);
 }
 void togglePhone() {
     if (panelOpen) {
@@ -477,6 +479,53 @@ void askFavor(Byte *player, unsigned id) {
     save();
     log("FAVOR " + std::string(favors::label(perk)) + " identity=" + std::to_string(id));
 }
+bool groveAtHome(Byte *player) {
+    if(!player)return false;
+    const auto p=position(player);return grove::nearby(p.x,p.y,p.z,player[0x2F]);
+}
+bool groveSafe(Byte *player) {
+    if(!player || storyActive() || *reinterpret_cast<float *>(player+0x540)<=0)return false;
+    auto car=drivenCar(player);
+    if(!onFoot(player) && !(car && stoppedCar(car)))return false;
+    auto wanted=reinterpret_cast<Byte *(__cdecl *)(int)>(0x56E230)(0);
+    return wanted && *reinterpret_cast<unsigned *>(wanted+0x2C)==0;
+}
+bool groveAtLedger(Byte *player) {
+    if(!player)return false;const auto p=position(player);
+    return grove::atLedger(p.x,p.y,p.z,player[0x2F]);
+}
+ledgerpointer::State grovePointer;
+void openGroveLedger(Byte *player) {
+    if(panelOpen && phone::ledgerPage(phoneState.page)){closePhone();return;}
+    if(!player || !onFoot(player) || !groveAtLedger(player)){help("GROVE_LEDGER_VISIT");return;}
+    if(!groveSafe(player)){help("GROVE_UNSAFE");return;}
+    if(panelOpen)closePhone();
+    // Acquire the modal control bit directly, without opening or navigating the phone.
+    auto pad=reinterpret_cast<Byte *(__cdecl *)(int)>(0x53FB70)(0);
+    if(!pad)return;
+    auto flags=reinterpret_cast<unsigned short *>(pad+0x10E);
+    if(*flags)return;
+    phoneControl=flags;*flags|=0x4000;phoneOwnsControl=true;panelOpen=true;
+    ledgerSession.open(phoneState);
+    grovePointer.open((GetAsyncKeyState(VK_LBUTTON)&0x8000)!=0,(GetAsyncKeyState(VK_RBUTTON)&0x8000)!=0);
+    panelTouched=GetTickCount();panelInvalid=true;
+}
+void groveSupply(Byte *player,unsigned project) {
+    grove::Visit visit;visit.here=groveAtHome(player);visit.safe=groveSafe(player);
+    if(!player){phoneState.notice="GROVE_UNSAFE";return;}
+    visit.onFoot=onFoot(player);
+    visit.health=*reinterpret_cast<float *>(player+0x540);
+    visit.maxHealth=*reinterpret_cast<float *>(player+0x544);
+    visit.armor=*reinterpret_cast<float *>(player+0x548);
+    auto car=drivenCar(player);visit.driver=car!=nullptr;visit.parked=car && stoppedCar(car);
+    if(car)visit.carHealth=*reinterpret_cast<float *>(car+0x4C0);
+    phoneState.notice=grove::use(registry,project,visit);
+    if(phoneState.notice=="GROVE_FOOD_DONE")*reinterpret_cast<float *>(player+0x540)=visit.health;
+    else if(phoneState.notice=="GROVE_ARMOR_DONE")*reinterpret_cast<float *>(player+0x548)=visit.armor;
+    else if(phoneState.notice=="GROVE_REPAIR_DONE" && car)*reinterpret_cast<float *>(car+0x4C0)=visit.carHealth;
+    else return;
+    dirty=panelInvalid=true;save();
+}
 void openCompose(bool call) {
     phoneState.page = phone::Page::Compose;
     phoneState.call = call;
@@ -505,16 +554,40 @@ void processPhone(Byte *player) {
         captureControl();
         return;
     }
-    bool up = pressAction(controls::PhoneUp, phoneUp), down = pressAction(controls::PhoneDown, phoneDown),
-         left = pressAction(controls::PhoneLeft, phoneLeft),
-         right = pressAction(controls::PhoneRight, phoneRight),
-         enter = pressAction(controls::PhoneSelect, phoneEnter),
-         back = pressAction(controls::PhoneBack, phoneBack);
+    bool up=false,down=false,left=false,right=false,enter=false,back=false;
+    if(!ledgerSession.active) {
+        up=pressAction(controls::PhoneUp,phoneUp);down=pressAction(controls::PhoneDown,phoneDown);
+        left=pressAction(controls::PhoneLeft,phoneLeft);right=pressAction(controls::PhoneRight,phoneRight);
+        enter=pressAction(controls::PhoneSelect,phoneEnter);back=pressAction(controls::PhoneBack,phoneBack);
+    }
     deliverReplies();
     if (!panelOpen)
         return;
+    if(phone::ledgerPage(phoneState.page)) {
+        DWORD foreground=0;GetWindowThreadProcessId(GetForegroundWindow(),&foreground);
+        const bool active=foreground==GetCurrentProcessId();
+        const unsigned page=phoneState.page==phone::Page::Grove?0u:phoneState.page==phone::Page::GroveDonate?1u:
+            phoneState.page==phone::Page::GroveUpgrades?2u:phoneState.page==phone::Page::GroveSupplies?3u:4u;
+        const float scale=phone::ledgerLayout(static_cast<float>(at<int>(0xC17044)),static_cast<float>(at<int>(0xC17048)),panelScale).scale;
+        const float dx=at<float>(0xB73424),dy=at<float>(0xB73428); // CPad::NewMouseControllerState movement.
+        const int action=grovePointer.update(page,dx/std::max(.1f,scale),dy/std::max(.1f,scale),
+            (GetAsyncKeyState(VK_LBUTTON)&0x8000)!=0,(GetAsyncKeyState(VK_RBUTTON)&0x8000)!=0,active,!phoneState.notice.empty());
+        phoneState.ledgerX=grovePointer.x;phoneState.ledgerY=grovePointer.y;
+        panelInvalid=true;
+        auto key=[](int code){return (GetAsyncKeyState(code)&0x8000)!=0;};
+        const unsigned keys=grovePointer.keyboard({active&&(key('W')||key(VK_UP)),
+            active&&(key('S')||key(VK_DOWN)),active&&(key('E')||key('D')||key(VK_RETURN)||key(VK_RIGHT)),
+            active&&(key('Q')||key('A')||key(VK_LEFT)||key(VK_BACK))});
+        up=(keys&1)!=0;down=(keys&2)!=0;enter=(keys&4)!=0;back=(keys&8)!=0;
+        if(action==-2){closePhone();return;}
+        if(action==-3)back=true;
+        if(action==-4){phoneState.notice.clear();return;}
+        if(action>=0){phoneState.cursor=static_cast<unsigned>(action);enter=true;}
+    }
+
     phoneState.typing = replyPending(phoneState.person);
     phoneState.legacyImport=canImportSharedProfile();
+    phoneState.groveHere=groveAtLedger(player);
     phoneState.events = sideEvents;
     phoneState.scale = static_cast<unsigned>(panelScale * 100 + 0.5f);
     phoneState.outing = companionOwns(phoneState.person) ? phoneState.person : 0;
@@ -530,10 +603,11 @@ void processPhone(Byte *player) {
     }
     auto page = phoneState.page;
     if (back) {
-        if(page==phone::Page::ImportShared)phoneState.page=phone::Page::Settings;
+        if(phone::ledgerPage(page))phoneState.page=phone::ledgerBack(page,phoneState.groveMode);
+        else if(page==phone::Page::ImportShared)phoneState.page=phone::Page::Settings;
         else if(page==phone::Page::History || page==phone::Page::Peace)phoneState.page=phone::Page::Stories;
         else if(page==phone::Page::PeaceConfirm)phoneState.page=phone::Page::Peace;
-        else if(page==phone::Page::Stories || page==phone::Page::AskAbout)phoneState.page=phone::Page::Actions;
+        else if(page==phone::Page::Stories || page==phone::Page::AskAbout || page==phone::Page::Care)phoneState.page=phone::Page::Actions;
         else if(page==phone::Page::RelationshipConfirm)phoneState.page=phone::Page::Relationship;
         else if(page==phone::Page::Relationship)phoneState.page=phone::Page::Actions;
         else if (page == phone::Page::Meeting)
@@ -560,6 +634,57 @@ void processPhone(Byte *player) {
         if(enter) {
             if(!phoneState.cursor)importSharedProfile();
             else {phoneState.page=phone::Page::Settings;phoneState.cursor=0;}
+        }
+        return;
+    }
+    if(page==phone::Page::Grove || page==phone::Page::GroveDonate || page==phone::Page::GroveUpgrades ||
+       page==phone::Page::GroveSupplies || page==phone::Page::GroveConfirm) {
+        const unsigned count=page==phone::Page::Grove?4u:page==phone::Page::GroveConfirm?2u:page==phone::Page::GroveDonate?3u:grove::Count;
+        phoneState.cursor%=count;
+        if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;
+        if(down)phoneState.cursor=(phoneState.cursor+1)%count;
+        if(enter) {
+            const auto choice=phoneState.cursor;
+            if(page==phone::Page::Grove) {
+                if(choice==3){showRoutineRoute({2487.5f,-1686.0f,13.4f});phoneState.notice="GROVE_ROUTE_READY";return;}
+                phoneState.page=choice==0?phone::Page::GroveDonate:choice==1?phone::Page::GroveUpgrades:phone::Page::GroveSupplies;
+                phoneState.cursor=0;return;
+            }
+            if(page==phone::Page::GroveConfirm && choice) {
+                phoneState.page=phoneState.groveMode?phone::Page::GroveUpgrades:phone::Page::GroveDonate;
+                phoneState.cursor=0;return;
+            }
+            if(page!=phone::Page::GroveSupplies && (!groveAtLedger(player) || !onFoot(player))){phoneState.notice="GROVE_LEDGER_VISIT";return;}
+            if(!groveSafe(player)){phoneState.notice="GROVE_UNSAFE";return;}
+            if(page==phone::Page::GroveSupplies){groveSupply(player,choice);return;}
+            if(page==phone::Page::GroveConfirm) {
+                auto money=playerMoney(player);
+                phoneState.notice=phoneState.groveMode?grove::upgrade(registry,phoneState.groveProject,phoneState.groveAmount):
+                    money?grove::donate(registry,*money,phoneState.groveAmount):"GROVE_NO_CASH";
+                if(phoneState.notice=="GROVE_BUILT" || phoneState.notice=="GROVE_DONATED") {dirty=true;save();}
+                phoneState.page=phoneState.groveMode?phone::Page::GroveUpgrades:phone::Page::GroveDonate;
+                phoneState.cursor=0;return;
+            }
+            phoneState.groveMode=page==phone::Page::GroveUpgrades?1u:0u;
+            phoneState.groveProject=choice;
+            const unsigned amounts[]={100,1000,10000};
+            phoneState.groveAmount=phoneState.groveMode?people::GroveFund::cost(choice,registry.grove.level[choice]):amounts[choice];
+            if(!phoneState.groveAmount){phoneState.notice="GROVE_MAX";return;}
+            phoneState.page=phone::Page::GroveConfirm;phoneState.cursor=1;return;
+        }
+        return; // The ledger never enters the phone tab cycle.
+    }
+    if(page==phone::Page::Care) {
+        const unsigned count=contactcare::Count;
+        phoneState.cursor%=count;
+        if(up)phoneState.cursor=(phoneState.cursor+count-1)%count;
+        if(down)phoneState.cursor=(phoneState.cursor+1)%count;
+        if(enter && player && !storyActive()) {
+            auto money=playerMoney(player);
+            if(!money){phoneState.notice="CARE_REFUSED";return;}
+            phoneState.notice=contactcare::apply(registry,phoneState.person,phoneState.cursor,*money);
+            if(phoneState.notice=="CARE_SENT") {dirty=true;save();}
+            panelInvalid=true;
         }
         return;
     }
@@ -658,6 +783,7 @@ void processPhone(Byte *player) {
             }
             unsigned action = phoneState.cursor;
             const std::string actionKey = phone::actionKeys(registry, phoneState)[action];
+            if(actionKey=="CARE_TITLE") {phoneState.page=phone::Page::Care;phoneState.cursor=0;return;}
             if(actionKey=="ST_PERSONAL" || actionKey=="ST_ASK") {
                 phoneState.page=actionKey=="ST_PERSONAL"?phone::Page::Stories:phone::Page::AskAbout;phoneState.cursor=0;return;
             }

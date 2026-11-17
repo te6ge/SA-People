@@ -30,3 +30,6 @@ loader/*.dll
 
 # Private CLEO candidate packages
 release-cleo/
+
+# Local test-install backups and machine-specific validation reports
+work/

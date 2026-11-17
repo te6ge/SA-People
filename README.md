@@ -1,6 +1,6 @@
 # SA People — NPC Interactions
 
-**Version 0.18.0 beta · GTA San Andreas PC 1.0 US · Single-player**
+**Version 0.19.0 beta · GTA San Andreas PC 1.0 US · Single-player**
 
 Every pedestrian can become someone you know. Meet people, learn about their lives,
 build friendships or rivalries, exchange messages and arrange outings. Their persistent
@@ -8,8 +8,8 @@ identities and relationships carry across game sessions.
 
 [Download the latest release](https://github.com/te6ge/SA-People/releases/latest)
 
-- [Normal ASI download](https://github.com/te6ge/SA-People/releases/download/v0.18.0-beta/SA-People-0.18.0-beta-normal.zip)
-- [CLEO 5 plugin download](https://github.com/te6ge/SA-People/releases/download/v0.18.0-beta/SA-People-0.18.0-beta-CLEO.zip)
+- [Normal ASI download](https://github.com/te6ge/SA-People/releases/download/v0.19.0-beta/SA-People-0.19.0-beta-normal.zip)
+- [CLEO 5 plugin download](https://github.com/te6ge/SA-People/releases/download/v0.19.0-beta/SA-People-0.19.0-beta-CLEO.zip)
 
 Choose one edition. Both use the same gameplay source; do not install them together.
 
@@ -34,10 +34,63 @@ Choose one edition. Both use the same gameplay source; do not install them toget
 - Close-range rival gang negotiations. A truce does not make you friends; a failed
   negotiation can lead to an attack using the gang members' existing weapons.
 - Honor on the TAB panel, contextual street remarks and interior patron dialogue.
-- English, Turkish, Russian, Spanish, Simplified Chinese and Japanese. Story missions and cutscenes suspend social
+- English, Turkish, Russian, Spanish, Simplified Chinese, Japanese and Polish. Story missions and cutscenes suspend social
   gameplay; scripted actors and recruited group members are excluded from ordinary chats.
 
-## What's new in 0.18.0 — Everyone Has a Reason
+## What's new in 0.19.0 — Friends Look Out for Each Other
+
+- **Polish setup fix:** choosing Polish now applies the installer translation.
+- **Paper Grove cashbook:** walk to the outdoor stand in front of CJ's house and press **L** (rebindable as
+  `[Controls] Ledger`). A two-page paper ledger handles contributions and upgrades.
+  Press **L** again to close. W/S or Up/Down select a row; E/Enter confirms; Q/A/Left goes back.
+  Mouse controls also work. F6/P always opens the separate phone. Access requires being outdoors on foot near
+  the stand, with no wanted level or active story mission. Contributions are $100,
+  $1,000 or $10,000, with confirmation before spending.
+- **Collectible home supplies:** purchased projects unlock native health and armor
+  pickups on two tables outside CJ's house. Level I restocks 24 tracked game hours after collection;
+  level II restocks after 12 hours. Native health/armor pickup behavior applies. Items
+  stay available until needed; opening the ledger does not grant the rewards directly.
+- **Expensive permanent upgrades:** food supplies cost $2,500/$6,500, engine workshop
+  $5,000/$10,000, protective equipment $6,000/$12,000, weapon cache $20,000/$45,000.
+  Second-level prices are additional. The workshop retains parked-driver repairs
+  (+250/+500 engine health, capped at 1,000) with 24/12-hour cooldowns.
+- **Weapon cache:** level I unlocks a pistol with 34 rounds; level II additionally
+  unlocks a shotgun with 12 shells and Micro SMG with 60 rounds. Each weapon has its
+  own 24-hour restock timer. The game's usual weapon-slot exchange controls apply.
+- **Save-safe stock ownership:** runtime pickups are removed before native GTA saves,
+  loads, restarts and during story missions. Only the mod's generation-checked handles
+  are removed. Unlocks and collection clocks live in per-save SA People data, not as
+  permanent additions to the GTA save's pickup pool. Engine ammo-only collection is
+  treated as a stock claim too, so a revisit cannot refill the same ammo endlessly.
+- **Lossless Grove migration:** archive V20 reads V19/older files. Existing V19 fund
+  balances and purchased levels are kept; a legacy credit bridges the increased prices.
+  Back up the entire SA-People folder before testing, as older plugins cannot read V20.
+- **Polish language:** phone, dialogue, subtitles and setup support Polski (`pl`). The initial dialogue translation is machine-assisted and welcomes native-speaker corrections.
+- **Keep in touch:** open a contact's actions and choose Keep in touch. Ask how they
+  are doing and receive a reply matching illness, job hunting, work, family time or
+  everyday life. Repeated check-ins have a two-game-hour cooldown.
+- **Help a friend recover:** send $25 for medicine to a sick contact. Help shortens
+  their remaining rest by up to six game hours and slightly builds trust; at least
+  one hour of rest remains. It never buys honor or instantly cures them.
+- **Job leads:** help an unemployed contact with their search. The remaining wait
+  shortens by up to twelve game hours, with at least three hours remaining unless
+  they were already closer to finishing. Assistance has a separate one-day cooldown.
+- **Mutual friends:** trusted contacts can recommend someone they actually know.
+  You learn the person's name, but still need to meet them and earn a phone-number
+  exchange. Recommendations exclude enemies, deceased people and hostile contacts.
+- **ASI startup compatibility:** configuration/resource loading and remaining game
+  hooks now wait for the first game callback. ModLoader and loaders that do not call
+  InitializeASI use the same deferred path. Repeated loader calls cannot self-chain.
+  This targets an early-startup risk; the reported community crash is not yet proven fixed.
+- All new phone actions and replies are available in all seven languages. The existing
+  archive migrates existing per-save honor, contacts and relationships.
+- Normal ASI and CLEO builds use the same gameplay source. Choose one edition.
+
+The new gameplay and startup paths pass automated tests. Live-game testing of this
+update and physical-controller testing are still pending.
+
+## Previous update — 0.18.0
+
 
 - **Personal grudges and motives:** robbery, violence and repeated insults can leave a
   persistent grievance. Temperament and fear influence whether a civilian keeps away,
@@ -92,7 +145,7 @@ It cannot undo cross-save crimes already mixed into the old archive. Other saves
 fresh social world unless you explicitly import into them too. The shared input and a
 `people.pre-save-profiles.dat` backup remain available.
 
-**Storage:** this version reads older archives and writes V18. Checkpoints are stored in
+**Storage:** this version reads older archives and writes V20. Checkpoints are stored in
 `SA-People/worlds/<save-fingerprint>/checkpoint.dat`, with matching backups. Each checkpoint is
 associated with the save filename and contents; replacing a GTA save with a different file starts
 another world. Copy the `worlds` folder when transferring your GTA saves to another installation.
@@ -370,10 +423,10 @@ result. Do not expect a rejected gang member to become an ordinary new contact.
 ## Updating, saves and removal
 
 Settings, relationships, backups and logs live in the game's `SA-People` folder, regardless
-of edition or installation method. Version 0.18 writes archive format V18 and imports earlier
+of edition or installation method. Version 0.19 writes archive format V20 and imports earlier
 archives through the confirmed legacy-import option. The original shared `people.dat` is
 preserved. New per-save checkpoints are stored under `worlds`; back up the complete folder.
-Do not expect an older plugin to read V18 data. Restore its matching pre-update backup if
+Do not expect an older plugin to read V20 data. Restore its matching pre-update backup if
 you downgrade. Previously mixed events in a shared archive cannot be assigned retroactively
 to their original GTA saves.
 

@@ -79,7 +79,7 @@ int main() {
     registry.families[0].presence = {17, 4, 100, 100, 12, 0, 100, 0, true, true};
     network::discover(registry, 1);
     registry.post(1, "MAIL_INVITATION");
-    const int dimensions[][2] = {{1280, 720}, {800, 600}, {1920, 1080}};
+    const int dimensions[][2] = {{1280, 720}, {800, 600}, {1024, 768}, {1920, 1080}};
     for (const auto &size : dimensions) {
         float sx = size[0] / 640.0f, sy = size[1] / 448.0f;
         auto scene = frontend::background(static_cast<float>(size[0]), static_cast<float>(size[1]));
@@ -100,7 +100,7 @@ int main() {
         std::wstring code(locale::code(locale::language), locale::code(locale::language) + 2);
         for (const auto &size : dimensions) {
             float width = static_cast<float>(size[0]), height = static_cast<float>(size[1]);
-            for (unsigned page = 0; page < 31; ++page) {
+            for (unsigned page = 0; page < 37; ++page) {
                 phone::State state;
                 state.page = page == 0   ? phone::Page::Contacts
                              : page == 1 ? phone::Page::Contact
@@ -166,11 +166,17 @@ int main() {
                     stories::publish(viewRegistry,1,stories::LostJob);
                 }
                 if(page==30){state.page=phone::Page::ImportShared;state.legacyImport=true;}
+                if(page==31){state.page=phone::Page::Care;viewRegistry.families[0].story.life=stories::Ill;viewRegistry.families[0].story.until=viewRegistry.worldMinutes+1440;}
+                if(page>=32 && page<=36) {
+                    const phone::Page groveViews[]={phone::Page::Grove,phone::Page::GroveDonate,phone::Page::GroveUpgrades,phone::Page::GroveSupplies,phone::Page::GroveConfirm};
+                    state.page=groveViews[page-32];state.groveHere=true;state.groveAmount=300;state.groveMode=1;
+                    viewRegistry.grove.contributed=5000;viewRegistry.grove.balance=2500;viewRegistry.grove.level[0]=1;
+                }
                 auto scene = phone::compose(viewRegistry, state, "14:35");
                 auto path = std::filesystem::path("preview") /
                             (L"phone-" + code + L"-" + std::to_wstring(size[0]) + L"-" +
                              std::to_wstring(page) + L".png");
-                if (!render(scene, phone::layout(width, height), size[0], size[1], path, png))
+                if (!render(scene, phone::viewLayout(state.page,width,height), size[0], size[1], path, png))
                     return 2;
                 if (page == 11) {
                     auto contextual = registry;
@@ -223,5 +229,5 @@ int main() {
     }
     controls::padInHands=false;controls::padPlayStation=false;
     GdiplusShutdown(token);
-    std::cout << "Phone and street previews: 6 languages, 3 resolutions.\n";
+    std::cout << "Phone and street previews: 7 languages, 4 resolutions.\n";
 }

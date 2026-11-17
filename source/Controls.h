@@ -23,17 +23,17 @@ inline const Binding defaults[Count] = {
     {VK_LMENU, 0},  {'G', 0},       {'H', 0},          {'J', 0},         {'R', 0},
     {'E', 0},       {VK_F6, 'P'},   {VK_UP, 'W'},      {VK_DOWN, 'S'},   {VK_LEFT, 'A'},
     {VK_RIGHT, 'D'}, {VK_RETURN, 'E'}, {VK_BACK, 'Q'}, {VK_ESCAPE, 0},   {VK_TAB, 0},
-    {VK_F7, 0},     {VK_F8, 0},     {VK_F10, 0}};
+    {VK_F7, 0},     {VK_F8, 0},     {VK_F10, 0}, {'L',0}};
 inline Binding keys[Count] = {
     {VK_LMENU, 0},  {'G', 0},       {'H', 0},          {'J', 0},         {'R', 0},
     {'E', 0},       {VK_F6, 'P'},   {VK_UP, 'W'},      {VK_DOWN, 'S'},   {VK_LEFT, 'A'},
     {VK_RIGHT, 'D'}, {VK_RETURN, 'E'}, {VK_BACK, 'Q'}, {VK_ESCAPE, 0},   {VK_TAB, 0},
-    {VK_F7, 0},     {VK_F8, 0},     {VK_F10, 0}};
+    {VK_F7, 0},     {VK_F8, 0},     {VK_F10, 0}, {'L',0}};
 inline const char *iniName(unsigned a) {
     static const char *const names[Count] = {
         "Focus",      "Greet",      "Provoke",     "Defuse",    "Rob",        "Repair",
         "Phone",      "PhoneUp",    "PhoneDown",   "PhoneLeft", "PhoneRight", "PhoneSelect",
-        "PhoneBack",  "PhoneClose", "Vitals",      "Contacts",  "Meetings",   "Save"};
+        "PhoneBack",  "PhoneClose", "Vitals",      "Contacts",  "Meetings",   "Save", "Ledger"};
     return a < Count ? names[a] : "";
 }
 inline const char *label(unsigned a) {
@@ -42,7 +42,7 @@ inline const char *label(unsigned a) {
         "CTRL_ROB",        "CTRL_REPAIR",     "CTRL_PHONE",        "CTRL_PHONE_UP",
         "CTRL_PHONE_DOWN", "CTRL_PHONE_LEFT", "CTRL_PHONE_RIGHT",  "CTRL_PHONE_SELECT",
         "CTRL_PHONE_BACK", "CTRL_PHONE_CLOSE", "CTRL_VITALS",      "CTRL_CONTACTS",
-        "CTRL_MEETINGS",   "CTRL_SAVE"};
+        "CTRL_MEETINGS",   "CTRL_SAVE", "CTRL_LEDGER"};
     return a < Count ? names[a] : "";
 }
 struct Named {

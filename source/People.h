@@ -13,6 +13,7 @@
 #include "SocialData.h"
 #include "CommitmentData.h"
 #include "StoryData.h"
+#include "GroveData.h"
 
 namespace people {
 constexpr unsigned MaxFamilies = 32768;
@@ -230,6 +231,7 @@ struct Registry {
     std::array<int, DistrictCount> districts{};
     WeekStats week;
     Request request;
+    GroveFund grove;
     unsigned nextNews=1;
     std::vector<StoryNews> news;
     std::vector<Sighting> sightings;
@@ -308,7 +310,7 @@ struct Registry {
         families[id - 1].household = mix(id + 811) % 4 == 0 ? 2u : 1u;
     }
     void write(std::ostream &out) const {
-        out << "SAPEOPLE 18\n"
+        out << "SAPEOPLE 20\n"
             << families.size() << '\n'
             << std::setprecision(std::numeric_limits<float>::max_digits10);
         for (const auto &f : families) {
@@ -433,6 +435,11 @@ struct Registry {
         for(const auto &n:news)out<<n.id<<' '<<n.person<<' '<<n.source<<' '<<n.kind<<' '<<n.minute<<'\n';
         for(const auto &s:sightings)out<<s.observer<<' '<<s.person<<' '<<s.minute<<' '
             <<s.point.x<<' '<<s.point.y<<' '<<s.point.z<<'\n';
+        if(!grove.valid(worldMinutes))throw std::runtime_error("Invalid Grove fund");
+        out<<"GROVE2 "<<grove.balance<<' '<<grove.contributed<<' '<<grove.legacyCredit;
+        for(auto value:grove.level)out<<' '<<value;
+        for(auto value:grove.usedAt)out<<' '<<value;
+        out<<'\n';
         if (!out)
             throw std::runtime_error("Write failed");
     }
@@ -476,7 +483,7 @@ struct Registry {
         std::string magic;
         unsigned version, count;
         if (!(in >> magic >> version >> count) || magic != "SAPEOPLE" || version < 1 ||
-            version > 18 || count > MaxFamilies)
+            version > 20 || count > MaxFamilies)
             throw std::runtime_error("Unsupported or corrupt archive");
         std::unordered_set<unsigned> relatives;
         for (unsigned i = 0; i < count; ++i) {
@@ -726,6 +733,21 @@ struct Registry {
                 r.sightings.push_back(sighting);
             }
             if(!r.validStories(count))throw std::runtime_error("Invalid story data");
+        }
+        if(version==19) {
+            std::string marker;unsigned balance=0,contributed=0;
+            std::array<unsigned,3> levels{};std::array<std::uint64_t,3> days{};
+            if(!(in>>marker>>balance>>contributed) || marker!="GROVE")throw std::runtime_error("Corrupt Grove header");
+            for(auto &value:levels)if(!(in>>value))throw std::runtime_error("Corrupt Grove upgrades");
+            for(auto &value:days)if(!(in>>value))throw std::runtime_error("Corrupt Grove dates");
+            if(!r.grove.importV19(balance,contributed,levels,days,r.worldMinutes))throw std::runtime_error("Invalid legacy Grove fund");
+        } else if(version>=20) {
+            std::string marker;
+            if(!(in>>marker>>r.grove.balance>>r.grove.contributed>>r.grove.legacyCredit) || marker!="GROVE2")
+                throw std::runtime_error("Corrupt Grove fund header");
+            for(auto &value:r.grove.level)if(!(in>>value))throw std::runtime_error("Corrupt Grove upgrades");
+            for(auto &value:r.grove.usedAt)if(!(in>>value))throw std::runtime_error("Corrupt Grove restock times");
+            if(!r.grove.valid(r.worldMinutes))throw std::runtime_error("Invalid Grove fund");
         }
         in >> std::ws;
         if (!in.eof())

@@ -23,6 +23,7 @@ void queueNewProfile() {
     profileReady=false;pendingProfile=ProfilePending::NewGame;pendingGameSave.clear();
 }
 bool __cdecl gameLoadProfileHook(bool *variablesLoaded) {
+    clearGroveStock();
     std::filesystem::path file;
     try {
         file=nativeSaveName(0xc15fc8,104,std::filesystem::current_path());
@@ -41,6 +42,7 @@ bool __cdecl gameLoadProfileHook(bool *variablesLoaded) {
     return success;
 }
 bool __cdecl gameSaveProfileHook(int unused) {
+    clearGroveStock(); // Runtime rewards must never be serialized into the GTA save itself.
     std::filesystem::path cwd;
     try {cwd=std::filesystem::current_path();}catch(const std::exception &){}
     const bool success=previousGameSave(unused);
